@@ -2,7 +2,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import {
-  useGetVisit, useUpdateVisit, useAddVisitItem, useDeleteVisitItem,
+  useGetVisit, useUpdateVisit, useAddVisitItem, useDeleteVisitItem, useUpdateVisitItem,
   useCreateDailyReport, getGetVisitQueryKey, useGetMe
 } from "@workspace/api-client-react";
 import { useRole } from "@/contexts/RoleContext";
@@ -21,7 +21,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { Printer, Plus, Trash2 } from "lucide-react";
+import { Printer, Plus, Trash2, CheckCircle2, Circle, Banknote } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const itemSchema = z.object({
   itemDate: z.string().min(1, "Date is required"),
@@ -45,6 +46,7 @@ const visitSchema = z.object({
   therapy: z.string().optional(),
   status: z.enum(["active", "completed", "cancelled"]).optional(),
   dischargeDate: z.string().optional(),
+  deposit: z.string().optional(),
 });
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -60,19 +62,67 @@ function formatDate(dateStr: string) {
   return d.toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
 }
 
-function groupItemsByDate(items: any[]): { date: string; items: any[]; subtotal: number }[] {
+function groupItemsByDate(items: any[]): { date: string; items: any[]; subtotal: number; billedSubtotal: number }[] {
   const map = new Map<string, any[]>();
   for (const item of items) {
     const d = item.itemDate || "";
     if (!map.has(d)) map.set(d, []);
     map.get(d)!.push(item);
   }
-  const groups: { date: string; items: any[]; subtotal: number }[] = [];
+  const groups: { date: string; items: any[]; subtotal: number; billedSubtotal: number }[] = [];
   for (const [date, grpItems] of map.entries()) {
     const subtotal = grpItems.reduce((s: number, i: any) => s + (i.totalPrice ?? 0), 0);
-    groups.push({ date, items: grpItems, subtotal });
+    const billedSubtotal = grpItems.filter((i: any) => !i.isPaid).reduce((s: number, i: any) => s + (i.totalPrice ?? 0), 0);
+    groups.push({ date, items: grpItems, subtotal, billedSubtotal });
   }
   return groups.sort((a, b) => (b.date > a.date ? 1 : -1));
+}
+
+function BillingSummary({ v, isVet }: { v: any; isVet: boolean }) {
+  const deposit = v.deposit ?? 0;
+  const billedCost = v.billedCost ?? 0;
+  const paidDirectly = (v.totalCost ?? 0) - billedCost;
+  const netDue = billedCost - deposit;
+
+  return (
+    <Card className="border-primary/20">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Banknote className="h-4 w-4 text-primary" />
+          Billing summary
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pb-4 space-y-1.5">
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">Total items &amp; care</span>
+          <span>Rp {(v.totalCost ?? 0).toLocaleString("id-ID")}</span>
+        </div>
+        {paidDirectly > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Paid directly</span>
+            <span className="text-green-600">− Rp {paidDirectly.toLocaleString("id-ID")}</span>
+          </div>
+        )}
+        <div className="flex justify-between text-sm font-medium border-t border-border pt-1.5 mt-1.5">
+          <span>Billed total</span>
+          <span>Rp {billedCost.toLocaleString("id-ID")}</span>
+        </div>
+        {deposit > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Deposit received</span>
+            <span className="text-blue-600">− Rp {deposit.toLocaleString("id-ID")}</span>
+          </div>
+        )}
+        <div className={cn(
+          "flex justify-between text-base font-bold border-t border-border pt-2 mt-1",
+          netDue < 0 ? "text-blue-600" : netDue === 0 ? "text-green-600" : "text-foreground"
+        )}>
+          <span>{netDue < 0 ? "Refund to owner" : netDue === 0 ? "Settled" : "Amount due"}</span>
+          <span>Rp {Math.abs(netDue).toLocaleString("id-ID")}</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function VisitDetailPage() {
@@ -83,11 +133,13 @@ export default function VisitDetailPage() {
   const updateVisit = useUpdateVisit();
   const addItem = useAddVisitItem();
   const deleteItem = useDeleteVisitItem();
+  const updateItem = useUpdateVisitItem();
   const createReport = useCreateDailyReport();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
 
   const v = visit.data;
   const { activeRole } = useRole();
@@ -96,7 +148,13 @@ export default function VisitDetailPage() {
 
   const visitForm = useForm<z.infer<typeof visitSchema>>({
     resolver: zodResolver(visitSchema),
-    values: { anamnesis: v?.anamnesis ?? "", therapy: v?.therapy ?? "", status: (v?.status as "active" | "completed" | "cancelled" | undefined) ?? "active", dischargeDate: v?.dischargeDate ?? "" },
+    values: {
+      anamnesis: v?.anamnesis ?? "",
+      therapy: v?.therapy ?? "",
+      status: (v?.status as "active" | "completed" | "cancelled" | undefined) ?? "active",
+      dischargeDate: v?.dischargeDate ?? "",
+      deposit: v?.deposit != null ? String(v.deposit) : "",
+    },
   });
 
   const itemForm = useForm<z.infer<typeof itemSchema>>({
@@ -110,7 +168,17 @@ export default function VisitDetailPage() {
   });
 
   async function saveVisit(values: z.infer<typeof visitSchema>) {
-    await updateVisit.mutateAsync({ visitId: id, data: values });
+    const depositVal = values.deposit && values.deposit.trim() !== "" ? parseFloat(values.deposit) : null;
+    await updateVisit.mutateAsync({
+      visitId: id,
+      data: {
+        anamnesis: values.anamnesis,
+        therapy: values.therapy,
+        status: values.status,
+        dischargeDate: values.dischargeDate,
+        deposit: depositVal as number | undefined,
+      },
+    });
     queryClient.invalidateQueries({ queryKey: getGetVisitQueryKey(id) });
     toast({ title: "Visit updated" });
   }
@@ -137,6 +205,16 @@ export default function VisitDetailPage() {
     await deleteItem.mutateAsync({ itemId });
     queryClient.invalidateQueries({ queryKey: getGetVisitQueryKey(id) });
     toast({ title: "Item removed" });
+  }
+
+  async function togglePaid(item: any) {
+    setTogglingId(item.id);
+    try {
+      await updateItem.mutateAsync({ itemId: item.id, data: { isPaid: !item.isPaid } });
+      queryClient.invalidateQueries({ queryKey: getGetVisitQueryKey(id) });
+    } finally {
+      setTogglingId(null);
+    }
   }
 
   async function addDailyReport(values: z.infer<typeof reportSchema>) {
@@ -168,7 +246,6 @@ export default function VisitDetailPage() {
 
   const items = v.items ?? [];
   const reports = v.dailyReports ?? [];
-  const totalCost = v.totalCost ?? 0;
   const dateGroups = groupItemsByDate(items);
 
   return (
@@ -189,7 +266,9 @@ export default function VisitDetailPage() {
           <StatusBadge status={v.type ?? "outpatient"} />
           <StatusBadge status={v.status ?? "active"} />
           <span className="text-sm text-muted-foreground flex-1 text-right">
-            Total: <span className="font-semibold text-foreground">Rp {totalCost.toLocaleString("id-ID")}</span>
+            Due: <span className="font-semibold text-foreground">
+              Rp {Math.max(0, (v.billedCost ?? 0) - (v.deposit ?? 0)).toLocaleString("id-ID")}
+            </span>
           </span>
         </div>
 
@@ -232,6 +311,20 @@ export default function VisitDetailPage() {
                       </FormItem>
                     )} />
                   </div>
+                  <FormField control={visitForm.control} name="deposit" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Deposit received (Rp)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          {...field}
+                          data-testid="input-deposit"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )} />
                   <Button type="submit" size="sm" className="w-full" disabled={updateVisit.isPending} data-testid="btn-save-visit">
                     {updateVisit.isPending ? "Saving..." : "Save notes"}
                   </Button>
@@ -341,15 +434,44 @@ export default function VisitDetailPage() {
                 <div key={group.date}>
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-xs font-semibold text-primary">{formatDate(group.date)}</p>
-                    <p className="text-xs text-muted-foreground">Rp {group.subtotal.toLocaleString("id-ID")}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Rp {group.billedSubtotal.toLocaleString("id-ID")}
+                      {group.billedSubtotal < group.subtotal && (
+                        <span className="ml-1 text-muted-foreground/60">(of Rp {group.subtotal.toLocaleString("id-ID")})</span>
+                      )}
+                    </p>
                   </div>
                   <div className="space-y-2">
                     {group.items.map((item: any) => (
-                      <div key={item.id} className="flex items-center gap-2 py-2 border-b border-border last:border-0" data-testid={`row-item-${item.id}`}>
+                      <div
+                        key={item.id}
+                        className={cn(
+                          "flex items-center gap-2 py-2 border-b border-border last:border-0",
+                          item.isPaid && "opacity-60"
+                        )}
+                        data-testid={`row-item-${item.id}`}
+                      >
+                        {isVet && (
+                          <button
+                            onClick={() => togglePaid(item)}
+                            disabled={togglingId === item.id}
+                            className="shrink-0 text-muted-foreground hover:text-primary transition-colors"
+                            data-testid={`btn-toggle-paid-${item.id}`}
+                            title={item.isPaid ? "Mark as billed" : "Mark as paid directly"}
+                          >
+                            {item.isPaid
+                              ? <CheckCircle2 className="h-4 w-4 text-green-500" />
+                              : <Circle className="h-4 w-4" />
+                            }
+                          </button>
+                        )}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <Badge variant="outline" className="text-xs">{CATEGORY_LABELS[item.category] ?? item.category}</Badge>
-                            <span className="text-sm font-medium truncate">{item.name}</span>
+                            <span className={cn("text-sm font-medium truncate", item.isPaid && "line-through")}>{item.name}</span>
+                            {item.isPaid && (
+                              <Badge variant="secondary" className="text-xs text-green-700 bg-green-100">Paid</Badge>
+                            )}
                           </div>
                           {item.description && <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>}
                           <p className="text-xs text-muted-foreground mt-0.5">
@@ -462,6 +584,8 @@ export default function VisitDetailPage() {
             </CardContent>
           </Card>
         )}
+
+        <BillingSummary v={v} isVet={isVet} />
       </div>
     </AppShell>
   );

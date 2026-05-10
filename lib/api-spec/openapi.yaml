@@ -1123,6 +1123,7 @@ components:
         therapy: { type: ["string", "null"] }
         visitDate: { type: string }
         dischargeDate: { type: ["string", "null"] }
+        deposit: { type: ["number", "null"] }
         totalCost: { type: number }
         createdAt: { type: string }
       required: [id, petId, clinicId, type, status, visitDate, totalCost, createdAt]
@@ -1160,7 +1161,9 @@ components:
         therapy: { type: ["string", "null"] }
         visitDate: { type: string }
         dischargeDate: { type: ["string", "null"] }
+        deposit: { type: ["number", "null"] }
         totalCost: { type: number }
+        billedCost: { type: number }
         items:
           type: array
           items:
@@ -1170,7 +1173,7 @@ components:
           items:
             $ref: "#/components/schemas/DailyReport"
         createdAt: { type: string }
-      required: [id, petId, clinicId, type, status, visitDate, totalCost, items, dailyReports, createdAt]
+      required: [id, petId, clinicId, type, status, visitDate, totalCost, billedCost, items, dailyReports, createdAt]
 
     VisitInput:
       type: object
@@ -1195,6 +1198,7 @@ components:
           enum: [active, completed, cancelled]
         dischargeDate: { type: string }
         vetId: { type: integer }
+        deposit: { type: number }
 
     VisitItem:
       type: object
@@ -1210,7 +1214,8 @@ components:
         unitPrice: { type: number }
         totalPrice: { type: number }
         itemDate: { type: string }
-      required: [id, visitId, category, name, quantity, unitPrice, totalPrice, itemDate]
+        isPaid: { type: boolean }
+      required: [id, visitId, category, name, quantity, unitPrice, totalPrice, itemDate, isPaid]
 
     VisitItemInput:
       type: object
@@ -1223,6 +1228,7 @@ components:
         quantity: { type: number }
         unitPrice: { type: number }
         itemDate: { type: string, description: "ISO date YYYY-MM-DD" }
+        isPaid: { type: boolean }
       required: [category, name, quantity, unitPrice, itemDate]
 
     VisitItemUpdate:
@@ -1232,6 +1238,7 @@ components:
         description: { type: string }
         quantity: { type: number }
         unitPrice: { type: number }
+        isPaid: { type: boolean }
 
     DailyReport:
       type: object

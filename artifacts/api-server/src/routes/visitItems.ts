@@ -11,12 +11,13 @@ router.patch("/:itemId", async (req, res) => {
   const { userId: clerkId } = getAuth(req);
   if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
   const itemId = parseInt(req.params.itemId);
-  const { name, description, quantity, unitPrice } = req.body;
+  const { name, description, quantity, unitPrice, isPaid } = req.body;
   const [updated] = await db.update(visitItemsTable).set({
     ...(name !== undefined && { name }),
     ...(description !== undefined && { description }),
     ...(quantity !== undefined && { quantity: String(quantity) }),
     ...(unitPrice !== undefined && { unitPrice: String(unitPrice) }),
+    ...(isPaid !== undefined && { isPaid }),
   }).where(eq(visitItemsTable.id, itemId)).returning();
   if (!updated) return res.status(404).json({ error: "Item not found" });
   res.json({
@@ -24,6 +25,7 @@ router.patch("/:itemId", async (req, res) => {
     quantity: parseFloat(updated.quantity),
     unitPrice: parseFloat(updated.unitPrice),
     totalPrice: parseFloat(updated.unitPrice) * parseFloat(updated.quantity),
+    isPaid: updated.isPaid,
   });
 });
 

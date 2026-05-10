@@ -309,6 +309,8 @@ export interface Visit {
   visitDate: string;
   /** @nullable */
   dischargeDate?: string | null;
+  /** @nullable */
+  deposit?: number | null;
   totalCost: number;
   createdAt: string;
 }
@@ -354,6 +356,7 @@ export interface VisitItem {
   unitPrice: number;
   totalPrice: number;
   itemDate: string;
+  isPaid: boolean;
 }
 
 export interface DailyReport {
@@ -391,7 +394,10 @@ export interface VisitDetail {
   visitDate: string;
   /** @nullable */
   dischargeDate?: string | null;
+  /** @nullable */
+  deposit?: number | null;
   totalCost: number;
+  billedCost: number;
   items: VisitItem[];
   dailyReports: DailyReport[];
   createdAt: string;
@@ -429,6 +435,7 @@ export interface VisitUpdate {
   status?: VisitUpdateStatus;
   dischargeDate?: string;
   vetId?: number;
+  deposit?: number;
 }
 
 export type VisitItemInputCategory =
@@ -450,6 +457,7 @@ export interface VisitItemInput {
   unitPrice: number;
   /** ISO date YYYY-MM-DD */
   itemDate: string;
+  isPaid?: boolean;
 }
 
 export interface VisitItemUpdate {
@@ -457,6 +465,7 @@ export interface VisitItemUpdate {
   description?: string;
   quantity?: number;
   unitPrice?: number;
+  isPaid?: boolean;
 }
 
 export interface DailyReportInput {

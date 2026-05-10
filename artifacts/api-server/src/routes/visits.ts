@@ -13,8 +13,10 @@ async function buildVisitDetail(visitId: number) {
   const pet = await db.query.petsTable.findFirst({ where: eq(petsTable.id, visit.petId) });
   const items = await db.query.visitItemsTable.findMany({ where: eq(visitItemsTable.visitId, visitId), orderBy: [desc(visitItemsTable.itemDate), desc(visitItemsTable.createdAt)] });
   const reports = await db.query.dailyReportsTable.findMany({ where: eq(dailyReportsTable.visitId, visitId), orderBy: [desc(dailyReportsTable.reportDate)] });
-  const totalCost = items.reduce((s, i) => s + parseFloat(i.unitPrice) * parseFloat(i.quantity), 0)
-    + reports.reduce((s, r) => s + parseFloat(r.cost), 0);
+  const reportsCost = reports.reduce((s, r) => s + parseFloat(r.cost), 0);
+  const totalCost = items.reduce((s, i) => s + parseFloat(i.unitPrice) * parseFloat(i.quantity), 0) + reportsCost;
+  const billedCost = items.filter(i => !i.isPaid).reduce((s, i) => s + parseFloat(i.unitPrice) * parseFloat(i.quantity), 0) + reportsCost;
+  const deposit = visit.deposit ? parseFloat(visit.deposit) : null;
   let vetName = null;
   if (visit.vetId) {
     const vet = await db.query.usersTable.findFirst({ where: eq(usersTable.id, visit.vetId) });
@@ -25,11 +27,12 @@ async function buildVisitDetail(visitId: number) {
     quantity: parseFloat(i.quantity),
     unitPrice: parseFloat(i.unitPrice),
     totalPrice: parseFloat(i.unitPrice) * parseFloat(i.quantity),
+    isPaid: i.isPaid,
   }));
   const formattedReports = reports.map(r => {
     return { ...r, cost: parseFloat(r.cost), vetName: null };
   });
-  return { ...visit, petName: pet?.name ?? null, vetName, totalCost, items: formattedItems, dailyReports: formattedReports };
+  return { ...visit, petName: pet?.name ?? null, vetName, deposit, totalCost, billedCost, items: formattedItems, dailyReports: formattedReports };
 }
 
 // GET /api/visits/:visitId
@@ -46,13 +49,14 @@ router.patch("/:visitId", async (req, res) => {
   const { userId: clerkId } = getAuth(req);
   if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
   const visitId = parseInt(req.params.visitId);
-  const { anamnesis, therapy, status, dischargeDate, vetId } = req.body;
+  const { anamnesis, therapy, status, dischargeDate, vetId, deposit } = req.body;
   const [updated] = await db.update(visitsTable).set({
     ...(anamnesis !== undefined && { anamnesis }),
     ...(therapy !== undefined && { therapy }),
     ...(status !== undefined && { status }),
     ...(dischargeDate !== undefined && { dischargeDate }),
     ...(vetId !== undefined && { vetId }),
+    ...(deposit !== undefined && { deposit: deposit !== null ? String(deposit) : null }),
   }).where(eq(visitsTable.id, visitId)).returning();
   if (!updated) return res.status(404).json({ error: "Visit not found" });
   // Update pet status when visit completed

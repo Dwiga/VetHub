@@ -515,6 +515,7 @@ export const ListVisitsResponseItem = zod.object({
   therapy: zod.string().nullish(),
   visitDate: zod.string(),
   dischargeDate: zod.string().nullish(),
+  deposit: zod.number().nullish(),
   totalCost: zod.number(),
   createdAt: zod.string(),
 });
@@ -556,7 +557,9 @@ export const GetVisitResponse = zod.object({
   therapy: zod.string().nullish(),
   visitDate: zod.string(),
   dischargeDate: zod.string().nullish(),
+  deposit: zod.number().nullish(),
   totalCost: zod.number(),
+  billedCost: zod.number(),
   items: zod.array(
     zod.object({
       id: zod.number(),
@@ -568,6 +571,7 @@ export const GetVisitResponse = zod.object({
       unitPrice: zod.number(),
       totalPrice: zod.number(),
       itemDate: zod.string(),
+      isPaid: zod.boolean(),
     }),
   ),
   dailyReports: zod.array(
@@ -599,6 +603,7 @@ export const UpdateVisitBody = zod.object({
   status: zod.enum(["active", "completed", "cancelled"]).optional(),
   dischargeDate: zod.string().optional(),
   vetId: zod.number().optional(),
+  deposit: zod.number().optional(),
 });
 
 export const UpdateVisitResponse = zod.object({
@@ -614,7 +619,9 @@ export const UpdateVisitResponse = zod.object({
   therapy: zod.string().nullish(),
   visitDate: zod.string(),
   dischargeDate: zod.string().nullish(),
+  deposit: zod.number().nullish(),
   totalCost: zod.number(),
+  billedCost: zod.number(),
   items: zod.array(
     zod.object({
       id: zod.number(),
@@ -626,6 +633,7 @@ export const UpdateVisitResponse = zod.object({
       unitPrice: zod.number(),
       totalPrice: zod.number(),
       itemDate: zod.string(),
+      isPaid: zod.boolean(),
     }),
   ),
   dailyReports: zod.array(
@@ -658,6 +666,7 @@ export const AddVisitItemBody = zod.object({
   quantity: zod.number(),
   unitPrice: zod.number(),
   itemDate: zod.string().describe("ISO date YYYY-MM-DD"),
+  isPaid: zod.boolean().optional(),
 });
 
 /**
@@ -672,6 +681,7 @@ export const UpdateVisitItemBody = zod.object({
   description: zod.string().optional(),
   quantity: zod.number().optional(),
   unitPrice: zod.number().optional(),
+  isPaid: zod.boolean().optional(),
 });
 
 export const UpdateVisitItemResponse = zod.object({
@@ -684,6 +694,7 @@ export const UpdateVisitItemResponse = zod.object({
   unitPrice: zod.number(),
   totalPrice: zod.number(),
   itemDate: zod.string(),
+  isPaid: zod.boolean(),
 });
 
 /**
