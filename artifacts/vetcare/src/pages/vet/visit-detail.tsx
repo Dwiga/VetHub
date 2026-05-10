@@ -173,7 +173,7 @@ export default function VisitDetailPage() {
     <AppShell>
       <PageHeader
         title={`Visit — ${v.petName}`}
-        subtitle={v.visitDate}
+        subtitle={[v.visitDate, v.vetName].filter(Boolean).join(" · ")}
         back
         action={
           <Button size="sm" variant="ghost" onClick={() => window.print()} data-testid="btn-print">

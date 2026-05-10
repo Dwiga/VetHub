@@ -50,6 +50,7 @@ export default function NewVisitPage() {
       petId: id,
       data: {
         clinicId,
+        vetId: me.data?.id ?? undefined,
         type: values.type,
         visitDate: values.visitDate,
         anamnesis: values.anamnesis || undefined,
