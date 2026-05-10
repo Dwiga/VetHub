@@ -511,6 +511,42 @@ export interface ProductUpdate {
   isActive?: boolean;
 }
 
+export interface Vaccination {
+  id: number;
+  petId: number;
+  vaccineName: string;
+  /** @nullable */
+  brand?: string | null;
+  /** Date administered YYYY-MM-DD */
+  date: string;
+  /** @nullable */
+  nextDueDate?: string | null;
+  /** @nullable */
+  batchNumber?: string | null;
+  /** @nullable */
+  administeredBy?: string | null;
+  /** @nullable */
+  cost?: number | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  vetId?: number | null;
+  createdAt: string;
+}
+
+export interface VaccinationInput {
+  /** @minLength 1 */
+  vaccineName: string;
+  brand?: string;
+  /** Date administered YYYY-MM-DD (can be backdated) */
+  date: string;
+  nextDueDate?: string;
+  batchNumber?: string;
+  administeredBy?: string;
+  cost?: number;
+  notes?: string;
+}
+
 export interface TopItem {
   name: string;
   count: number;

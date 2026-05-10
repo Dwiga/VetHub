@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
-import { usersTable, petsTable, speciesTable, monitoringTable } from "@workspace/db";
+import { usersTable, petsTable, speciesTable, monitoringTable, vaccinationsTable } from "@workspace/db";
 import { eq, desc, ilike } from "drizzle-orm";
 import { getOrCreateUser } from "./users";
 
@@ -174,6 +174,35 @@ router.post("/:petId/visits", async (req, res) => {
     vetName = vet?.name ?? null;
   }
   res.status(201).json({ ...visit, petName: pet?.name ?? null, vetName, totalCost: 0 });
+});
+
+// GET /api/pets/:petId/vaccinations
+router.get("/:petId/vaccinations", async (req, res) => {
+  const { userId: clerkId } = getAuth(req);
+  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const petId = parseInt(req.params.petId);
+  const records = await db.query.vaccinationsTable.findMany({
+    where: eq(vaccinationsTable.petId, petId),
+    orderBy: [desc(vaccinationsTable.date)],
+  });
+  res.json(records.map(r => ({ ...r, cost: r.cost ? parseFloat(r.cost) : null })));
+});
+
+// POST /api/pets/:petId/vaccinations
+router.post("/:petId/vaccinations", async (req, res) => {
+  const { userId: clerkId } = getAuth(req);
+  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const user = await getOrCreateUser(clerkId);
+  const petId = parseInt(req.params.petId);
+  const { vaccineName, brand, date, nextDueDate, batchNumber, administeredBy, cost, notes } = req.body;
+  if (!vaccineName || !date) return res.status(400).json({ error: "vaccineName and date are required" });
+  const [record] = await db.insert(vaccinationsTable).values({
+    petId, vaccineName, brand, date, nextDueDate, batchNumber,
+    administeredBy: administeredBy ?? user.name,
+    cost: cost !== undefined && cost !== null ? String(cost) : null,
+    notes, vetId: user.id,
+  }).returning();
+  res.status(201).json({ ...record, cost: record.cost ? parseFloat(record.cost) : null });
 });
 
 export default router;

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, boolean, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, boolean, integer, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -35,3 +35,22 @@ export const monitoringTable = pgTable("monitoring", {
 export const insertMonitoringSchema = createInsertSchema(monitoringTable).omit({ id: true, recordedAt: true });
 export type InsertMonitoring = z.infer<typeof insertMonitoringSchema>;
 export type Monitoring = typeof monitoringTable.$inferSelect;
+
+export const vaccinationsTable = pgTable("vaccinations", {
+  id: serial("id").primaryKey(),
+  petId: integer("pet_id").notNull(),
+  vaccineName: text("vaccine_name").notNull(),
+  brand: text("brand"),
+  date: text("date").notNull(),
+  nextDueDate: text("next_due_date"),
+  batchNumber: text("batch_number"),
+  administeredBy: text("administered_by"),
+  cost: numeric("cost", { precision: 15, scale: 2 }),
+  notes: text("notes"),
+  vetId: integer("vet_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const insertVaccinationSchema = createInsertSchema(vaccinationsTable).omit({ id: true, createdAt: true });
+export type InsertVaccination = z.infer<typeof insertVaccinationSchema>;
+export type Vaccination = typeof vaccinationsTable.$inferSelect;

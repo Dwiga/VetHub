@@ -1,13 +1,26 @@
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { useGetPet, useListMonitoring, useListVisits, getGetPetQueryKey } from "@workspace/api-client-react";
+import {
+  useGetPet, useListMonitoring, useListVisits, getGetPetQueryKey,
+  useListVaccinations, getListVaccinationsQueryKey,
+  useAddVaccination, useDeleteVaccination,
+} from "@workspace/api-client-react";
 import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Edit, Plus, Activity } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Edit, Plus, Activity, Syringe, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRole } from "@/contexts/RoleContext";
 
 function MonitoringCharts({ petId }: { petId: number }) {
   const monitoring = useListMonitoring(petId, { query: { queryKey: ["monitoring", petId] } });
@@ -109,6 +122,179 @@ function VisitHistory({ petId }: { petId: number }) {
   );
 }
 
+const EMPTY_FORM = {
+  vaccineName: "",
+  brand: "",
+  date: new Date().toISOString().split("T")[0],
+  nextDueDate: "",
+  batchNumber: "",
+  administeredBy: "",
+  cost: "",
+  notes: "",
+};
+
+function VaccinationSection({ petId }: { petId: number }) {
+  const { activeRole } = useRole();
+  const isVet = activeRole === "vet";
+  const qc = useQueryClient();
+  const vaccinationsQuery = useListVaccinations(petId, { query: { queryKey: getListVaccinationsQueryKey(petId) } });
+  const addMutation = useAddVaccination();
+  const deleteMutation = useDeleteVaccination();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+
+  const records = vaccinationsQuery.data ?? [];
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.vaccineName || !form.date) return;
+    await addMutation.mutateAsync({
+      petId,
+      data: {
+        vaccineName: form.vaccineName,
+        brand: form.brand || undefined,
+        date: form.date,
+        nextDueDate: form.nextDueDate || undefined,
+        batchNumber: form.batchNumber || undefined,
+        administeredBy: form.administeredBy || undefined,
+        cost: form.cost ? parseFloat(form.cost) : undefined,
+        notes: form.notes || undefined,
+      },
+    });
+    await qc.invalidateQueries({ queryKey: getListVaccinationsQueryKey(petId) });
+    setForm(EMPTY_FORM);
+    setOpen(false);
+  }
+
+  async function handleDelete(vaccinationId: number) {
+    if (!confirm("Delete this vaccination record?")) return;
+    await deleteMutation.mutateAsync({ vaccinationId });
+    await qc.invalidateQueries({ queryKey: getListVaccinationsQueryKey(petId) });
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold text-foreground text-sm">Vaccination records</h2>
+        {isVet && (
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline" data-testid="btn-add-vaccination">
+                <Plus className="h-4 w-4 mr-1" />Add
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-sm mx-auto">
+              <DialogHeader>
+                <DialogTitle>Add vaccination</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-3 pt-1">
+                <div className="space-y-1">
+                  <Label htmlFor="vaccineName">Vaccine name *</Label>
+                  <Input id="vaccineName" name="vaccineName" value={form.vaccineName} onChange={handleChange} placeholder="e.g. Rabies, DHPP" required />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="brand">Brand / manufacturer</Label>
+                  <Input id="brand" name="brand" value={form.brand} onChange={handleChange} placeholder="e.g. Nobivac" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="date">Date given *</Label>
+                    <Input id="date" name="date" type="date" value={form.date} onChange={handleChange} required />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="nextDueDate">Next due date</Label>
+                    <Input id="nextDueDate" name="nextDueDate" type="date" value={form.nextDueDate} onChange={handleChange} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="batchNumber">Batch no.</Label>
+                    <Input id="batchNumber" name="batchNumber" value={form.batchNumber} onChange={handleChange} placeholder="Optional" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="cost">Cost (Rp)</Label>
+                    <Input id="cost" name="cost" type="number" min="0" value={form.cost} onChange={handleChange} placeholder="0" />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="administeredBy">Administered by</Label>
+                  <Input id="administeredBy" name="administeredBy" value={form.administeredBy} onChange={handleChange} placeholder="Vet name or clinic" />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea id="notes" name="notes" value={form.notes} onChange={handleChange} placeholder="Any additional notes..." rows={2} />
+                </div>
+                <Button type="submit" className="w-full" disabled={addMutation.isPending}>
+                  {addMutation.isPending ? "Saving..." : "Save vaccination"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+
+      {vaccinationsQuery.isLoading ? (
+        <div className="h-20 bg-muted animate-pulse rounded-xl" />
+      ) : records.length === 0 ? (
+        <Card>
+          <CardContent className="py-8 flex flex-col items-center gap-2">
+            <Syringe className="h-8 w-8 text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">No vaccination records yet</p>
+            {isVet && (
+              <p className="text-xs text-muted-foreground">Use the Add button to log vaccines, including past records from the vaccine book</p>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {records.map(v => (
+            <Card key={v.id} data-testid={`card-vaccination-${v.id}`}>
+              <CardContent className="py-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{v.vaccineName}</p>
+                    {v.brand && <p className="text-xs text-muted-foreground">{v.brand}</p>}
+                    <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                      <span>Given: <span className="text-foreground font-medium">{v.date}</span></span>
+                      {v.nextDueDate && (
+                        <span>Next due: <span className="text-foreground font-medium">{v.nextDueDate}</span></span>
+                      )}
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                      {v.administeredBy && <span>By: {v.administeredBy}</span>}
+                      {v.batchNumber && <span>Batch: {v.batchNumber}</span>}
+                      {v.cost != null && v.cost > 0 && (
+                        <span>Rp {(v.cost as number).toLocaleString("id-ID")}</span>
+                      )}
+                    </div>
+                    {v.notes && <p className="text-xs text-muted-foreground mt-1 italic">{v.notes}</p>}
+                  </div>
+                  {isVet && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
+                      onClick={() => handleDelete(v.id)}
+                      disabled={deleteMutation.isPending}
+                      data-testid={`btn-delete-vaccination-${v.id}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PetDetailPage() {
   const { petId } = useParams<{ petId: string }>();
   const id = parseInt(petId);
@@ -187,6 +373,8 @@ export default function PetDetailPage() {
           </Button>
         </div>
         <MonitoringCharts petId={id} />
+
+        <VaccinationSection petId={id} />
 
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-foreground text-sm">Visit history</h2>

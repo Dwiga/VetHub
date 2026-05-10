@@ -46,6 +46,8 @@ import type {
   StaffMember,
   UserProfile,
   UserProfileUpdate,
+  Vaccination,
+  VaccinationInput,
   VetAddPetInput,
   Visit,
   VisitDetail,
@@ -1890,6 +1892,264 @@ export const useAddPetForOwner = <
   TContext
 > => {
   return useMutation(getAddPetForOwnerMutationOptions(options));
+};
+
+/**
+ * @summary List all vaccinations for a pet
+ */
+export const getListVaccinationsUrl = (petId: number) => {
+  return `/api/pets/${petId}/vaccinations`;
+};
+
+export const listVaccinations = async (
+  petId: number,
+  options?: RequestInit,
+): Promise<Vaccination[]> => {
+  return customFetch<Vaccination[]>(getListVaccinationsUrl(petId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListVaccinationsQueryKey = (petId: number) => {
+  return [`/api/pets/${petId}/vaccinations`] as const;
+};
+
+export const getListVaccinationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listVaccinations>>,
+  TError = ErrorType<unknown>,
+>(
+  petId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listVaccinations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListVaccinationsQueryKey(petId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listVaccinations>>
+  > = ({ signal }) => listVaccinations(petId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!petId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listVaccinations>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListVaccinationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listVaccinations>>
+>;
+export type ListVaccinationsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all vaccinations for a pet
+ */
+
+export function useListVaccinations<
+  TData = Awaited<ReturnType<typeof listVaccinations>>,
+  TError = ErrorType<unknown>,
+>(
+  petId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listVaccinations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListVaccinationsQueryOptions(petId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add a vaccination record (vet only, date can be backdated)
+ */
+export const getAddVaccinationUrl = (petId: number) => {
+  return `/api/pets/${petId}/vaccinations`;
+};
+
+export const addVaccination = async (
+  petId: number,
+  vaccinationInput: VaccinationInput,
+  options?: RequestInit,
+): Promise<Vaccination> => {
+  return customFetch<Vaccination>(getAddVaccinationUrl(petId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(vaccinationInput),
+  });
+};
+
+export const getAddVaccinationMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addVaccination>>,
+    TError,
+    { petId: number; data: BodyType<VaccinationInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addVaccination>>,
+  TError,
+  { petId: number; data: BodyType<VaccinationInput> },
+  TContext
+> => {
+  const mutationKey = ["addVaccination"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addVaccination>>,
+    { petId: number; data: BodyType<VaccinationInput> }
+  > = (props) => {
+    const { petId, data } = props ?? {};
+
+    return addVaccination(petId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddVaccinationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addVaccination>>
+>;
+export type AddVaccinationMutationBody = BodyType<VaccinationInput>;
+export type AddVaccinationMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Add a vaccination record (vet only, date can be backdated)
+ */
+export const useAddVaccination = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addVaccination>>,
+    TError,
+    { petId: number; data: BodyType<VaccinationInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addVaccination>>,
+  TError,
+  { petId: number; data: BodyType<VaccinationInput> },
+  TContext
+> => {
+  return useMutation(getAddVaccinationMutationOptions(options));
+};
+
+/**
+ * @summary Delete a vaccination record
+ */
+export const getDeleteVaccinationUrl = (vaccinationId: number) => {
+  return `/api/vaccinations/${vaccinationId}`;
+};
+
+export const deleteVaccination = async (
+  vaccinationId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteVaccinationUrl(vaccinationId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteVaccinationMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteVaccination>>,
+    TError,
+    { vaccinationId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteVaccination>>,
+  TError,
+  { vaccinationId: number },
+  TContext
+> => {
+  const mutationKey = ["deleteVaccination"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteVaccination>>,
+    { vaccinationId: number }
+  > = (props) => {
+    const { vaccinationId } = props ?? {};
+
+    return deleteVaccination(vaccinationId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteVaccinationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteVaccination>>
+>;
+
+export type DeleteVaccinationMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a vaccination record
+ */
+export const useDeleteVaccination = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteVaccination>>,
+    TError,
+    { vaccinationId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteVaccination>>,
+  TError,
+  { vaccinationId: number },
+  TContext
+> => {
+  return useMutation(getDeleteVaccinationMutationOptions(options));
 };
 
 /**

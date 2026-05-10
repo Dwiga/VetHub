@@ -446,6 +446,56 @@ export const AddPetForOwnerBody = zod.object({
 });
 
 /**
+ * @summary List all vaccinations for a pet
+ */
+export const ListVaccinationsParams = zod.object({
+  petId: zod.coerce.number(),
+});
+
+export const ListVaccinationsResponseItem = zod.object({
+  id: zod.number(),
+  petId: zod.number(),
+  vaccineName: zod.string(),
+  brand: zod.string().nullish(),
+  date: zod.string().describe("Date administered YYYY-MM-DD"),
+  nextDueDate: zod.string().nullish(),
+  batchNumber: zod.string().nullish(),
+  administeredBy: zod.string().nullish(),
+  cost: zod.number().nullish(),
+  notes: zod.string().nullish(),
+  vetId: zod.number().nullish(),
+  createdAt: zod.string(),
+});
+export const ListVaccinationsResponse = zod.array(ListVaccinationsResponseItem);
+
+/**
+ * @summary Add a vaccination record (vet only, date can be backdated)
+ */
+export const AddVaccinationParams = zod.object({
+  petId: zod.coerce.number(),
+});
+
+export const AddVaccinationBody = zod.object({
+  vaccineName: zod.string().min(1),
+  brand: zod.string().optional(),
+  date: zod
+    .string()
+    .describe("Date administered YYYY-MM-DD (can be backdated)"),
+  nextDueDate: zod.string().optional(),
+  batchNumber: zod.string().optional(),
+  administeredBy: zod.string().optional(),
+  cost: zod.number().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Delete a vaccination record
+ */
+export const DeleteVaccinationParams = zod.object({
+  vaccinationId: zod.coerce.number(),
+});
+
+/**
  * @summary List all visits for a pet
  */
 export const ListVisitsParams = zod.object({

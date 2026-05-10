@@ -28,6 +28,8 @@ tags:
     description: Inpatient daily status reports
   - name: products
     description: Clinic products and inventory
+  - name: vaccinations
+    description: Pet vaccination records
   - name: reports
     description: Revenue and analytics reports
 
@@ -441,6 +443,63 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Pet"
+
+  # ── Vaccinations ──────────────────────────────────────────────────────────
+  /pets/{petId}/vaccinations:
+    get:
+      operationId: listVaccinations
+      tags: [vaccinations]
+      summary: List all vaccinations for a pet
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Vaccination records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vaccination"
+    post:
+      operationId: addVaccination
+      tags: [vaccinations]
+      summary: Add a vaccination record (vet only, date can be backdated)
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VaccinationInput"
+      responses:
+        "201":
+          description: Created vaccination record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vaccination"
+
+  /vaccinations/{vaccinationId}:
+    delete:
+      operationId: deleteVaccination
+      tags: [vaccinations]
+      summary: Delete a vaccination record
+      parameters:
+        - name: vaccinationId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
 
   # ── Hospital Visits ───────────────────────────────────────────────────────
   /pets/{petId}/visits:
@@ -1242,6 +1301,36 @@ components:
         stock: { type: integer }
         unit: { type: string }
         isActive: { type: boolean }
+
+    Vaccination:
+      type: object
+      properties:
+        id: { type: integer }
+        petId: { type: integer }
+        vaccineName: { type: string }
+        brand: { type: ["string", "null"] }
+        date: { type: string, description: "Date administered YYYY-MM-DD" }
+        nextDueDate: { type: ["string", "null"] }
+        batchNumber: { type: ["string", "null"] }
+        administeredBy: { type: ["string", "null"] }
+        cost: { type: ["number", "null"] }
+        notes: { type: ["string", "null"] }
+        vetId: { type: ["integer", "null"] }
+        createdAt: { type: string }
+      required: [id, petId, vaccineName, date, createdAt]
+
+    VaccinationInput:
+      type: object
+      properties:
+        vaccineName: { type: string, minLength: 1 }
+        brand: { type: string }
+        date: { type: string, description: "Date administered YYYY-MM-DD (can be backdated)" }
+        nextDueDate: { type: string }
+        batchNumber: { type: string }
+        administeredBy: { type: string }
+        cost: { type: number }
+        notes: { type: string }
+      required: [vaccineName, date]
 
     ReportSummary:
       type: object
