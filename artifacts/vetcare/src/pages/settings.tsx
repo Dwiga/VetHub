@@ -15,7 +15,7 @@ import { Separator } from "@/components/ui/separator";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  phone: z.string().optional(),
+  phone: z.string().min(9, "Phone number is required").regex(/^[0-9+\-\s()]+$/, "Enter a valid phone number"),
 });
 
 const vetSchema = z.object({

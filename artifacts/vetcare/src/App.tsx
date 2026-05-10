@@ -6,8 +6,10 @@ import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wo
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useGetMe } from "@workspace/api-client-react";
 import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing";
+import OnboardingPage from "@/pages/onboarding";
 import DashboardPage from "@/pages/dashboard";
 import PetsPage from "@/pages/pets/index";
 import NewPetPage from "@/pages/pets/new";
@@ -134,13 +136,27 @@ const queryClient = new QueryClient({
   },
 });
 
+function PhoneGate({ component: Comp }: { component: React.ComponentType }) {
+  const me = useGetMe();
+  if (me.isLoading) return null;
+  if (me.data && !me.data.phone) return <Redirect to="/onboarding" />;
+  return <Comp />;
+}
+
 function AuthedRoute({ component: Comp }: { component: React.ComponentType }) {
   return (
     <>
-      <Show when="signed-in"><Comp /></Show>
+      <Show when="signed-in"><PhoneGate component={Comp} /></Show>
       <Show when="signed-out"><Redirect to="/sign-in" /></Show>
     </>
   );
+}
+
+function OnboardingRoute() {
+  const me = useGetMe();
+  if (me.isLoading) return null;
+  if (me.data?.phone) return <Redirect to="/dashboard" />;
+  return <OnboardingPage />;
 }
 
 function HomeRedirect() {
@@ -176,6 +192,12 @@ function ClerkProviderWithRoutes() {
             <Route path="/" component={HomeRedirect} />
             <Route path="/sign-in/*?" component={SignInPage} />
             <Route path="/sign-up/*?" component={SignUpPage} />
+            <Route path="/onboarding" component={() => (
+              <>
+                <Show when="signed-in"><OnboardingRoute /></Show>
+                <Show when="signed-out"><Redirect to="/sign-in" /></Show>
+              </>
+            )} />
             <Route path="/dashboard" component={() => <AuthedRoute component={DashboardPage} />} />
             <Route path="/pets" component={() => <AuthedRoute component={PetsPage} />} />
             <Route path="/pets/new" component={() => <AuthedRoute component={NewPetPage} />} />
