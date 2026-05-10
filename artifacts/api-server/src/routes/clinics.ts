@@ -136,34 +136,64 @@ router.get("/:clinicId/visits/active", async (req, res) => {
   res.json(result);
 });
 
+// Helper: get start/end dates for a period
+function getPeriodRange(period: string, date: string): { startDate: string; endDate: string } {
+  const d = new Date(date);
+  if (period === "daily") {
+    return { startDate: date, endDate: date };
+  } else if (period === "weekly") {
+    const day = d.getDay(); // 0=Sun
+    const diffToMon = (day === 0 ? -6 : 1 - day);
+    const mon = new Date(d); mon.setDate(d.getDate() + diffToMon);
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+    return { startDate: mon.toISOString().split("T")[0], endDate: sun.toISOString().split("T")[0] };
+  } else if (period === "monthly") {
+    const y = d.getFullYear(), m = d.getMonth() + 1;
+    const lastDay = new Date(y, m, 0).getDate();
+    return { startDate: `${y}-${String(m).padStart(2, "0")}-01`, endDate: `${y}-${String(m).padStart(2, "0")}-${lastDay}` };
+  } else if (period === "quarterly") {
+    const q = Math.floor(d.getMonth() / 3);
+    const startMonth = q * 3 + 1;
+    const endMonth = startMonth + 2;
+    const lastDay = new Date(d.getFullYear(), endMonth, 0).getDate();
+    return {
+      startDate: `${d.getFullYear()}-${String(startMonth).padStart(2, "0")}-01`,
+      endDate: `${d.getFullYear()}-${String(endMonth).padStart(2, "0")}-${lastDay}`,
+    };
+  } else {
+    return { startDate: `${d.getFullYear()}-01-01`, endDate: `${d.getFullYear()}-12-31` };
+  }
+}
+
+async function calcVisitRevenue(visitId: number, visitItemsTable: any, dailyReportsTable: any): Promise<number> {
+  const items = await db.query.visitItemsTable.findMany({ where: eq(visitItemsTable.id, visitId) });
+  const reports = await db.query.dailyReportsTable.findMany({ where: eq(dailyReportsTable.visitId, visitId) });
+  return items.reduce((s: number, i: any) => s + parseFloat(i.unitPrice) * parseFloat(i.quantity), 0)
+    + reports.reduce((s: number, r: any) => s + parseFloat(r.cost), 0);
+}
+
 // GET /api/clinics/:clinicId/reports/summary
 router.get("/:clinicId/reports/summary", async (req, res) => {
   const { userId: clerkId } = getAuth(req);
   if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
   const clinicId = parseInt(req.params.clinicId);
-  const period = req.query.period as string || "monthly";
-  const date = req.query.date as string || new Date().toISOString().split("T")[0];
-  const { visitsTable, visitItemsTable, dailyReportsTable } = await import("@workspace/db");
-  const { gte, lte, sql } = await import("drizzle-orm");
+  const period = (req.query.period as string) || "monthly";
+  const date = (req.query.date as string) || new Date().toISOString().split("T")[0];
+  const { visitsTable, visitItemsTable, dailyReportsTable, petsTable } = await import("@workspace/db");
+  const { gte, lte } = await import("drizzle-orm");
 
-  let startDate: string, endDate: string;
-  const d = new Date(date);
-  if (period === "daily") {
-    startDate = date; endDate = date;
-  } else if (period === "monthly") {
-    startDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
-    const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-    endDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${lastDay}`;
-  } else {
-    startDate = `${d.getFullYear()}-01-01`; endDate = `${d.getFullYear()}-12-31`;
-  }
+  const { startDate, endDate } = getPeriodRange(period, date);
 
   const visits = await db.query.visitsTable.findMany({
     where: and(eq(visitsTable.clinicId, clinicId), gte(visitsTable.visitDate, startDate), lte(visitsTable.visitDate, endDate)),
   });
 
   let totalRevenue = 0;
+  let diedCount = 0;
+  let survivedCount = 0;
+  let earlyDischargeCount = 0;
   const serviceMap: Record<string, { count: number; revenue: number }> = {};
+
   for (const v of visits) {
     const items = await db.query.visitItemsTable.findMany({ where: eq(visitItemsTable.visitId, v.id) });
     const reports = await db.query.dailyReportsTable.findMany({ where: eq(dailyReportsTable.visitId, v.id) });
@@ -174,13 +204,19 @@ router.get("/:clinicId/reports/summary", async (req, res) => {
       serviceMap[i.name].count++;
       serviceMap[i.name].revenue += amt;
     }
-    for (const r of reports) {
-      totalRevenue += parseFloat(r.cost);
+    for (const r of reports) totalRevenue += parseFloat(r.cost);
+
+    if (v.status === "cancelled") {
+      earlyDischargeCount++;
+    } else if (v.status === "completed" && v.type === "inpatient") {
+      const pet = await db.query.petsTable.findFirst({ where: eq(petsTable.id, v.petId) });
+      if (pet?.status === "passed_away") diedCount++;
+      else survivedCount++;
     }
   }
 
   const topServices = Object.entries(serviceMap)
-    .map(([name, v]) => ({ name, count: v.count, revenue: v.revenue }))
+    .map(([name, val]) => ({ name, count: val.count, revenue: val.revenue }))
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 5);
 
@@ -191,6 +227,9 @@ router.get("/:clinicId/reports/summary", async (req, res) => {
     inpatientVisits: visits.filter(v => v.type === "inpatient").length,
     outpatientVisits: visits.filter(v => v.type === "outpatient").length,
     averageRevenuePerVisit: visits.length > 0 ? totalRevenue / visits.length : 0,
+    diedCount,
+    survivedCount,
+    earlyDischargeCount,
     topServices,
     topProducts: [],
   });
@@ -201,47 +240,77 @@ router.get("/:clinicId/reports/visits", async (req, res) => {
   const { userId: clerkId } = getAuth(req);
   if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
   const clinicId = parseInt(req.params.clinicId);
-  const period = req.query.period as string || "monthly";
-  const date = req.query.date as string || new Date().toISOString().split("T")[0];
-  const { visitsTable } = await import("@workspace/db");
+  const period = (req.query.period as string) || "monthly";
+  const date = (req.query.date as string) || new Date().toISOString().split("T")[0];
+  const { visitsTable, visitItemsTable, dailyReportsTable } = await import("@workspace/db");
   const { gte, lte } = await import("drizzle-orm");
 
   const d = new Date(date);
-  let labels: string[] = [];
-  let visitCounts: number[] = [];
-  let revenues: number[] = [];
+  const labels: string[] = [];
+  const visitCounts: number[] = [];
+  const revenues: number[] = [];
 
-  if (period === "daily") {
+  async function bucketRevenue(start: string, end: string): Promise<{ count: number; revenue: number }> {
+    const vs = await db.query.visitsTable.findMany({
+      where: and(eq(visitsTable.clinicId, clinicId), gte(visitsTable.visitDate, start), lte(visitsTable.visitDate, end)),
+    });
+    let rev = 0;
+    for (const v of vs) {
+      const items = await db.query.visitItemsTable.findMany({ where: eq(visitItemsTable.visitId, v.id) });
+      const rpts = await db.query.dailyReportsTable.findMany({ where: eq(dailyReportsTable.visitId, v.id) });
+      rev += items.reduce((s: number, i: any) => s + parseFloat(i.unitPrice) * parseFloat(i.quantity), 0)
+        + rpts.reduce((s: number, r: any) => s + parseFloat(r.cost), 0);
+    }
+    return { count: vs.length, revenue: rev };
+  }
+
+  if (period === "daily" || period === "weekly") {
     // Last 7 days
     for (let i = 6; i >= 0; i--) {
       const day = new Date(d); day.setDate(d.getDate() - i);
       const dayStr = day.toISOString().split("T")[0];
-      labels.push(dayStr);
-      const visits = await db.query.visitsTable.findMany({ where: and(eq(visitsTable.clinicId, clinicId), eq(visitsTable.visitDate, dayStr)) });
-      visitCounts.push(visits.length);
-      revenues.push(0);
+      labels.push(dayStr.slice(5)); // MM-DD
+      const { count, revenue } = await bucketRevenue(dayStr, dayStr);
+      visitCounts.push(count);
+      revenues.push(revenue);
     }
   } else if (period === "monthly") {
     // Last 12 months
     for (let i = 11; i >= 0; i--) {
       const m = new Date(d.getFullYear(), d.getMonth() - i, 1);
-      const monthStr = `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, "0")}`;
+      const y = m.getFullYear(), mo = m.getMonth() + 1;
+      const monthStr = `${y}-${String(mo).padStart(2, "0")}`;
       labels.push(monthStr);
       const start = `${monthStr}-01`;
-      const lastDay = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
-      const end = `${monthStr}-${lastDay}`;
-      const visits = await db.query.visitsTable.findMany({ where: and(eq(visitsTable.clinicId, clinicId), gte(visitsTable.visitDate, start), lte(visitsTable.visitDate, end)) });
-      visitCounts.push(visits.length);
-      revenues.push(0);
+      const end = `${monthStr}-${new Date(y, mo, 0).getDate()}`;
+      const { count, revenue } = await bucketRevenue(start, end);
+      visitCounts.push(count);
+      revenues.push(revenue);
+    }
+  } else if (period === "quarterly") {
+    // Last 8 quarters
+    for (let i = 7; i >= 0; i--) {
+      const totalMonths = d.getFullYear() * 12 + d.getMonth() - i * 3;
+      const qYear = Math.floor(totalMonths / 12);
+      const qMonth = totalMonths % 12; // 0-indexed start month of quarter's base
+      const qNum = Math.floor(qMonth / 3) + 1;
+      const startMonth = (qNum - 1) * 3 + 1;
+      const endMonth = startMonth + 2;
+      labels.push(`Q${qNum} ${qYear}`);
+      const start = `${qYear}-${String(startMonth).padStart(2, "0")}-01`;
+      const end = `${qYear}-${String(endMonth).padStart(2, "0")}-${new Date(qYear, endMonth, 0).getDate()}`;
+      const { count, revenue } = await bucketRevenue(start, end);
+      visitCounts.push(count);
+      revenues.push(revenue);
     }
   } else {
     // Last 5 years
     for (let i = 4; i >= 0; i--) {
       const year = d.getFullYear() - i;
       labels.push(String(year));
-      const visits = await db.query.visitsTable.findMany({ where: and(eq(visitsTable.clinicId, clinicId), gte(visitsTable.visitDate, `${year}-01-01`), lte(visitsTable.visitDate, `${year}-12-31`)) });
-      visitCounts.push(visits.length);
-      revenues.push(0);
+      const { count, revenue } = await bucketRevenue(`${year}-01-01`, `${year}-12-31`);
+      visitCounts.push(count);
+      revenues.push(revenue);
     }
   }
 

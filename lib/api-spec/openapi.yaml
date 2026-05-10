@@ -833,7 +833,7 @@ components:
 
     ReportPeriod:
       type: string
-      enum: [daily, monthly, yearly]
+      enum: [daily, weekly, monthly, quarterly, yearly]
 
     UserProfile:
       type: object
@@ -1253,6 +1253,9 @@ components:
         inpatientVisits: { type: integer }
         outpatientVisits: { type: integer }
         averageRevenuePerVisit: { type: number }
+        diedCount: { type: integer, description: "Inpatient visits where pet passed away" }
+        survivedCount: { type: integer, description: "Completed inpatient visits where pet survived" }
+        earlyDischargeCount: { type: integer, description: "Visits cancelled before completion (taken early by owner)" }
         topServices:
           type: array
           items:
@@ -1261,7 +1264,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TopItem"
-      required: [period, date, totalRevenue, totalVisits, inpatientVisits, outpatientVisits, averageRevenuePerVisit, topServices, topProducts]
+      required: [period, date, totalRevenue, totalVisits, inpatientVisits, outpatientVisits, averageRevenuePerVisit, diedCount, survivedCount, earlyDischargeCount, topServices, topProducts]
 
     TopItem:
       type: object

@@ -13,7 +13,9 @@ export type ReportPeriod = (typeof ReportPeriod)[keyof typeof ReportPeriod];
 
 export const ReportPeriod = {
   daily: "daily",
+  weekly: "weekly",
   monthly: "monthly",
+  quarterly: "quarterly",
   yearly: "yearly",
 } as const;
 
@@ -523,6 +525,12 @@ export interface ReportSummary {
   inpatientVisits: number;
   outpatientVisits: number;
   averageRevenuePerVisit: number;
+  /** Inpatient visits where pet passed away */
+  diedCount: number;
+  /** Completed inpatient visits where pet survived */
+  survivedCount: number;
+  /** Visits cancelled before completion (taken early by owner) */
+  earlyDischargeCount: number;
   topServices: TopItem[];
   topProducts: TopItem[];
 }

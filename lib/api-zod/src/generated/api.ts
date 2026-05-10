@@ -805,7 +805,7 @@ export const GetReportSummaryParams = zod.object({
 });
 
 export const GetReportSummaryQueryParams = zod.object({
-  period: zod.enum(["daily", "monthly", "yearly"]),
+  period: zod.enum(["daily", "weekly", "monthly", "quarterly", "yearly"]),
   date: zod.coerce
     .string()
     .describe("ISO date string (YYYY-MM-DD) for reference point"),
@@ -819,6 +819,13 @@ export const GetReportSummaryResponse = zod.object({
   inpatientVisits: zod.number(),
   outpatientVisits: zod.number(),
   averageRevenuePerVisit: zod.number(),
+  diedCount: zod.number().describe("Inpatient visits where pet passed away"),
+  survivedCount: zod
+    .number()
+    .describe("Completed inpatient visits where pet survived"),
+  earlyDischargeCount: zod
+    .number()
+    .describe("Visits cancelled before completion (taken early by owner)"),
   topServices: zod.array(
     zod.object({
       name: zod.string(),
@@ -843,7 +850,7 @@ export const GetVisitStatsParams = zod.object({
 });
 
 export const GetVisitStatsQueryParams = zod.object({
-  period: zod.enum(["daily", "monthly", "yearly"]),
+  period: zod.enum(["daily", "weekly", "monthly", "quarterly", "yearly"]),
   date: zod.coerce.string(),
 });
 
