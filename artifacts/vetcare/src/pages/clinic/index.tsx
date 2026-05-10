@@ -19,7 +19,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, User, Building2, Package } from "lucide-react";
+import { Plus, Trash2, User, Building2, Package, BarChart2 } from "lucide-react";
+import { useLocation } from "wouter";
 
 const clinicSchema = z.object({
   name: z.string().min(1),
@@ -45,6 +46,7 @@ const productSchema = z.object({
 
 export default function ClinicPage() {
   const me = useGetMe();
+  const [, navigate] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const user = me.data;
@@ -149,11 +151,12 @@ export default function ClinicPage() {
   return (
     <AppShell>
       <PageHeader title="Clinic management" />
-      <Tabs defaultValue="profile">
+      <Tabs defaultValue="profile" onValueChange={v => { if (v === "reports") navigate("/clinic/reports"); }}>
         <TabsList className="w-full mb-5">
           <TabsTrigger value="profile" className="flex-1" data-testid="tab-profile">Profile</TabsTrigger>
           <TabsTrigger value="staff" className="flex-1" data-testid="tab-staff">Staff</TabsTrigger>
           <TabsTrigger value="products" className="flex-1" data-testid="tab-products">Products</TabsTrigger>
+          <TabsTrigger value="reports" className="flex-1" data-testid="tab-reports">Reports</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">

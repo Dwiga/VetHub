@@ -62,7 +62,7 @@ export default function ClinicReportsPage() {
 
   return (
     <AppShell>
-      <PageHeader title="Reports" subtitle="Clinic analytics" />
+      <PageHeader title="Reports" subtitle="Clinic analytics" back backHref="/clinic" />
 
       <div className="space-y-5">
         {/* Period selector */}
