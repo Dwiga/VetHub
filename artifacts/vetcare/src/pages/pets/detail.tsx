@@ -85,15 +85,22 @@ function VisitHistory({ petId }: { petId: number }) {
       {visitList.map(v => (
         <Link key={v.id} href={`/vet/visits/${v.id}`}>
           <Card className="hover:border-primary/50 transition-colors cursor-pointer" data-testid={`card-visit-${v.id}`}>
-            <CardContent className="py-3 flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground">{v.visitDate}</p>
-                <p className="text-xs text-muted-foreground truncate">{v.vetName ?? "No vet assigned"}</p>
+            <CardContent className="py-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">{v.visitDate}</p>
+                  <p className="text-xs text-muted-foreground truncate">{v.vetName ?? "No vet assigned"}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <StatusBadge status={v.type ?? "outpatient"} />
+                  <StatusBadge status={v.status ?? "active"} />
+                </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <StatusBadge status={v.type ?? "outpatient"} />
-                <StatusBadge status={v.status ?? "active"} />
-              </div>
+              {(v.totalCost ?? 0) > 0 && (
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Total: <span className="font-semibold text-foreground">Rp {(v.totalCost ?? 0).toLocaleString("id-ID")}</span>
+                </p>
+              )}
             </CardContent>
           </Card>
         </Link>
