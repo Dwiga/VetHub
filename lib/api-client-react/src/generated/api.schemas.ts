@@ -351,6 +351,7 @@ export interface VisitItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  itemDate: string;
 }
 
 export interface DailyReport {
@@ -445,6 +446,8 @@ export interface VisitItemInput {
   description?: string;
   quantity: number;
   unitPrice: number;
+  /** ISO date YYYY-MM-DD */
+  itemDate: string;
 }
 
 export interface VisitItemUpdate {

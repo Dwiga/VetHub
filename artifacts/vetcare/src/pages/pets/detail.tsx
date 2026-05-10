@@ -83,18 +83,20 @@ function VisitHistory({ petId }: { petId: number }) {
   return (
     <div className="space-y-3">
       {visitList.map(v => (
-        <Card key={v.id} className="hover:border-primary/50 transition-colors" data-testid={`card-visit-${v.id}`}>
-          <CardContent className="py-3 flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground">{v.visitDate}</p>
-              <p className="text-xs text-muted-foreground truncate">{v.vetName ?? "No vet assigned"}</p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <StatusBadge status={v.type ?? "outpatient"} />
-              <StatusBadge status={v.status ?? "active"} />
-            </div>
-          </CardContent>
-        </Card>
+        <Link key={v.id} href={`/vet/visits/${v.id}`}>
+          <Card className="hover:border-primary/50 transition-colors cursor-pointer" data-testid={`card-visit-${v.id}`}>
+            <CardContent className="py-3 flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground">{v.visitDate}</p>
+                <p className="text-xs text-muted-foreground truncate">{v.vetName ?? "No vet assigned"}</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <StatusBadge status={v.type ?? "outpatient"} />
+                <StatusBadge status={v.status ?? "active"} />
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
       ))}
     </div>
   );

@@ -11,7 +11,7 @@ async function buildVisitDetail(visitId: number) {
   const visit = await db.query.visitsTable.findFirst({ where: eq(visitsTable.id, visitId) });
   if (!visit) return null;
   const pet = await db.query.petsTable.findFirst({ where: eq(petsTable.id, visit.petId) });
-  const items = await db.query.visitItemsTable.findMany({ where: eq(visitItemsTable.visitId, visitId), orderBy: [desc(visitItemsTable.createdAt)] });
+  const items = await db.query.visitItemsTable.findMany({ where: eq(visitItemsTable.visitId, visitId), orderBy: [desc(visitItemsTable.itemDate), desc(visitItemsTable.createdAt)] });
   const reports = await db.query.dailyReportsTable.findMany({ where: eq(dailyReportsTable.visitId, visitId), orderBy: [desc(dailyReportsTable.reportDate)] });
   const totalCost = items.reduce((s, i) => s + parseFloat(i.unitPrice) * parseFloat(i.quantity), 0)
     + reports.reduce((s, r) => s + parseFloat(r.cost), 0);
@@ -68,13 +68,15 @@ router.post("/:visitId/items", async (req, res) => {
   const { userId: clerkId } = getAuth(req);
   if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
   const visitId = parseInt(req.params.visitId);
-  const { category, name, description, quantity, unitPrice } = req.body;
+  const { category, name, description, quantity, unitPrice, itemDate } = req.body;
   if (!category || !name || !quantity || unitPrice === undefined) {
     return res.status(400).json({ error: "category, name, quantity, unitPrice are required" });
   }
+  const today = new Date().toISOString().split("T")[0];
   const [item] = await db.insert(visitItemsTable).values({
     visitId, category, name, description,
     quantity: String(quantity), unitPrice: String(unitPrice),
+    itemDate: itemDate ?? today,
   }).returning();
   res.status(201).json({
     ...item,

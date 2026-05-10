@@ -29,6 +29,7 @@ export const visitItemsTable = pgTable("visit_items", {
   description: text("description"),
   quantity: numeric("quantity", { precision: 10, scale: 2 }).notNull().default("1"),
   unitPrice: numeric("unit_price", { precision: 15, scale: 2 }).notNull().default("0"),
+  itemDate: text("item_date").notNull().default(""),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

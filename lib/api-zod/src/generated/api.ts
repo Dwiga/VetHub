@@ -517,6 +517,7 @@ export const GetVisitResponse = zod.object({
       quantity: zod.number(),
       unitPrice: zod.number(),
       totalPrice: zod.number(),
+      itemDate: zod.string(),
     }),
   ),
   dailyReports: zod.array(
@@ -574,6 +575,7 @@ export const UpdateVisitResponse = zod.object({
       quantity: zod.number(),
       unitPrice: zod.number(),
       totalPrice: zod.number(),
+      itemDate: zod.string(),
     }),
   ),
   dailyReports: zod.array(
@@ -605,6 +607,7 @@ export const AddVisitItemBody = zod.object({
   description: zod.string().optional(),
   quantity: zod.number(),
   unitPrice: zod.number(),
+  itemDate: zod.string().describe("ISO date YYYY-MM-DD"),
 });
 
 /**
@@ -630,6 +633,7 @@ export const UpdateVisitItemResponse = zod.object({
   quantity: zod.number(),
   unitPrice: zod.number(),
   totalPrice: zod.number(),
+  itemDate: zod.string(),
 });
 
 /**

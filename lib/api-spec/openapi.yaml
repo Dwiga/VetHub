@@ -1150,7 +1150,8 @@ components:
         quantity: { type: number }
         unitPrice: { type: number }
         totalPrice: { type: number }
-      required: [id, visitId, category, name, quantity, unitPrice, totalPrice]
+        itemDate: { type: string }
+      required: [id, visitId, category, name, quantity, unitPrice, totalPrice, itemDate]
 
     VisitItemInput:
       type: object
@@ -1162,7 +1163,8 @@ components:
         description: { type: string }
         quantity: { type: number }
         unitPrice: { type: number }
-      required: [category, name, quantity, unitPrice]
+        itemDate: { type: string, description: "ISO date YYYY-MM-DD" }
+      required: [category, name, quantity, unitPrice, itemDate]
 
     VisitItemUpdate:
       type: object
