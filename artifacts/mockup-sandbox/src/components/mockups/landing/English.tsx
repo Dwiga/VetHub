@@ -1,0 +1,265 @@
+import { useState } from "react";
+import { Heart, PawPrint, Stethoscope, BarChart3, Shield, ArrowRight, CheckCircle, Star, Menu, X } from "lucide-react";
+
+const teal = "hsl(175, 70%, 25%)";
+const tealLight = "hsl(175, 70%, 92%)";
+const tealMid = "hsl(175, 60%, 40%)";
+
+const features = [
+  {
+    icon: PawPrint,
+    title: "Pet health tracking",
+    desc: "Monitor weight, temperature, and health history. View vaccination records, visit history, and trend charts — all in one place.",
+    badge: "Pet owners",
+  },
+  {
+    icon: Stethoscope,
+    title: "Clinic management",
+    desc: "Manage inpatient and outpatient visits, anamnesis, therapy notes, and daily reports. Built for Indonesian veterinary clinics.",
+    badge: "Veterinarians",
+  },
+  {
+    icon: BarChart3,
+    title: "Revenue analytics",
+    desc: "Track revenue and visit counts with daily, monthly, and yearly breakdowns. Know exactly how your clinic is performing.",
+    badge: "Clinic owners",
+  },
+  {
+    icon: Shield,
+    title: "Secure and trusted",
+    desc: "Your clinic data and patient records are protected. Role-based access ensures every team member sees only what they need.",
+    badge: "Everyone",
+  },
+];
+
+const howItWorks = [
+  { step: "01", title: "Register your clinic or pet", desc: "Sign up in seconds. Clinic owners add their profile; pet owners register their animals." },
+  { step: "02", title: "Manage visits & health", desc: "Vets log visits, therapies, and billing. Pet owners track health trends and vaccinations." },
+  { step: "03", title: "Grow with confidence", desc: "Use analytics to understand revenue patterns, staff performance, and patient flow." },
+];
+
+export function English() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  return (
+    <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", background: "#fff", color: "#0d2d2a", minHeight: "100vh" }}>
+      {/* Nav */}
+      <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid hsl(175,30%,90%)" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: teal, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <PawPrint style={{ color: "#fff", width: 20, height: 20 }} />
+            </div>
+            <span style={{ fontSize: 18, fontWeight: 700, color: teal }}>VetCare Pro</span>
+          </div>
+          {/* Desktop nav */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", background: "hsl(175,30%,94%)", borderRadius: 8, padding: 3, gap: 2 }}>
+              <span style={{ padding: "5px 14px", borderRadius: 6, background: teal, color: "#fff", fontSize: 13, fontWeight: 600 }}>EN</span>
+              <a href="/__mockup/preview/landing/Indonesian" style={{ padding: "5px 14px", borderRadius: 6, color: teal, fontSize: 13, fontWeight: 500, textDecoration: "none" }}>ID</a>
+            </div>
+            <a href="/sign-in" style={{ padding: "8px 18px", borderRadius: 8, color: teal, fontSize: 14, fontWeight: 600, textDecoration: "none" }}>Sign in</a>
+            <a href="/sign-up" style={{ padding: "8px 20px", borderRadius: 8, background: teal, color: "#fff", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>Get started</a>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <section style={{ background: `linear-gradient(135deg, hsl(175,60%,10%) 0%, hsl(175,70%,18%) 50%, hsl(175,50%,22%) 100%)`, padding: "96px 24px 80px", position: "relative", overflow: "hidden" }}>
+        {/* Decorative circles */}
+        <div style={{ position: "absolute", top: -80, right: -80, width: 400, height: 400, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
+        <div style={{ position: "absolute", bottom: -120, left: -60, width: 300, height: 300, borderRadius: "50%", background: "rgba(255,255,255,0.03)" }} />
+        <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center", position: "relative" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.12)", borderRadius: 100, padding: "6px 16px", marginBottom: 24, border: "1px solid rgba(255,255,255,0.18)" }}>
+            <Heart style={{ width: 14, height: 14, color: "#7ae8d8" }} />
+            <span style={{ fontSize: 13, color: "#7ae8d8", fontWeight: 500 }}>Built for Indonesian veterinary clinics</span>
+          </div>
+          <h1 style={{ fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 800, color: "#fff", lineHeight: 1.15, marginBottom: 20, letterSpacing: "-0.02em" }}>
+            The smartest way<br />to care for <span style={{ color: "#7ae8d8" }}>every pet</span>
+          </h1>
+          <p style={{ fontSize: "clamp(15px, 2vw, 19px)", color: "rgba(255,255,255,0.72)", maxWidth: 600, margin: "0 auto 36px", lineHeight: 1.65 }}>
+            VetCare Pro connects pet owners, veterinarians, and clinic owners — so pets get the care they deserve and clinics run smoothly.
+          </p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <a href="/sign-up" style={{ padding: "14px 32px", borderRadius: 10, background: "#fff", color: teal, fontSize: 15, fontWeight: 700, textDecoration: "none", display: "flex", alignItems: "center", gap: 8 }}>
+              Get started free <ArrowRight style={{ width: 16, height: 16 }} />
+            </a>
+            <a href="/sign-in" style={{ padding: "14px 28px", borderRadius: 10, background: "rgba(255,255,255,0.12)", color: "#fff", fontSize: 15, fontWeight: 600, textDecoration: "none", border: "1px solid rgba(255,255,255,0.25)" }}>
+              Sign in
+            </a>
+          </div>
+          {/* Stat pills */}
+          <div style={{ display: "flex", gap: 16, justifyContent: "center", marginTop: 48, flexWrap: "wrap" }}>
+            {[["100%", "Free to start"], ["All-in-one", "Pet + clinic platform"], ["Indonesia", "Designed for you"]].map(([val, lbl]) => (
+              <div key={lbl} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 10, padding: "10px 20px", textAlign: "center" }}>
+                <p style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 2 }}>{val}</p>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{lbl}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 5% Impact Banner */}
+      <section style={{ background: `linear-gradient(90deg, hsl(175,65%,16%) 0%, hsl(175,60%,22%) 100%)`, padding: "28px 24px" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
+          <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Heart style={{ width: 22, height: 22, color: "#ff8fa3" }} />
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <p style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 4 }}>
+              5% of our revenue goes to street animal rescue
+            </p>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)" }}>
+              Every clinic that uses VetCare Pro helps fund stray animal care across Indonesia. Healing pets, helping strays.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section style={{ padding: "80px 24px", background: "#f8fffe" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 52 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: tealMid, letterSpacing: "0.1em", textTransform: "uppercase" }}>Everything you need</span>
+            <h2 style={{ fontSize: "clamp(26px, 3vw, 40px)", fontWeight: 800, color: "#0d2d2a", marginTop: 8, letterSpacing: "-0.01em" }}>One platform. Every role.</h2>
+            <p style={{ color: "#5a7a76", fontSize: 16, marginTop: 10, maxWidth: 500, margin: "10px auto 0" }}>Purpose-built for the full veterinary ecosystem — from the pet owner's phone to the clinic owner's dashboard.</p>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
+            {features.map(({ icon: Icon, title, desc, badge }) => (
+              <div key={title} style={{ background: "#fff", borderRadius: 16, padding: 28, border: "1.5px solid hsl(175,30%,92%)", boxShadow: "0 2px 12px rgba(0,80,72,0.06)", transition: "box-shadow 0.2s" }}>
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: tealLight, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+                  <Icon style={{ width: 24, height: 24, color: teal }} />
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 700, color: tealMid, letterSpacing: "0.06em", textTransform: "uppercase" }}>{badge}</span>
+                <h3 style={{ fontSize: 17, fontWeight: 700, color: "#0d2d2a", marginTop: 6, marginBottom: 10 }}>{title}</h3>
+                <p style={{ fontSize: 14, color: "#5a7a76", lineHeight: 1.65 }}>{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Who it's for */}
+      <section style={{ padding: "80px 24px", background: "#fff" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 48 }}>
+            <h2 style={{ fontSize: "clamp(24px, 3vw, 38px)", fontWeight: 800, color: "#0d2d2a" }}>Who is VetCare Pro for?</h2>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
+            {[
+              {
+                icon: PawPrint,
+                title: "Pet owners",
+                color: "hsl(175,70%,20%)",
+                bg: tealLight,
+                items: ["Register your cats, dogs, and other pets", "Track weight, temperature, and health over time", "Store vaccination records digitally", "View full visit and treatment history"],
+              },
+              {
+                icon: Stethoscope,
+                title: "Veterinarians",
+                color: "hsl(210,70%,30%)",
+                bg: "hsl(210,80%,94%)",
+                items: ["Search patients by phone number or pet name", "Create inpatient and outpatient visits", "Log daily reports for hospitalized animals", "Manage therapy notes and billing"],
+              },
+              {
+                icon: BarChart3,
+                title: "Clinic owners",
+                color: "hsl(145,60%,25%)",
+                bg: "hsl(145,60%,93%)",
+                items: ["Manage clinic profile and staff", "Build a product and service catalog", "View daily, monthly, and yearly revenue", "Track visit volume and performance"],
+              },
+            ].map(({ icon: Icon, title, color, bg, items }) => (
+              <div key={title} style={{ background: bg, borderRadius: 20, padding: 32, border: `1.5px solid ${bg}` }}>
+                <div style={{ width: 52, height: 52, borderRadius: 16, background: color, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+                  <Icon style={{ width: 26, height: 26, color: "#fff" }} />
+                </div>
+                <h3 style={{ fontSize: 20, fontWeight: 700, color: "#0d2d2a", marginBottom: 16 }}>{title}</h3>
+                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+                  {items.map(item => (
+                    <li key={item} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                      <CheckCircle style={{ width: 16, height: 16, color, marginTop: 2, flexShrink: 0 }} />
+                      <span style={{ fontSize: 14, color: "#3a5a55", lineHeight: 1.5 }}>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section style={{ padding: "80px 24px", background: "#f0faf8" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 52 }}>
+            <h2 style={{ fontSize: "clamp(24px, 3vw, 38px)", fontWeight: 800, color: "#0d2d2a" }}>Up and running in minutes</h2>
+            <p style={{ color: "#5a7a76", fontSize: 15, marginTop: 10 }}>No training required. Sign up and get your clinic or pet profile active immediately.</p>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 24 }}>
+            {howItWorks.map(({ step, title, desc }) => (
+              <div key={step} style={{ textAlign: "center" }}>
+                <div style={{ width: 56, height: 56, borderRadius: "50%", background: teal, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 18, margin: "0 auto 16px" }}>{step}</div>
+                <h3 style={{ fontSize: 17, fontWeight: 700, color: "#0d2d2a", marginBottom: 8 }}>{title}</h3>
+                <p style={{ fontSize: 14, color: "#5a7a76", lineHeight: 1.65 }}>{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Impact section */}
+      <section style={{ padding: "72px 24px", background: `linear-gradient(135deg, hsl(175,70%,12%) 0%, hsl(175,60%,20%) 100%)` }}>
+        <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
+          <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}>
+            <Heart style={{ width: 32, height: 32, color: "#ff8fa3" }} />
+          </div>
+          <h2 style={{ fontSize: "clamp(24px, 3vw, 38px)", fontWeight: 800, color: "#fff", marginBottom: 16 }}>Healing pets. Helping strays.</h2>
+          <p style={{ fontSize: 17, color: "rgba(255,255,255,0.75)", lineHeight: 1.7, marginBottom: 28 }}>
+            <strong style={{ color: "#7ae8d8" }}>5% of every rupiah we earn</strong> is donated to street animal rescue organizations across Indonesia. When you use VetCare Pro, you're not just caring for your pet — you're giving countless stray animals a chance at a better life.
+          </p>
+          <div style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, padding: "16px 24px", display: "inline-block" }}>
+            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", margin: 0 }}>
+              Every clinic subscription · Every visit logged · Every feature used<br />
+              <span style={{ color: "#7ae8d8", fontWeight: 600 }}>5% reaches the strays who need it most</span>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section style={{ padding: "80px 24px", background: "#fff", textAlign: "center" }}>
+        <div style={{ maxWidth: 600, margin: "0 auto" }}>
+          <h2 style={{ fontSize: "clamp(26px, 3vw, 42px)", fontWeight: 800, color: "#0d2d2a", marginBottom: 16 }}>Ready to get started?</h2>
+          <p style={{ fontSize: 16, color: "#5a7a76", marginBottom: 32, lineHeight: 1.65 }}>Join clinics and pet owners across Indonesia who trust VetCare Pro for every visit, every vaccination, every check-up.</p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <a href="/sign-up" style={{ padding: "14px 32px", borderRadius: 10, background: teal, color: "#fff", fontSize: 15, fontWeight: 700, textDecoration: "none", display: "flex", alignItems: "center", gap: 8 }}>
+              Get started free <ArrowRight style={{ width: 16, height: 16 }} />
+            </a>
+            <a href="/sign-in" style={{ padding: "14px 28px", borderRadius: 10, background: tealLight, color: teal, fontSize: 15, fontWeight: 600, textDecoration: "none" }}>
+              Sign in to your account
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer style={{ background: "hsl(175,50%,10%)", padding: "40px 24px 24px" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <PawPrint style={{ color: "#7ae8d8", width: 18, height: 18 }} />
+            </div>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>VetCare Pro</span>
+          </div>
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 20, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", margin: 0 }}>© 2026 VetCare Pro. Built for clinics that care.</p>
+            <p style={{ fontSize: 13, color: "#7ae8d8", margin: 0, display: "flex", alignItems: "center", gap: 6 }}>
+              <Heart style={{ width: 13, height: 13 }} /> 5% for street animal rescue
+            </p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
