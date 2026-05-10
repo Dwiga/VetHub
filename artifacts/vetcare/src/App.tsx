@@ -2,8 +2,18 @@ import { useEffect, useRef } from "react";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
-import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
-import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import {
+  Switch,
+  Route,
+  useLocation,
+  Router as WouterRouter,
+  Redirect,
+} from "wouter";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useGetMe } from "@workspace/api-client-react";
@@ -67,7 +77,8 @@ const clerkAppearance = {
   },
   elements: {
     rootBox: "w-full flex justify-center",
-    cardBox: "bg-white rounded-2xl w-[440px] max-w-full overflow-hidden shadow-xl border border-border",
+    cardBox:
+      "bg-white rounded-2xl w-[440px] max-w-full overflow-hidden shadow-xl border border-border",
     card: "!shadow-none !border-0 !bg-transparent !rounded-none",
     footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
     headerTitle: "text-2xl font-bold text-foreground",
@@ -83,7 +94,8 @@ const clerkAppearance = {
     logoBox: "h-12 w-12 mx-auto text-primary",
     logoImage: "w-full h-full object-contain",
     socialButtonsBlockButton: "border-border hover:bg-secondary",
-    formButtonPrimary: "bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm",
+    formButtonPrimary:
+      "bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm",
     formFieldInput: "border-border focus:ring-2 focus:ring-ring bg-white",
     footerAction: "bg-muted/50 py-4 px-6 border-t border-border",
     dividerLine: "bg-border",
@@ -97,7 +109,11 @@ const clerkAppearance = {
 function SignInPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-8">
-      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+      <SignIn
+        routing="path"
+        path={`${basePath}/sign-in`}
+        signUpUrl={`${basePath}/sign-up`}
+      />
     </div>
   );
 }
@@ -105,7 +121,11 @@ function SignInPage() {
 function SignUpPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-8">
-      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
+      <SignUp
+        routing="path"
+        path={`${basePath}/sign-up`}
+        signInUrl={`${basePath}/sign-in`}
+      />
     </div>
   );
 }
@@ -118,7 +138,10 @@ function ClerkQueryClientCacheInvalidator() {
   useEffect(() => {
     const unsubscribe = addListener(({ user }) => {
       const userId = user?.id ?? null;
-      if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
+      if (
+        prevUserIdRef.current !== undefined &&
+        prevUserIdRef.current !== userId
+      ) {
         queryClient.clear();
       }
       prevUserIdRef.current = userId;
@@ -148,8 +171,12 @@ function PhoneGate({ component: Comp }: { component: React.ComponentType }) {
 function AuthedRoute({ component: Comp }: { component: React.ComponentType }) {
   return (
     <>
-      <Show when="signed-in"><PhoneGate component={Comp} /></Show>
-      <Show when="signed-out"><Redirect to="/sign-in" /></Show>
+      <Show when="signed-in">
+        <PhoneGate component={Comp} />
+      </Show>
+      <Show when="signed-out">
+        <Redirect to="/sign-in" />
+      </Show>
     </>
   );
 }
@@ -164,8 +191,12 @@ function OnboardingRoute() {
 function HomeRedirect() {
   return (
     <>
-      <Show when="signed-in"><Redirect to="/dashboard" /></Show>
-      <Show when="signed-out"><LandingPage /></Show>
+      <Show when="signed-in">
+        <Redirect to="/dashboard" />
+      </Show>
+      <Show when="signed-out">
+        <LandingPage />
+      </Show>
     </>
   );
 }
@@ -181,8 +212,18 @@ function ClerkProviderWithRoutes() {
       signInUrl={`${basePath}/sign-in`}
       signUpUrl={`${basePath}/sign-up`}
       localization={{
-        signIn: { start: { title: "Welcome back", subtitle: "Sign in to your VetCare Pro account" } },
-        signUp: { start: { title: "Create an account", subtitle: "Get started with VetCare Pro" } },
+        signIn: {
+          start: {
+            title: "Welcome back",
+            subtitle: "Sign in to your VetHub account",
+          },
+        },
+        signUp: {
+          start: {
+            title: "Create an account",
+            subtitle: "Get started with VetHub",
+          },
+        },
       }}
       routerPush={(to) => setLocation(stripBase(to))}
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
@@ -190,37 +231,95 @@ function ClerkProviderWithRoutes() {
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
         <RoleProvider>
-        <LangProvider>
-        <TooltipProvider>
-          <Switch>
-            <Route path="/" component={HomeRedirect} />
-            <Route path="/sign-in/*?" component={SignInPage} />
-            <Route path="/sign-up/*?" component={SignUpPage} />
-            <Route path="/onboarding" component={() => (
-              <>
-                <Show when="signed-in"><OnboardingRoute /></Show>
-                <Show when="signed-out"><Redirect to="/sign-in" /></Show>
-              </>
-            )} />
-            <Route path="/dashboard" component={() => <AuthedRoute component={DashboardPage} />} />
-            <Route path="/pets" component={() => <AuthedRoute component={PetsPage} />} />
-            <Route path="/pets/new" component={() => <AuthedRoute component={NewPetPage} />} />
-            <Route path="/pets/:petId/edit" component={() => <AuthedRoute component={EditPetPage} />} />
-            <Route path="/pets/:petId/monitoring/new" component={() => <AuthedRoute component={MonitoringNewPage} />} />
-            <Route path="/pets/:petId" component={() => <AuthedRoute component={PetDetailPage} />} />
-            <Route path="/vet" component={() => <AuthedRoute component={VetPage} />} />
-            <Route path="/vet/search" component={() => <AuthedRoute component={VetSearchPage} />} />
-            <Route path="/vet/add-pet" component={() => <AuthedRoute component={AddPetForOwnerPage} />} />
-            <Route path="/vet/visits/new/:petId" component={() => <AuthedRoute component={NewVisitPage} />} />
-            <Route path="/vet/visits/:visitId" component={() => <AuthedRoute component={VisitDetailPage} />} />
-            <Route path="/vet/daily-reports/:reportId" component={() => <AuthedRoute component={DailyReportPage} />} />
-            <Route path="/clinic" component={() => <AuthedRoute component={ClinicPage} />} />
-            <Route path="/clinic/reports" component={() => <AuthedRoute component={ClinicReportsPage} />} />
-            <Route path="/settings" component={() => <AuthedRoute component={SettingsPage} />} />
-            <Route component={NotFound} />
-          </Switch>
-        </TooltipProvider>
-        </LangProvider>
+          <LangProvider>
+            <TooltipProvider>
+              <Switch>
+                <Route path="/" component={HomeRedirect} />
+                <Route path="/sign-in/*?" component={SignInPage} />
+                <Route path="/sign-up/*?" component={SignUpPage} />
+                <Route
+                  path="/onboarding"
+                  component={() => (
+                    <>
+                      <Show when="signed-in">
+                        <OnboardingRoute />
+                      </Show>
+                      <Show when="signed-out">
+                        <Redirect to="/sign-in" />
+                      </Show>
+                    </>
+                  )}
+                />
+                <Route
+                  path="/dashboard"
+                  component={() => <AuthedRoute component={DashboardPage} />}
+                />
+                <Route
+                  path="/pets"
+                  component={() => <AuthedRoute component={PetsPage} />}
+                />
+                <Route
+                  path="/pets/new"
+                  component={() => <AuthedRoute component={NewPetPage} />}
+                />
+                <Route
+                  path="/pets/:petId/edit"
+                  component={() => <AuthedRoute component={EditPetPage} />}
+                />
+                <Route
+                  path="/pets/:petId/monitoring/new"
+                  component={() => (
+                    <AuthedRoute component={MonitoringNewPage} />
+                  )}
+                />
+                <Route
+                  path="/pets/:petId"
+                  component={() => <AuthedRoute component={PetDetailPage} />}
+                />
+                <Route
+                  path="/vet"
+                  component={() => <AuthedRoute component={VetPage} />}
+                />
+                <Route
+                  path="/vet/search"
+                  component={() => <AuthedRoute component={VetSearchPage} />}
+                />
+                <Route
+                  path="/vet/add-pet"
+                  component={() => (
+                    <AuthedRoute component={AddPetForOwnerPage} />
+                  )}
+                />
+                <Route
+                  path="/vet/visits/new/:petId"
+                  component={() => <AuthedRoute component={NewVisitPage} />}
+                />
+                <Route
+                  path="/vet/visits/:visitId"
+                  component={() => <AuthedRoute component={VisitDetailPage} />}
+                />
+                <Route
+                  path="/vet/daily-reports/:reportId"
+                  component={() => <AuthedRoute component={DailyReportPage} />}
+                />
+                <Route
+                  path="/clinic"
+                  component={() => <AuthedRoute component={ClinicPage} />}
+                />
+                <Route
+                  path="/clinic/reports"
+                  component={() => (
+                    <AuthedRoute component={ClinicReportsPage} />
+                  )}
+                />
+                <Route
+                  path="/settings"
+                  component={() => <AuthedRoute component={SettingsPage} />}
+                />
+                <Route component={NotFound} />
+              </Switch>
+            </TooltipProvider>
+          </LangProvider>
         </RoleProvider>
       </QueryClientProvider>
     </ClerkProvider>

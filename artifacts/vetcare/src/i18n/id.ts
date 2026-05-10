@@ -20,9 +20,10 @@ export const id: Record<LangKeys, string> = {
   enabled: "Aktif",
 
   welcome: "Selamat datang",
-  chooseRole: "Pilih cara Anda menggunakan VetCare Pro:",
+  chooseRole: "Pilih cara Anda menggunakan VetHub:",
   petOwner: "Pemilik hewan",
-  petOwnerDesc: "Pantau kesehatan, berat badan, dan riwayat kunjungan hewan peliharaan Anda",
+  petOwnerDesc:
+    "Pantau kesehatan, berat badan, dan riwayat kunjungan hewan peliharaan Anda",
   vetClinic: "Klinik hewan",
   vetClinicDesc: "Daftarkan klinik Anda untuk mengelola kunjungan dan staf",
   myPets: "Hewanku",
@@ -31,9 +32,11 @@ export const id: Record<LangKeys, string> = {
   activePatients: "Pasien aktif",
   noActivePatientsNow: "Tidak ada pasien aktif saat ini.",
   findPatient: "Cari pasien",
-  vetStaffNote: "Anda terdaftar sebagai staf dokter hewan. Hubungi pemilik klinik untuk mengelola pasien.",
+  vetStaffNote:
+    "Anda terdaftar sebagai staf dokter hewan. Hubungi pemilik klinik untuk mengelola pasien.",
   goToClinic: "Ke klinik",
-  notRegisteredVet: "Anda belum terdaftar sebagai dokter hewan atau pemilik klinik.",
+  notRegisteredVet:
+    "Anda belum terdaftar sebagai dokter hewan atau pemilik klinik.",
   goToSettings: "Ke pengaturan",
 
   petsTitle: "Hewanku",
@@ -45,7 +48,8 @@ export const id: Record<LangKeys, string> = {
   addRecord: "Tambah catatan",
   vaccinationRecords: "Riwayat vaksinasi",
   noVaccinationRecords: "Belum ada catatan vaksinasi",
-  vaccinationTip: "Gunakan tombol Tambah untuk mencatat vaksin, termasuk catatan lama dari buku vaksin",
+  vaccinationTip:
+    "Gunakan tombol Tambah untuk mencatat vaksin, termasuk catatan lama dari buku vaksin",
   visitHistory: "Riwayat kunjungan",
   noVisitHistory: "Belum ada riwayat kunjungan",
   noVetAssigned: "Belum ada dokter",

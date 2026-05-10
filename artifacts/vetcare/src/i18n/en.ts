@@ -18,7 +18,7 @@ export const en = {
   enabled: "Enabled",
 
   welcome: "Welcome",
-  chooseRole: "Choose how you want to use VetCare Pro:",
+  chooseRole: "Choose how you want to use VetHub:",
   petOwner: "Pet owner",
   petOwnerDesc: "Track your pets' health, weight, and visit history",
   vetClinic: "Veterinary clinic",
@@ -29,7 +29,8 @@ export const en = {
   activePatients: "Active patients",
   noActivePatientsNow: "No active patients right now.",
   findPatient: "Find a patient",
-  vetStaffNote: "You are registered as a vet staff member. Contact your clinic owner to manage patients.",
+  vetStaffNote:
+    "You are registered as a vet staff member. Contact your clinic owner to manage patients.",
   goToClinic: "Go to clinic",
   notRegisteredVet: "You are not registered as a vet or clinic owner.",
   goToSettings: "Go to settings",
@@ -43,7 +44,8 @@ export const en = {
   addRecord: "Add record",
   vaccinationRecords: "Vaccination records",
   noVaccinationRecords: "No vaccination records yet",
-  vaccinationTip: "Use the Add button to log vaccines, including past records from the vaccine book",
+  vaccinationTip:
+    "Use the Add button to log vaccines, including past records from the vaccine book",
   visitHistory: "Visit history",
   noVisitHistory: "No visit history yet",
   noVetAssigned: "No vet assigned",

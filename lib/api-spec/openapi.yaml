@@ -3,7 +3,7 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: VetCare Pro API specification
+  description: VetHub API specification
 servers:
   - url: /api
     description: Base API path
@@ -1005,7 +1005,8 @@ components:
           enum: [healthy, sick, hospitalized, need_intensive_care, passed_away]
         photoUrl: { type: ["string", "null"] }
         createdAt: { type: string }
-      required: [id, name, gender, sterilized, speciesId, ownerId, status, createdAt]
+      required:
+        [id, name, gender, sterilized, speciesId, ownerId, status, createdAt]
 
     PetInput:
       type: object
@@ -1126,7 +1127,8 @@ components:
         deposit: { type: ["number", "null"] }
         totalCost: { type: number }
         createdAt: { type: string }
-      required: [id, petId, clinicId, type, status, visitDate, totalCost, createdAt]
+      required:
+        [id, petId, clinicId, type, status, visitDate, totalCost, createdAt]
 
     VisitWithPet:
       type: object
@@ -1144,7 +1146,8 @@ components:
         visitDate: { type: string }
         totalCost: { type: number }
         latestReport: { type: ["string", "null"] }
-      required: [id, petId, petName, clinicId, type, status, visitDate, totalCost]
+      required:
+        [id, petId, petName, clinicId, type, status, visitDate, totalCost]
 
     VisitDetail:
       type: object
@@ -1173,7 +1176,20 @@ components:
           items:
             $ref: "#/components/schemas/DailyReport"
         createdAt: { type: string }
-      required: [id, petId, clinicId, type, status, visitDate, totalCost, billedCost, items, dailyReports, createdAt]
+      required:
+        [
+          id,
+          petId,
+          clinicId,
+          type,
+          status,
+          visitDate,
+          totalCost,
+          billedCost,
+          items,
+          dailyReports,
+          createdAt,
+        ]
 
     VisitInput:
       type: object
@@ -1215,7 +1231,18 @@ components:
         totalPrice: { type: number }
         itemDate: { type: string }
         isPaid: { type: boolean }
-      required: [id, visitId, category, name, quantity, unitPrice, totalPrice, itemDate, isPaid]
+      required:
+        [
+          id,
+          visitId,
+          category,
+          name,
+          quantity,
+          unitPrice,
+          totalPrice,
+          itemDate,
+          isPaid,
+        ]
 
     VisitItemInput:
       type: object
@@ -1331,7 +1358,11 @@ components:
       properties:
         vaccineName: { type: string, minLength: 1 }
         brand: { type: string }
-        date: { type: string, description: "Date administered YYYY-MM-DD (can be backdated)" }
+        date:
+          {
+            type: string,
+            description: "Date administered YYYY-MM-DD (can be backdated)",
+          }
         nextDueDate: { type: string }
         batchNumber: { type: string }
         administeredBy: { type: string }
@@ -1349,9 +1380,21 @@ components:
         inpatientVisits: { type: integer }
         outpatientVisits: { type: integer }
         averageRevenuePerVisit: { type: number }
-        diedCount: { type: integer, description: "Inpatient visits where pet passed away" }
-        survivedCount: { type: integer, description: "Completed inpatient visits where pet survived" }
-        earlyDischargeCount: { type: integer, description: "Visits cancelled before completion (taken early by owner)" }
+        diedCount:
+          {
+            type: integer,
+            description: "Inpatient visits where pet passed away",
+          }
+        survivedCount:
+          {
+            type: integer,
+            description: "Completed inpatient visits where pet survived",
+          }
+        earlyDischargeCount:
+          {
+            type: integer,
+            description: "Visits cancelled before completion (taken early by owner)",
+          }
         topServices:
           type: array
           items:
@@ -1360,7 +1403,21 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TopItem"
-      required: [period, date, totalRevenue, totalVisits, inpatientVisits, outpatientVisits, averageRevenuePerVisit, diedCount, survivedCount, earlyDischargeCount, topServices, topProducts]
+      required:
+        [
+          period,
+          date,
+          totalRevenue,
+          totalVisits,
+          inpatientVisits,
+          outpatientVisits,
+          averageRevenuePerVisit,
+          diedCount,
+          survivedCount,
+          earlyDischargeCount,
+          topServices,
+          topProducts,
+        ]
 
     TopItem:
       type: object

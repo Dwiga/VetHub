@@ -1,4 +1,4 @@
-# VetCare Pro
+# VetHub
 
 A full-stack veterinary clinic and pet management web app (mobile-optimized) for Indonesia. Handles pet owners tracking their pets' health, vets managing clinic visits, and clinic owners managing staff and analytics.
 
