@@ -151,20 +151,34 @@ export default function VetSearchPage() {
             <p className="text-sm text-muted-foreground text-center py-4">No pets found.</p>
           )}
 
-          {(petResults.data ?? []).map((pet: any) => (
-            <Link key={pet.id} href={`/pets/${pet.id}`}>
-              <Card className="hover:border-primary/50 transition-colors cursor-pointer" data-testid={`card-pet-${pet.id}`}>
-                <CardContent className="py-3 flex items-center gap-3">
-                  <PawPrint className="h-4 w-4 text-primary/60 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">{pet.name}</p>
-                    <p className="text-xs text-muted-foreground">{pet.speciesName} · {pet.ownerName} · {pet.ownerPhone}</p>
-                  </div>
-                  <StatusBadge status={pet.status ?? "healthy"} />
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+          <div className="space-y-3">
+            {(petResults.data ?? []).map((pet: any) => (
+              <Link key={pet.id} href={`/pets/${pet.id}`}>
+                <Card className="hover:border-primary/50 transition-colors cursor-pointer" data-testid={`card-pet-${pet.id}`}>
+                  <CardContent className="py-3 flex items-center gap-3">
+                    <PawPrint className="h-4 w-4 text-primary/60 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm">{pet.name}</p>
+                      <p className="text-xs text-muted-foreground">{pet.speciesName} · {pet.ownerName} · {pet.ownerPhone}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <StatusBadge status={pet.status ?? "healthy"} />
+                      {me.data?.clinicId && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={e => { e.preventDefault(); setLocation(`/vet/visits/new/${pet.id}`); }}
+                          data-testid={`btn-new-visit-${pet.id}`}
+                        >
+                          Visit
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
         </TabsContent>
       </Tabs>
     </AppShell>
