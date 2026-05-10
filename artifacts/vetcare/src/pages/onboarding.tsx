@@ -1,4 +1,5 @@
 import { useGetMe, useUpdateMe, getGetMeQueryKey } from "@workspace/api-client-react";
+import { normalizePhone } from "@/lib/phone";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,7 +36,7 @@ export default function OnboardingPage() {
 
   async function onSubmit(values: z.infer<typeof schema>) {
     try {
-      await updateMe.mutateAsync({ data: values });
+      await updateMe.mutateAsync({ data: { ...values, phone: normalizePhone(values.phone) } });
       await queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
       setLocation("/dashboard");
     } catch {

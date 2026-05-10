@@ -2,8 +2,9 @@ import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
 import { usersTable, petsTable, speciesTable } from "@workspace/db";
-import { eq, ilike, or } from "drizzle-orm";
+import { eq, ilike, or, inArray } from "drizzle-orm";
 import { getOrCreateUser } from "./users";
+import { normalizePhone, phoneVariants } from "../utils/phone";
 
 const router = Router();
 
@@ -24,7 +25,10 @@ router.get("/search-owner", async (req, res) => {
   if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
   const phone = req.query.phone as string;
   if (!phone) return res.status(400).json({ error: "phone is required" });
-  const owner = await db.query.usersTable.findFirst({ where: eq(usersTable.phone, phone) });
+  const variants = phoneVariants(phone);
+  const owner = await db.query.usersTable.findFirst({
+    where: inArray(usersTable.phone, variants),
+  });
   if (!owner) return res.status(404).json({ error: "Owner not found" });
   const pets = await db.query.petsTable.findMany({ where: eq(petsTable.ownerId, owner.id) });
   const petsWithDetails = await Promise.all(pets.map(petWithDetails));
@@ -68,10 +72,12 @@ router.post("/add-pet-for-owner", async (req, res) => {
   if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
   const { ownerPhone, name, dateOfBirth, gender, sterilized, color, speciesId } = req.body;
   if (!ownerPhone || !name || !speciesId) return res.status(400).json({ error: "ownerPhone, name, speciesId required" });
-  let owner = await db.query.usersTable.findFirst({ where: eq(usersTable.phone, ownerPhone) });
+  const canonicalPhone = normalizePhone(ownerPhone);
+  const variants = phoneVariants(ownerPhone);
+  let owner = await db.query.usersTable.findFirst({ where: inArray(usersTable.phone, variants) });
   if (!owner) {
     const [created] = await db.insert(usersTable).values({
-      clerkId: `phone_${ownerPhone}_${Date.now()}`, phone: ownerPhone, isPetOwner: true,
+      clerkId: `phone_${canonicalPhone}_${Date.now()}`, phone: canonicalPhone, isPetOwner: true,
     }).returning();
     owner = created;
   } else if (!owner.isPetOwner) {

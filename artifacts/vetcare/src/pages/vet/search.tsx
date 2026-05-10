@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PawPrint, Phone, User, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useGetMe } from "@workspace/api-client-react";
+import { normalizePhone } from "@/lib/phone";
 
 export default function VetSearchPage() {
   const [searchParams] = typeof window !== "undefined"
@@ -38,7 +39,7 @@ export default function VetSearchPage() {
 
   function handlePhoneSearch(e: React.FormEvent) {
     e.preventDefault();
-    setSubmittedPhone(phone.trim());
+    setSubmittedPhone(normalizePhone(phone.trim()));
   }
 
   function handlePetSearch(e: React.FormEvent) {

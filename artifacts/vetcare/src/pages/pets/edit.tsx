@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { useGetPet, useUpdatePet, useListSpecies, getGetPetQueryKey } from "@workspace/api-client-react";
+import { useGetPet, useUpdatePet, useUpdatePetStatus, useListSpecies, getGetPetQueryKey } from "@workspace/api-client-react";
 import { useParams, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -14,6 +14,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 
+const PET_STATUSES = [
+  { value: "healthy", label: "Healthy" },
+  { value: "sick", label: "Sick" },
+  { value: "hospitalized", label: "Hospitalized" },
+  { value: "need_intensive_care", label: "Needs intensive care" },
+  { value: "passed_away", label: "Passed away" },
+] as const;
+
 const schema = z.object({
   name: z.string().min(1),
   speciesId: z.string().min(1),
@@ -21,6 +29,7 @@ const schema = z.object({
   gender: z.enum(["male", "female", "unknown"]),
   sterilized: z.boolean(),
   color: z.string().optional(),
+  status: z.enum(["healthy", "sick", "hospitalized", "need_intensive_care", "passed_away"]),
 });
 
 export default function EditPetPage() {
@@ -28,6 +37,7 @@ export default function EditPetPage() {
   const id = parseInt(petId);
   const pet = useGetPet(id, { query: { queryKey: getGetPetQueryKey(id) } });
   const updatePet = useUpdatePet();
+  const updatePetStatus = useUpdatePetStatus();
   const species = useListSpecies();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
@@ -35,7 +45,7 @@ export default function EditPetPage() {
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", speciesId: "", gender: "unknown", sterilized: false, color: "", dateOfBirth: "" },
+    defaultValues: { name: "", speciesId: "", gender: "unknown", sterilized: false, color: "", dateOfBirth: "", status: "healthy" },
   });
 
   useEffect(() => {
@@ -47,11 +57,13 @@ export default function EditPetPage() {
         gender: (pet.data.gender as "male" | "female" | "unknown") ?? "unknown",
         sterilized: pet.data.sterilized ?? false,
         color: pet.data.color ?? "",
+        status: (pet.data.status as z.infer<typeof schema>["status"]) ?? "healthy",
       });
     }
   }, [pet.data]);
 
   async function onSubmit(values: z.infer<typeof schema>) {
+    const originalStatus = pet.data?.status ?? "healthy";
     await updatePet.mutateAsync({
       petId: id,
       data: {
@@ -63,10 +75,15 @@ export default function EditPetPage() {
         color: values.color || undefined,
       },
     });
+    if (values.status !== originalStatus) {
+      await updatePetStatus.mutateAsync({ petId: id, data: { status: values.status } });
+    }
     queryClient.invalidateQueries({ queryKey: getGetPetQueryKey(id) });
     toast({ title: "Pet updated" });
     setLocation(`/pets/${id}`);
   }
+
+  const isPending = updatePet.isPending || updatePetStatus.isPending;
 
   return (
     <AppShell>
@@ -90,6 +107,22 @@ export default function EditPetPage() {
                 <SelectContent>
                   {(species.data ?? []).map(s => (
                     <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={form.control} name="status" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger data-testid="select-status"><SelectValue /></SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {PET_STATUSES.map(s => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -134,8 +167,8 @@ export default function EditPetPage() {
               </FormControl>
             </FormItem>
           )} />
-          <Button type="submit" className="w-full" disabled={updatePet.isPending} data-testid="btn-submit">
-            {updatePet.isPending ? "Saving..." : "Save changes"}
+          <Button type="submit" className="w-full" disabled={isPending} data-testid="btn-submit">
+            {isPending ? "Saving..." : "Save changes"}
           </Button>
         </form>
       </Form>

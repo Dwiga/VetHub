@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useClerk } from "@clerk/react";
 import { Separator } from "@/components/ui/separator";
+import { normalizePhone } from "@/lib/phone";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -45,7 +46,7 @@ export default function SettingsPage() {
   });
 
   async function saveProfile(values: z.infer<typeof profileSchema>) {
-    await updateMe.mutateAsync({ data: values });
+    await updateMe.mutateAsync({ data: { ...values, phone: normalizePhone(values.phone) } });
     queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
     toast({ title: "Profile updated" });
   }
