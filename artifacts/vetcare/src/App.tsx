@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useGetMe } from "@workspace/api-client-react";
 import { RoleProvider } from "@/contexts/RoleContext";
+import { LangProvider } from "@/contexts/LangContext";
 import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing";
 import OnboardingPage from "@/pages/onboarding";
@@ -189,6 +190,7 @@ function ClerkProviderWithRoutes() {
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
         <RoleProvider>
+        <LangProvider>
         <TooltipProvider>
           <Switch>
             <Route path="/" component={HomeRedirect} />
@@ -218,6 +220,7 @@ function ClerkProviderWithRoutes() {
             <Route component={NotFound} />
           </Switch>
         </TooltipProvider>
+        </LangProvider>
         </RoleProvider>
       </QueryClientProvider>
     </ClerkProvider>

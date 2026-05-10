@@ -6,18 +6,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { PawPrint, Plus, ChevronRight } from "lucide-react";
+import { useLang } from "@/contexts/LangContext";
 
 export default function PetsPage() {
   const pets = useListMyPets();
   const petList = pets.data ?? [];
+  const { t } = useLang();
 
   return (
     <AppShell>
       <PageHeader
-        title="My pets"
+        title={t("petsTitle")}
         action={
           <Button asChild size="sm" data-testid="btn-add-pet">
-            <Link href="/pets/new"><Plus className="h-4 w-4 mr-1" />Add</Link>
+            <Link href="/pets/new"><Plus className="h-4 w-4 mr-1" />{t("add")}</Link>
           </Button>
         }
       />
@@ -30,9 +32,9 @@ export default function PetsPage() {
         <Card>
           <CardContent className="py-12 flex flex-col items-center gap-3">
             <PawPrint className="h-12 w-12 text-muted-foreground/30" />
-            <p className="text-muted-foreground text-sm text-center">No pets yet. Add your first one!</p>
+            <p className="text-muted-foreground text-sm text-center">{t("noPetsYet")}</p>
             <Button asChild size="sm" data-testid="btn-add-first-pet">
-              <Link href="/pets/new">Add pet</Link>
+              <Link href="/pets/new">{t("addPet")}</Link>
             </Button>
           </CardContent>
         </Card>

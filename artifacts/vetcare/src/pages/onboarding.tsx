@@ -10,13 +10,14 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { Phone } from "lucide-react";
+import { useLang } from "@/contexts/LangContext";
 
 const schema = z.object({
-  name: z.string().min(1, "Full name is required"),
+  name: z.string().min(1),
   phone: z
     .string()
-    .min(9, "Phone number is too short")
-    .regex(/^[0-9+\-\s()]+$/, "Enter a valid phone number"),
+    .min(9)
+    .regex(/^[0-9+\-\s()]+$/),
 });
 
 export default function OnboardingPage() {
@@ -25,6 +26,7 @@ export default function OnboardingPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { t } = useLang();
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -52,9 +54,9 @@ export default function OnboardingPage() {
             <Phone className="h-7 w-7 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">One last step</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t("onboardingTitle")}</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Enter your phone number so vets can find you and your pets.
+              {t("onboardingSubtitle")}
             </p>
           </div>
         </div>
@@ -66,11 +68,10 @@ export default function OnboardingPage() {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full name</FormLabel>
+                  <FormLabel>{t("yourName")}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
-                      placeholder="Your full name"
                       autoComplete="name"
                       data-testid="input-onboarding-name"
                     />
@@ -84,7 +85,7 @@ export default function OnboardingPage() {
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone / WhatsApp number</FormLabel>
+                  <FormLabel>{t("yourPhone")}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
@@ -96,7 +97,7 @@ export default function OnboardingPage() {
                   </FormControl>
                   <FormMessage />
                   <p className="text-xs text-muted-foreground">
-                    Used by vets to look up your pets. Include country code, e.g. +62 for Indonesia.
+                    Include country code, e.g. +62 for Indonesia.
                   </p>
                 </FormItem>
               )}
@@ -107,7 +108,7 @@ export default function OnboardingPage() {
               disabled={updateMe.isPending}
               data-testid="btn-onboarding-submit"
             >
-              {updateMe.isPending ? "Saving..." : "Continue"}
+              {updateMe.isPending ? t("gettingStarted") : t("getStarted")}
             </Button>
           </form>
         </Form>

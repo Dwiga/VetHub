@@ -1,17 +1,19 @@
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { useGetMe, useListActiveVisits, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useGetMe, useListActiveVisits } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useLocation } from "wouter";
 import { Search, Stethoscope, PawPrint } from "lucide-react";
 import { useState } from "react";
+import { useLang } from "@/contexts/LangContext";
 
 function ActiveVisitsList({ clinicId }: { clinicId: number }) {
   const visits = useListActiveVisits(clinicId, { query: { queryKey: ["active-visits", clinicId] } });
   const list = visits.data ?? [];
+  const { t } = useLang();
 
   if (visits.isLoading) return (
     <div className="space-y-3">
@@ -23,7 +25,7 @@ function ActiveVisitsList({ clinicId }: { clinicId: number }) {
     <Card>
       <CardContent className="py-10 flex flex-col items-center gap-2">
         <Stethoscope className="h-10 w-10 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground text-center">No active patients</p>
+        <p className="text-sm text-muted-foreground text-center">{t("noActivePatientsShort")}</p>
       </CardContent>
     </Card>
   );
@@ -43,7 +45,7 @@ function ActiveVisitsList({ clinicId }: { clinicId: number }) {
                   <StatusBadge status={v.type ?? "outpatient"} />
                 </div>
                 <p className="text-xs text-muted-foreground">{v.ownerName} · {v.ownerPhone}</p>
-                {v.latestReport && <p className="text-xs text-muted-foreground mt-1 truncate">Condition: {v.latestReport}</p>}
+                {v.latestReport && <p className="text-xs text-muted-foreground mt-1 truncate">{v.latestReport}</p>}
               </div>
               <div className="text-right shrink-0">
                 <p className="text-xs font-medium text-foreground">
@@ -62,6 +64,7 @@ export default function VetPage() {
   const me = useGetMe();
   const [, setLocation] = useLocation();
   const [searchInput, setSearchInput] = useState("");
+  const { t } = useLang();
   const user = me.data;
 
   function handleSearch(e: React.FormEvent) {
@@ -74,9 +77,9 @@ export default function VetPage() {
       <AppShell>
         <div className="pt-12 flex flex-col items-center gap-4">
           <Stethoscope className="h-16 w-16 text-muted-foreground/30" />
-          <p className="text-muted-foreground text-center">You are not registered as a vet or clinic owner.</p>
+          <p className="text-muted-foreground text-center">{t("notRegisteredVet")}</p>
           <Button asChild variant="outline" size="sm" data-testid="btn-go-settings">
-            <Link href="/settings">Go to settings</Link>
+            <Link href="/settings">{t("goToSettings")}</Link>
           </Button>
         </div>
       </AppShell>
@@ -85,11 +88,11 @@ export default function VetPage() {
 
   return (
     <AppShell>
-      <PageHeader title="Clinic" subtitle="Active patients" />
+      <PageHeader title={t("nav_clinic")} subtitle={t("activePatients")} />
       <div className="space-y-5">
         <form onSubmit={handleSearch} className="flex gap-2">
           <Input
-            placeholder="Search by phone or pet name..."
+            placeholder={t("searchPlaceholder")}
             value={searchInput}
             onChange={e => setSearchInput(e.target.value)}
             data-testid="input-search"

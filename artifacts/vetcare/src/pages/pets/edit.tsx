@@ -13,14 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-
-const PET_STATUSES = [
-  { value: "healthy", label: "Healthy" },
-  { value: "sick", label: "Sick" },
-  { value: "hospitalized", label: "Hospitalized" },
-  { value: "need_intensive_care", label: "Needs intensive care" },
-  { value: "passed_away", label: "Passed away" },
-] as const;
+import { useLang } from "@/contexts/LangContext";
 
 const schema = z.object({
   name: z.string().min(1),
@@ -42,6 +35,7 @@ export default function EditPetPage() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useLang();
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -79,30 +73,38 @@ export default function EditPetPage() {
       await updatePetStatus.mutateAsync({ petId: id, data: { status: values.status } });
     }
     queryClient.invalidateQueries({ queryKey: getGetPetQueryKey(id) });
-    toast({ title: "Pet updated" });
+    toast({ title: t("petUpdated") });
     setLocation(`/pets/${id}`);
   }
 
   const isPending = updatePet.isPending || updatePetStatus.isPending;
 
+  const petStatuses = [
+    { value: "healthy", label: t("statusHealthy") },
+    { value: "sick", label: t("statusSick") },
+    { value: "hospitalized", label: t("statusHospitalized") },
+    { value: "need_intensive_care", label: t("statusNeedsCare") },
+    { value: "passed_away", label: t("statusPassedAway") },
+  ] as const;
+
   return (
     <AppShell>
-      <PageHeader title="Edit pet" back backHref={`/pets/${id}`} />
+      <PageHeader title={t("editPetTitle")} back backHref={`/pets/${id}`} />
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
           <FormField control={form.control} name="name" render={({ field }) => (
             <FormItem>
-              <FormLabel>Pet name</FormLabel>
+              <FormLabel>{t("petName")}</FormLabel>
               <FormControl><Input {...field} data-testid="input-pet-name" /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
           <FormField control={form.control} name="speciesId" render={({ field }) => (
             <FormItem>
-              <FormLabel>Species</FormLabel>
+              <FormLabel>{t("species")}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
-                  <SelectTrigger data-testid="select-species"><SelectValue placeholder="Select species" /></SelectTrigger>
+                  <SelectTrigger data-testid="select-species"><SelectValue placeholder={t("selectSpecies")} /></SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   {(species.data ?? []).map(s => (
@@ -115,13 +117,13 @@ export default function EditPetPage() {
           )} />
           <FormField control={form.control} name="status" render={({ field }) => (
             <FormItem>
-              <FormLabel>Status</FormLabel>
+              <FormLabel>{t("petStatus")}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger data-testid="select-status"><SelectValue /></SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {PET_STATUSES.map(s => (
+                  {petStatuses.map(s => (
                     <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                   ))}
                 </SelectContent>
@@ -131,22 +133,22 @@ export default function EditPetPage() {
           )} />
           <FormField control={form.control} name="dateOfBirth" render={({ field }) => (
             <FormItem>
-              <FormLabel>Date of birth</FormLabel>
+              <FormLabel>{t("dateOfBirth")}</FormLabel>
               <FormControl><Input type="date" {...field} data-testid="input-dob" /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
           <FormField control={form.control} name="gender" render={({ field }) => (
             <FormItem>
-              <FormLabel>Gender</FormLabel>
+              <FormLabel>{t("gender")}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger data-testid="select-gender"><SelectValue /></SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="unknown">Unknown</SelectItem>
+                  <SelectItem value="male">{t("male")}</SelectItem>
+                  <SelectItem value="female">{t("female")}</SelectItem>
+                  <SelectItem value="unknown">{t("unknown")}</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -154,21 +156,21 @@ export default function EditPetPage() {
           )} />
           <FormField control={form.control} name="color" render={({ field }) => (
             <FormItem>
-              <FormLabel>Color / markings</FormLabel>
+              <FormLabel>{t("colorMarkings")}</FormLabel>
               <FormControl><Input {...field} data-testid="input-color" /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
           <FormField control={form.control} name="sterilized" render={({ field }) => (
             <FormItem className="flex items-center justify-between">
-              <FormLabel className="mb-0">Sterilized</FormLabel>
+              <FormLabel className="mb-0">{t("sterilized")}</FormLabel>
               <FormControl>
                 <Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-sterilized" />
               </FormControl>
             </FormItem>
           )} />
           <Button type="submit" className="w-full" disabled={isPending} data-testid="btn-submit">
-            {isPending ? "Saving..." : "Save changes"}
+            {isPending ? t("saving") : t("save")}
           </Button>
         </form>
       </Form>

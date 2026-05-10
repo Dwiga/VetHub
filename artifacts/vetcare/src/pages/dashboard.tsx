@@ -10,29 +10,31 @@ import { PawPrint, Plus, Stethoscope, Search } from "lucide-react";
 import { useRegisterAsPetOwner } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { useRole } from "@/contexts/RoleContext";
+import { useLang } from "@/contexts/LangContext";
 
 function RoleSelector() {
   const registerAsPetOwner = useRegisterAsPetOwner();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useLang();
 
   async function becomePetOwner() {
     await registerAsPetOwner.mutateAsync(undefined);
     queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
-    toast({ title: "Welcome! You can now add your pets." });
+    toast({ title: t("registeredPetOwner") });
   }
 
   return (
     <div className="space-y-4 pt-6">
-      <p className="text-muted-foreground text-sm text-center">Choose how you want to use VetCare Pro:</p>
+      <p className="text-muted-foreground text-sm text-center">{t("chooseRole")}</p>
       <Card className="cursor-pointer hover:border-primary transition-colors" onClick={becomePetOwner} data-testid="card-pet-owner">
         <CardContent className="pt-5 pb-5 flex gap-4 items-center">
           <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
             <PawPrint className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <p className="font-semibold text-foreground">Pet owner</p>
-            <p className="text-xs text-muted-foreground">Track your pets' health, weight, and visit history</p>
+            <p className="font-semibold text-foreground">{t("petOwner")}</p>
+            <p className="text-xs text-muted-foreground">{t("petOwnerDesc")}</p>
           </div>
         </CardContent>
       </Card>
@@ -43,8 +45,8 @@ function RoleSelector() {
               <Stethoscope className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <p className="font-semibold text-foreground">Veterinary clinic</p>
-              <p className="text-xs text-muted-foreground">Register your clinic to manage visits and staff</p>
+              <p className="font-semibold text-foreground">{t("vetClinic")}</p>
+              <p className="text-xs text-muted-foreground">{t("vetClinicDesc")}</p>
             </div>
           </CardContent>
         </Card>
@@ -56,13 +58,14 @@ function RoleSelector() {
 function PetOwnerDashboard() {
   const pets = useListMyPets();
   const petList = pets.data ?? [];
+  const { t } = useLang();
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-foreground">My pets</h2>
+        <h2 className="font-semibold text-foreground">{t("myPets")}</h2>
         <Button asChild size="sm" variant="outline" data-testid="btn-add-pet">
-          <Link href="/pets/new"><Plus className="h-4 w-4 mr-1" />Add pet</Link>
+          <Link href="/pets/new"><Plus className="h-4 w-4 mr-1" />{t("addPet")}</Link>
         </Button>
       </div>
       {pets.isLoading && (
@@ -76,9 +79,9 @@ function PetOwnerDashboard() {
         <Card>
           <CardContent className="py-10 flex flex-col items-center gap-3">
             <PawPrint className="h-10 w-10 text-muted-foreground/40" />
-            <p className="text-muted-foreground text-sm text-center">No pets yet. Add your first pet!</p>
+            <p className="text-muted-foreground text-sm text-center">{t("noPets")}</p>
             <Button asChild size="sm" data-testid="btn-add-first-pet">
-              <Link href="/pets/new">Add pet</Link>
+              <Link href="/pets/new">{t("addPet")}</Link>
             </Button>
           </CardContent>
         </Card>
@@ -110,6 +113,7 @@ function PetOwnerDashboard() {
 function ActiveVisitsList({ clinicId }: { clinicId: number }) {
   const visits = useListActiveVisits(clinicId, { query: { queryKey: ["active-visits", clinicId] } });
   const activeList = visits.data ?? [];
+  const { t } = useLang();
 
   if (visits.isLoading) return (
     <div className="space-y-3">
@@ -121,9 +125,9 @@ function ActiveVisitsList({ clinicId }: { clinicId: number }) {
     <Card>
       <CardContent className="py-10 flex flex-col items-center gap-3">
         <Stethoscope className="h-10 w-10 text-muted-foreground/40" />
-        <p className="text-muted-foreground text-sm text-center">No active patients right now.</p>
+        <p className="text-muted-foreground text-sm text-center">{t("noActivePatientsNow")}</p>
         <Button asChild size="sm" data-testid="btn-search-first-patient">
-          <Link href="/vet/search">Find a patient</Link>
+          <Link href="/vet/search">{t("findPatient")}</Link>
         </Button>
       </CardContent>
     </Card>
@@ -152,12 +156,13 @@ function ActiveVisitsList({ clinicId }: { clinicId: number }) {
 }
 
 function VetDashboard({ clinicId }: { clinicId: number }) {
+  const { t } = useLang();
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-foreground">Active patients</h2>
+        <h2 className="font-semibold text-foreground">{t("activePatients")}</h2>
         <Button asChild size="sm" variant="outline" data-testid="btn-search-patient">
-          <Link href="/vet/search"><Search className="h-4 w-4 mr-1" />Search</Link>
+          <Link href="/vet/search"><Search className="h-4 w-4 mr-1" />{t("search")}</Link>
         </Button>
       </div>
       <ActiveVisitsList clinicId={clinicId} />
@@ -168,6 +173,7 @@ function VetDashboard({ clinicId }: { clinicId: number }) {
 export default function DashboardPage() {
   const me = useGetMe();
   const { activeRole } = useRole();
+  const { t } = useLang();
   const user = me.data;
   const isNew = !user?.isPetOwner && !user?.isVet && !user?.isVetOwner;
   const isVet = !!(user?.isVet || user?.isVetOwner);
@@ -175,7 +181,7 @@ export default function DashboardPage() {
   return (
     <AppShell>
       <PageHeader
-        title={user?.name ? `Hello, ${user.name.split(" ")[0]}` : "Welcome"}
+        title={user?.name ? `${t("welcome")}, ${user.name.split(" ")[0]}` : t("welcome")}
         subtitle="VetCare Pro"
       />
       {isNew && !me.isLoading && <RoleSelector />}
@@ -183,8 +189,8 @@ export default function DashboardPage() {
       {!isNew && activeRole === "vet" && isVet && !user?.clinicId && (
         <div className="pt-8 flex flex-col items-center gap-3">
           <Stethoscope className="h-12 w-12 text-muted-foreground/30" />
-          <p className="text-sm text-muted-foreground text-center">You are registered as a vet staff member.<br />Contact your clinic owner to manage patients.</p>
-          <Button asChild size="sm" variant="outline"><Link href="/vet">Go to clinic</Link></Button>
+          <p className="text-sm text-muted-foreground text-center">{t("vetStaffNote")}</p>
+          <Button asChild size="sm" variant="outline"><Link href="/vet">{t("goToClinic")}</Link></Button>
         </div>
       )}
       {!isNew && (activeRole === "pet-owner" || !isVet) && user?.isPetOwner && <PetOwnerDashboard />}

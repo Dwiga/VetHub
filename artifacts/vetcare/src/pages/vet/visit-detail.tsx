@@ -6,6 +6,7 @@ import {
   useCreateDailyReport, getGetVisitQueryKey, useGetMe
 } from "@workspace/api-client-react";
 import { useRole } from "@/contexts/RoleContext";
+import { useLang } from "@/contexts/LangContext";
 import { useParams, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -25,7 +26,7 @@ import { Printer, Plus, Trash2, CheckCircle2, Circle, Banknote } from "lucide-re
 import { cn } from "@/lib/utils";
 
 const itemSchema = z.object({
-  itemDate: z.string().min(1, "Date is required"),
+  itemDate: z.string().min(1),
   category: z.enum(["service", "medicine", "supporting", "other"]),
   name: z.string().min(1),
   description: z.string().optional(),
@@ -49,13 +50,6 @@ const visitSchema = z.object({
   deposit: z.string().optional(),
 });
 
-const CATEGORY_LABELS: Record<string, string> = {
-  service: "Service",
-  medicine: "Medicine",
-  supporting: "Supporting",
-  other: "Other",
-};
-
 function formatDate(dateStr: string) {
   if (!dateStr) return "—";
   const d = new Date(dateStr + "T00:00:00");
@@ -78,7 +72,8 @@ function groupItemsByDate(items: any[]): { date: string; items: any[]; subtotal:
   return groups.sort((a, b) => (b.date > a.date ? 1 : -1));
 }
 
-function BillingSummary({ v, isVet }: { v: any; isVet: boolean }) {
+function BillingSummary({ v }: { v: any }) {
+  const { t } = useLang();
   const deposit = v.deposit ?? 0;
   const billedCost = v.billedCost ?? 0;
   const paidDirectly = (v.totalCost ?? 0) - billedCost;
@@ -89,27 +84,27 @@ function BillingSummary({ v, isVet }: { v: any; isVet: boolean }) {
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2">
           <Banknote className="h-4 w-4 text-primary" />
-          Billing summary
+          {t("billingSummary")}
         </CardTitle>
       </CardHeader>
       <CardContent className="pb-4 space-y-1.5">
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Total items &amp; care</span>
+          <span className="text-muted-foreground">{t("totalCare")}</span>
           <span>Rp {(v.totalCost ?? 0).toLocaleString("id-ID")}</span>
         </div>
         {paidDirectly > 0 && (
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Paid directly</span>
+            <span className="text-muted-foreground">{t("paidDirectly")}</span>
             <span className="text-green-600">− Rp {paidDirectly.toLocaleString("id-ID")}</span>
           </div>
         )}
         <div className="flex justify-between text-sm font-medium border-t border-border pt-1.5 mt-1.5">
-          <span>Billed total</span>
+          <span>{t("billedTotal")}</span>
           <span>Rp {billedCost.toLocaleString("id-ID")}</span>
         </div>
         {deposit > 0 && (
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Deposit received</span>
+            <span className="text-muted-foreground">{t("depositLine")}</span>
             <span className="text-blue-600">− Rp {deposit.toLocaleString("id-ID")}</span>
           </div>
         )}
@@ -117,7 +112,7 @@ function BillingSummary({ v, isVet }: { v: any; isVet: boolean }) {
           "flex justify-between text-base font-bold border-t border-border pt-2 mt-1",
           netDue < 0 ? "text-blue-600" : netDue === 0 ? "text-green-600" : "text-foreground"
         )}>
-          <span>{netDue < 0 ? "Refund to owner" : netDue === 0 ? "Settled" : "Amount due"}</span>
+          <span>{netDue < 0 ? t("refundToOwner") : netDue === 0 ? t("settled") : t("amountDue")}</span>
           <span>Rp {Math.abs(netDue).toLocaleString("id-ID")}</span>
         </div>
       </CardContent>
@@ -137,6 +132,7 @@ export default function VisitDetailPage() {
   const createReport = useCreateDailyReport();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useLang();
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
@@ -180,7 +176,7 @@ export default function VisitDetailPage() {
       },
     });
     queryClient.invalidateQueries({ queryKey: getGetVisitQueryKey(id) });
-    toast({ title: "Visit updated" });
+    toast({ title: t("visitSaved") });
   }
 
   async function addVisitItem(values: z.infer<typeof itemSchema>) {
@@ -198,13 +194,13 @@ export default function VisitDetailPage() {
     queryClient.invalidateQueries({ queryKey: getGetVisitQueryKey(id) });
     setItemDialogOpen(false);
     itemForm.reset({ itemDate: today, category: "service", name: "", description: "", quantity: "1", unitPrice: "0" });
-    toast({ title: "Item added" });
+    toast({ title: t("itemAdded") });
   }
 
   async function removeItem(itemId: number) {
     await deleteItem.mutateAsync({ itemId });
     queryClient.invalidateQueries({ queryKey: getGetVisitQueryKey(id) });
-    toast({ title: "Item removed" });
+    toast({ title: t("itemRemoved") });
   }
 
   async function togglePaid(item: any) {
@@ -231,7 +227,7 @@ export default function VisitDetailPage() {
     queryClient.invalidateQueries({ queryKey: getGetVisitQueryKey(id) });
     setReportDialogOpen(false);
     reportForm.reset({ reportDate: today, condition: "", treatment: "", notes: "", cost: "0" });
-    toast({ title: "Daily report added" });
+    toast({ title: t("reportAdded") });
   }
 
   if (visit.isLoading) return (
@@ -242,16 +238,23 @@ export default function VisitDetailPage() {
     </AppShell>
   );
 
-  if (!v) return <AppShell><p className="text-center text-muted-foreground pt-8">Visit not found</p></AppShell>;
+  if (!v) return <AppShell><p className="text-center text-muted-foreground pt-8">{t("visitNotFound")}</p></AppShell>;
 
   const items = v.items ?? [];
   const reports = v.dailyReports ?? [];
   const dateGroups = groupItemsByDate(items);
 
+  const categoryLabels: Record<string, string> = {
+    service: t("catService"),
+    medicine: t("catMedicine"),
+    supporting: t("catSupporting"),
+    other: t("catOther"),
+  };
+
   return (
     <AppShell>
       <PageHeader
-        title={`Visit — ${v.petName}`}
+        title={`${t("newVisit").split(" ")[0]} — ${v.petName}`}
         subtitle={[v.visitDate, v.vetName].filter(Boolean).join(" · ")}
         back
         action={
@@ -266,7 +269,7 @@ export default function VisitDetailPage() {
           <StatusBadge status={v.type ?? "outpatient"} />
           <StatusBadge status={v.status ?? "active"} />
           <span className="text-sm text-muted-foreground flex-1 text-right">
-            Due: <span className="font-semibold text-foreground">
+            {t("amountDue")}: <span className="font-semibold text-foreground">
               Rp {Math.max(0, (v.billedCost ?? 0) - (v.deposit ?? 0)).toLocaleString("id-ID")}
             </span>
           </span>
@@ -274,59 +277,53 @@ export default function VisitDetailPage() {
 
         {isVet && (
           <Card>
-            <CardHeader className="pb-3"><CardTitle className="text-sm">Clinical notes</CardTitle></CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-sm">{t("clinicalNotes")}</CardTitle></CardHeader>
             <CardContent>
               <Form {...visitForm}>
                 <form onSubmit={visitForm.handleSubmit(saveVisit)} className="space-y-3">
                   <FormField control={visitForm.control} name="anamnesis" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Anamnesis</FormLabel>
-                      <FormControl><Textarea {...field} rows={3} placeholder="History and complaints..." data-testid="input-anamnesis" /></FormControl>
+                      <FormLabel>{t("anamnesis")}</FormLabel>
+                      <FormControl><Textarea {...field} rows={3} placeholder={t("anamnesisPlaceholderShort")} data-testid="input-anamnesis" /></FormControl>
                     </FormItem>
                   )} />
                   <FormField control={visitForm.control} name="therapy" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Therapy</FormLabel>
-                      <FormControl><Textarea {...field} rows={3} placeholder="Prescribed therapy..." data-testid="input-therapy" /></FormControl>
+                      <FormLabel>{t("therapy")}</FormLabel>
+                      <FormControl><Textarea {...field} rows={3} placeholder={t("therapyPlaceholderShort")} data-testid="input-therapy" /></FormControl>
                     </FormItem>
                   )} />
                   <div className="flex gap-3">
                     <FormField control={visitForm.control} name="status" render={({ field }) => (
                       <FormItem className="flex-1">
-                        <FormLabel>Status</FormLabel>
+                        <FormLabel>{t("statusLabel")}</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value ?? ""}>
                           <FormControl><SelectTrigger data-testid="select-status"><SelectValue /></SelectTrigger></FormControl>
                           <SelectContent>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                            <SelectItem value="active">{t("statusActive")}</SelectItem>
+                            <SelectItem value="completed">{t("statusCompleted")}</SelectItem>
+                            <SelectItem value="cancelled">{t("statusCancelled")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormItem>
                     )} />
                     <FormField control={visitForm.control} name="dischargeDate" render={({ field }) => (
                       <FormItem className="flex-1">
-                        <FormLabel>Discharge date</FormLabel>
+                        <FormLabel>{t("dischargeDate")}</FormLabel>
                         <FormControl><Input type="date" {...field} data-testid="input-discharge" /></FormControl>
                       </FormItem>
                     )} />
                   </div>
                   <FormField control={visitForm.control} name="deposit" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Deposit received (Rp)</FormLabel>
+                      <FormLabel>{t("depositReceived")}</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          {...field}
-                          data-testid="input-deposit"
-                        />
+                        <Input type="number" min="0" placeholder="0" {...field} data-testid="input-deposit" />
                       </FormControl>
                     </FormItem>
                   )} />
                   <Button type="submit" size="sm" className="w-full" disabled={updateVisit.isPending} data-testid="btn-save-visit">
-                    {updateVisit.isPending ? "Saving..." : "Save notes"}
+                    {updateVisit.isPending ? t("saving") : t("saveNotes")}
                   </Button>
                 </form>
               </Form>
@@ -336,17 +333,17 @@ export default function VisitDetailPage() {
 
         {!isVet && (v.anamnesis || v.therapy) && (
           <Card>
-            <CardHeader className="pb-3"><CardTitle className="text-sm">Clinical notes</CardTitle></CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-sm">{t("clinicalNotes")}</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               {v.anamnesis && (
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Anamnesis</p>
+                  <p className="text-xs text-muted-foreground mb-1">{t("anamnesis")}</p>
                   <p className="text-sm">{v.anamnesis}</p>
                 </div>
               )}
               {v.therapy && (
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Therapy</p>
+                  <p className="text-xs text-muted-foreground mb-1">{t("therapy")}</p>
                   <p className="text-sm">{v.therapy}</p>
                 </div>
               )}
@@ -356,70 +353,70 @@ export default function VisitDetailPage() {
 
         <Card>
           <CardHeader className="pb-3 flex-row items-center justify-between">
-            <CardTitle className="text-sm">Visit items</CardTitle>
+            <CardTitle className="text-sm">{t("visitItems")}</CardTitle>
             {isVet && (
               <Dialog open={itemDialogOpen} onOpenChange={setItemDialogOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" variant="outline" data-testid="btn-add-item">
-                    <Plus className="h-4 w-4 mr-1" />Add
+                    <Plus className="h-4 w-4 mr-1" />{t("add")}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogHeader><DialogTitle>Add visit item</DialogTitle></DialogHeader>
+                  <DialogHeader><DialogTitle>{t("addItem")}</DialogTitle></DialogHeader>
                   <Form {...itemForm}>
                     <form onSubmit={itemForm.handleSubmit(addVisitItem)} className="space-y-4 pt-2">
                       <FormField control={itemForm.control} name="itemDate" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Date</FormLabel>
+                          <FormLabel>{t("date")}</FormLabel>
                           <FormControl><Input type="date" {...field} data-testid="input-item-date" /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )} />
                       <FormField control={itemForm.control} name="category" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Category</FormLabel>
+                          <FormLabel>{t("category")}</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                             <SelectContent>
-                              <SelectItem value="service">Service</SelectItem>
-                              <SelectItem value="medicine">Medicine</SelectItem>
-                              <SelectItem value="supporting">Supporting</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
+                              <SelectItem value="service">{t("catService")}</SelectItem>
+                              <SelectItem value="medicine">{t("catMedicine")}</SelectItem>
+                              <SelectItem value="supporting">{t("catSupporting")}</SelectItem>
+                              <SelectItem value="other">{t("catOther")}</SelectItem>
                             </SelectContent>
                           </Select>
                         </FormItem>
                       )} />
                       <FormField control={itemForm.control} name="name" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Name</FormLabel>
-                          <FormControl><Input {...field} placeholder="Item name" data-testid="input-item-name" /></FormControl>
+                          <FormLabel>{t("name")}</FormLabel>
+                          <FormControl><Input {...field} data-testid="input-item-name" /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )} />
                       <FormField control={itemForm.control} name="description" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Description</FormLabel>
+                          <FormLabel>{t("description")}</FormLabel>
                           <FormControl><Input {...field} data-testid="input-item-desc" /></FormControl>
                         </FormItem>
                       )} />
                       <div className="flex gap-3">
                         <FormField control={itemForm.control} name="quantity" render={({ field }) => (
                           <FormItem className="flex-1">
-                            <FormLabel>Quantity</FormLabel>
+                            <FormLabel>{t("quantity")}</FormLabel>
                             <FormControl><Input type="number" step="0.01" min="0" {...field} data-testid="input-item-qty" /></FormControl>
                             <FormMessage />
                           </FormItem>
                         )} />
                         <FormField control={itemForm.control} name="unitPrice" render={({ field }) => (
                           <FormItem className="flex-1">
-                            <FormLabel>Unit price (Rp)</FormLabel>
+                            <FormLabel>{t("unitPrice")}</FormLabel>
                             <FormControl><Input type="number" min="0" {...field} data-testid="input-item-price" /></FormControl>
                             <FormMessage />
                           </FormItem>
                         )} />
                       </div>
                       <Button type="submit" className="w-full" disabled={addItem.isPending} data-testid="btn-submit-item">
-                        {addItem.isPending ? "Adding..." : "Add item"}
+                        {addItem.isPending ? t("addingItem") : t("addItem")}
                       </Button>
                     </form>
                   </Form>
@@ -428,7 +425,7 @@ export default function VisitDetailPage() {
             )}
           </CardHeader>
           <CardContent className="pb-4">
-            {dateGroups.length === 0 && <p className="text-sm text-muted-foreground text-center py-3">No items yet</p>}
+            {dateGroups.length === 0 && <p className="text-sm text-muted-foreground text-center py-3">{t("noItemsYet")}</p>}
             <div className="space-y-5">
               {dateGroups.map(group => (
                 <div key={group.date}>
@@ -457,7 +454,7 @@ export default function VisitDetailPage() {
                             disabled={togglingId === item.id}
                             className="shrink-0 text-muted-foreground hover:text-primary transition-colors"
                             data-testid={`btn-toggle-paid-${item.id}`}
-                            title={item.isPaid ? "Mark as billed" : "Mark as paid directly"}
+                            title={item.isPaid ? t("markAsBilled") : t("markAsPaid")}
                           >
                             {item.isPaid
                               ? <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -467,10 +464,10 @@ export default function VisitDetailPage() {
                         )}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <Badge variant="outline" className="text-xs">{CATEGORY_LABELS[item.category] ?? item.category}</Badge>
+                            <Badge variant="outline" className="text-xs">{categoryLabels[item.category] ?? item.category}</Badge>
                             <span className={cn("text-sm font-medium truncate", item.isPaid && "line-through")}>{item.name}</span>
                             {item.isPaid && (
-                              <Badge variant="secondary" className="text-xs text-green-700 bg-green-100">Paid</Badge>
+                              <Badge variant="secondary" className="text-xs text-green-700 bg-green-100">{t("paidBadge")}</Badge>
                             )}
                           </div>
                           {item.description && <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>}
@@ -495,49 +492,49 @@ export default function VisitDetailPage() {
         {v.type === "inpatient" && (
           <Card>
             <CardHeader className="pb-3 flex-row items-center justify-between">
-              <CardTitle className="text-sm">Daily reports</CardTitle>
+              <CardTitle className="text-sm">{t("dailyReports")}</CardTitle>
               {isVet && (
                 <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button size="sm" variant="outline" data-testid="btn-add-report"><Plus className="h-4 w-4 mr-1" />Add</Button>
+                    <Button size="sm" variant="outline" data-testid="btn-add-report"><Plus className="h-4 w-4 mr-1" />{t("add")}</Button>
                   </DialogTrigger>
                   <DialogContent>
-                    <DialogHeader><DialogTitle>Add daily report</DialogTitle></DialogHeader>
+                    <DialogHeader><DialogTitle>{t("addDailyReport")}</DialogTitle></DialogHeader>
                     <Form {...reportForm}>
                       <form onSubmit={reportForm.handleSubmit(addDailyReport)} className="space-y-4 pt-2">
                         <FormField control={reportForm.control} name="reportDate" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Date</FormLabel>
+                            <FormLabel>{t("date")}</FormLabel>
                             <FormControl><Input type="date" {...field} data-testid="input-report-date" /></FormControl>
                             <FormMessage />
                           </FormItem>
                         )} />
                         <FormField control={reportForm.control} name="condition" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Condition</FormLabel>
-                            <FormControl><Textarea {...field} rows={2} placeholder="Patient's condition today..." data-testid="input-condition" /></FormControl>
+                            <FormLabel>{t("reportCondition")}</FormLabel>
+                            <FormControl><Textarea {...field} rows={2} data-testid="input-condition" /></FormControl>
                           </FormItem>
                         )} />
                         <FormField control={reportForm.control} name="treatment" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Treatment</FormLabel>
-                            <FormControl><Textarea {...field} rows={2} placeholder="Treatments administered..." data-testid="input-treatment" /></FormControl>
+                            <FormLabel>{t("reportTreatment")}</FormLabel>
+                            <FormControl><Textarea {...field} rows={2} data-testid="input-treatment" /></FormControl>
                           </FormItem>
                         )} />
                         <FormField control={reportForm.control} name="notes" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Notes</FormLabel>
+                            <FormLabel>{t("notes")}</FormLabel>
                             <FormControl><Textarea {...field} rows={2} data-testid="input-report-notes" /></FormControl>
                           </FormItem>
                         )} />
                         <FormField control={reportForm.control} name="cost" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Cost (Rp)</FormLabel>
+                            <FormLabel>{t("reportCost")}</FormLabel>
                             <FormControl><Input type="number" min="0" {...field} data-testid="input-report-cost" /></FormControl>
                           </FormItem>
                         )} />
                         <Button type="submit" className="w-full" disabled={createReport.isPending} data-testid="btn-submit-report">
-                          {createReport.isPending ? "Adding..." : "Add report"}
+                          {createReport.isPending ? t("addingReport") : t("addReport")}
                         </Button>
                       </form>
                     </Form>
@@ -546,7 +543,7 @@ export default function VisitDetailPage() {
               )}
             </CardHeader>
             <CardContent className="pb-4">
-              {reports.length === 0 && <p className="text-sm text-muted-foreground text-center py-3">No reports yet</p>}
+              {reports.length === 0 && <p className="text-sm text-muted-foreground text-center py-3">{t("noReportsYet")}</p>}
               <div className="space-y-3">
                 {reports.map((r: any) => (
                   isVet ? (
@@ -555,7 +552,7 @@ export default function VisitDetailPage() {
                         <CardContent className="py-3">
                           <p className="text-xs font-semibold text-primary">{formatDate(r.reportDate)}</p>
                           <p className="text-sm mt-1 text-foreground">{r.condition ?? "—"}</p>
-                          {r.cost > 0 && <p className="text-xs text-muted-foreground mt-1">Cost: Rp {r.cost.toLocaleString("id-ID")}</p>}
+                          {r.cost > 0 && <p className="text-xs text-muted-foreground mt-1">Rp {r.cost.toLocaleString("id-ID")}</p>}
                         </CardContent>
                       </Card>
                     </Link>
@@ -566,13 +563,13 @@ export default function VisitDetailPage() {
                         {r.condition && <p className="text-sm mt-1">{r.condition}</p>}
                         {r.treatment && (
                           <div className="mt-2">
-                            <p className="text-xs text-muted-foreground">Treatment</p>
+                            <p className="text-xs text-muted-foreground">{t("reportTreatment")}</p>
                             <p className="text-sm">{r.treatment}</p>
                           </div>
                         )}
                         {r.notes && (
                           <div className="mt-2">
-                            <p className="text-xs text-muted-foreground">Notes</p>
+                            <p className="text-xs text-muted-foreground">{t("notes")}</p>
                             <p className="text-sm">{r.notes}</p>
                           </div>
                         )}
@@ -585,7 +582,7 @@ export default function VisitDetailPage() {
           </Card>
         )}
 
-        <BillingSummary v={v} isVet={isVet} />
+        <BillingSummary v={v} />
       </div>
     </AppShell>
   );

@@ -3,34 +3,36 @@ import { useLocation, Link } from "wouter";
 import { Home, PawPrint, Stethoscope, Building2, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/contexts/RoleContext";
-
-const petOwnerNav = [
-  { href: "/dashboard", icon: Home, label: "Home" },
-  { href: "/pets", icon: PawPrint, label: "Pets" },
-  { href: "/settings", icon: Settings, label: "Settings" },
-];
-
-const vetNav = [
-  { href: "/vet", icon: Stethoscope, label: "Clinic" },
-  { href: "/settings", icon: Settings, label: "Settings" },
-];
-
-const vetOwnerNav = [
-  { href: "/vet", icon: Stethoscope, label: "Clinic" },
-  { href: "/clinic", icon: Building2, label: "Manage" },
-  { href: "/settings", icon: Settings, label: "Settings" },
-];
-
-const PET_PATHS = ["/dashboard", "/pets"];
-const VET_PATHS = ["/vet", "/clinic"];
+import { useLang } from "@/contexts/LangContext";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const me = useGetMe();
   const { activeRole, setActiveRole, hasBothRoles, canSwitchToVet, canSwitchToPetOwner } = useRole();
   const [location, navigate] = useLocation();
+  const { t } = useLang();
 
   const user = me.data;
   const isVetOwner = !!user?.isVetOwner;
+
+  const petOwnerNav = [
+    { href: "/dashboard", icon: Home, label: t("nav_home") },
+    { href: "/pets", icon: PawPrint, label: t("nav_pets") },
+    { href: "/settings", icon: Settings, label: t("nav_settings") },
+  ];
+
+  const vetNav = [
+    { href: "/vet", icon: Stethoscope, label: t("nav_clinic") },
+    { href: "/settings", icon: Settings, label: t("nav_settings") },
+  ];
+
+  const vetOwnerNav = [
+    { href: "/vet", icon: Stethoscope, label: t("nav_clinic") },
+    { href: "/clinic", icon: Building2, label: t("nav_manage") },
+    { href: "/settings", icon: Settings, label: t("nav_settings") },
+  ];
+
+  const PET_PATHS = ["/dashboard", "/pets"];
+  const VET_PATHS = ["/vet", "/clinic"];
 
   let navItems = petOwnerNav;
   if (activeRole === "vet") {
@@ -75,7 +77,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 )}
               >
                 <PawPrint className="h-3.5 w-3.5" />
-                My pets
+                {t("role_myPets")}
               </button>
               <button
                 onClick={() => switchRole("vet")}
@@ -88,7 +90,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 )}
               >
                 <Stethoscope className="h-3.5 w-3.5" />
-                Clinic
+                {t("role_clinic")}
               </button>
             </div>
           </div>
@@ -111,7 +113,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={href}
                 href={href}
-                data-testid={`nav-${label.toLowerCase()}`}
+                data-testid={`nav-${href.replace("/", "").replace("/", "-")}`}
                 className={cn(
                   "flex flex-col items-center gap-1 px-4 py-3 min-w-0 flex-1 text-xs font-medium transition-colors",
                   active

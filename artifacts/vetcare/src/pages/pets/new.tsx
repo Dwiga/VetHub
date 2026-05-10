@@ -12,10 +12,11 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { useLang } from "@/contexts/LangContext";
 
 const schema = z.object({
-  name: z.string().min(1, "Pet name is required"),
-  speciesId: z.string().min(1, "Species is required"),
+  name: z.string().min(1),
+  speciesId: z.string().min(1),
   dateOfBirth: z.string().optional(),
   gender: z.enum(["male", "female", "unknown"]),
   sterilized: z.boolean(),
@@ -28,6 +29,7 @@ export default function NewPetPage() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useLang();
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -46,29 +48,29 @@ export default function NewPetPage() {
       },
     });
     queryClient.invalidateQueries({ queryKey: getListMyPetsQueryKey() });
-    toast({ title: `${pet.name} added successfully` });
+    toast({ title: `${pet.name} ${t("petAdded")}` });
     setLocation(`/pets/${pet.id}`);
   }
 
   return (
     <AppShell>
-      <PageHeader title="Add pet" back />
+      <PageHeader title={t("addPetTitle")} back />
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
           <FormField control={form.control} name="name" render={({ field }) => (
             <FormItem>
-              <FormLabel>Pet name</FormLabel>
-              <FormControl><Input {...field} placeholder="e.g. Mochi" data-testid="input-pet-name" /></FormControl>
+              <FormLabel>{t("petName")}</FormLabel>
+              <FormControl><Input {...field} placeholder={t("petNamePlaceholder")} data-testid="input-pet-name" /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
           <FormField control={form.control} name="speciesId" render={({ field }) => (
             <FormItem>
-              <FormLabel>Species</FormLabel>
+              <FormLabel>{t("species")}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger data-testid="select-species">
-                    <SelectValue placeholder="Select species" />
+                    <SelectValue placeholder={t("selectSpecies")} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -82,14 +84,14 @@ export default function NewPetPage() {
           )} />
           <FormField control={form.control} name="dateOfBirth" render={({ field }) => (
             <FormItem>
-              <FormLabel>Date of birth</FormLabel>
+              <FormLabel>{t("dateOfBirth")}</FormLabel>
               <FormControl><Input type="date" {...field} data-testid="input-dob" /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
           <FormField control={form.control} name="gender" render={({ field }) => (
             <FormItem>
-              <FormLabel>Gender</FormLabel>
+              <FormLabel>{t("gender")}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger data-testid="select-gender">
@@ -97,9 +99,9 @@ export default function NewPetPage() {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="unknown">Unknown</SelectItem>
+                  <SelectItem value="male">{t("male")}</SelectItem>
+                  <SelectItem value="female">{t("female")}</SelectItem>
+                  <SelectItem value="unknown">{t("unknown")}</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -107,21 +109,21 @@ export default function NewPetPage() {
           )} />
           <FormField control={form.control} name="color" render={({ field }) => (
             <FormItem>
-              <FormLabel>Color / markings</FormLabel>
-              <FormControl><Input {...field} placeholder="e.g. White with black spots" data-testid="input-color" /></FormControl>
+              <FormLabel>{t("colorMarkings")}</FormLabel>
+              <FormControl><Input {...field} placeholder={t("colorPlaceholder")} data-testid="input-color" /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
           <FormField control={form.control} name="sterilized" render={({ field }) => (
             <FormItem className="flex items-center justify-between">
-              <FormLabel className="mb-0">Sterilized</FormLabel>
+              <FormLabel className="mb-0">{t("sterilized")}</FormLabel>
               <FormControl>
                 <Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-sterilized" />
               </FormControl>
             </FormItem>
           )} />
           <Button type="submit" className="w-full" disabled={createPet.isPending} data-testid="btn-submit">
-            {createPet.isPending ? "Adding..." : "Add pet"}
+            {createPet.isPending ? t("addingPet") : t("addPetTitle")}
           </Button>
         </form>
       </Form>

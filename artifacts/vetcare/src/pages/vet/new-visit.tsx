@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useLang } from "@/contexts/LangContext";
 
 const schema = z.object({
   type: z.enum(["inpatient", "outpatient"]),
@@ -29,6 +30,7 @@ export default function NewVisitPage() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useLang();
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -43,7 +45,7 @@ export default function NewVisitPage() {
   async function onSubmit(values: z.infer<typeof schema>) {
     const clinicId = me.data?.clinicId;
     if (!clinicId) {
-      toast({ title: "No clinic assigned", variant: "destructive" });
+      toast({ title: t("noClinicAssigned"), variant: "destructive" });
       return;
     }
     const visit = await createVisit.mutateAsync({
@@ -58,7 +60,7 @@ export default function NewVisitPage() {
       },
     });
     queryClient.invalidateQueries({ queryKey: getListVisitsQueryKey(id) });
-    toast({ title: "Visit created" });
+    toast({ title: t("visitSaved") });
     setLocation(`/vet/visits/${visit.id}`);
   }
 
@@ -67,7 +69,7 @@ export default function NewVisitPage() {
   return (
     <AppShell>
       <PageHeader
-        title="New visit"
+        title={t("newVisit")}
         subtitle={p ? `${p.name} — ${p.speciesName}` : "..."}
         back
       />
@@ -75,14 +77,14 @@ export default function NewVisitPage() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
           <FormField control={form.control} name="type" render={({ field }) => (
             <FormItem>
-              <FormLabel>Visit type</FormLabel>
+              <FormLabel>{t("visitType")}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger data-testid="select-type"><SelectValue /></SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="outpatient">Outpatient</SelectItem>
-                  <SelectItem value="inpatient">Inpatient (hospitalization)</SelectItem>
+                  <SelectItem value="outpatient">{t("outpatient")}</SelectItem>
+                  <SelectItem value="inpatient">{t("inpatient")}</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -90,25 +92,25 @@ export default function NewVisitPage() {
           )} />
           <FormField control={form.control} name="visitDate" render={({ field }) => (
             <FormItem>
-              <FormLabel>Visit date</FormLabel>
+              <FormLabel>{t("visitDate")}</FormLabel>
               <FormControl><Input type="date" {...field} data-testid="input-date" /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
           <FormField control={form.control} name="anamnesis" render={({ field }) => (
             <FormItem>
-              <FormLabel>Anamnesis</FormLabel>
-              <FormControl><Textarea {...field} rows={3} placeholder="Patient history and complaints..." data-testid="input-anamnesis" /></FormControl>
+              <FormLabel>{t("anamnesis")}</FormLabel>
+              <FormControl><Textarea {...field} rows={3} placeholder={t("anamnesisPlaceholder")} data-testid="input-anamnesis" /></FormControl>
             </FormItem>
           )} />
           <FormField control={form.control} name="therapy" render={({ field }) => (
             <FormItem>
-              <FormLabel>Initial therapy</FormLabel>
-              <FormControl><Textarea {...field} rows={3} placeholder="Planned treatments..." data-testid="input-therapy" /></FormControl>
+              <FormLabel>{t("initialTherapy")}</FormLabel>
+              <FormControl><Textarea {...field} rows={3} placeholder={t("therapyPlaceholder")} data-testid="input-therapy" /></FormControl>
             </FormItem>
           )} />
           <Button type="submit" className="w-full" disabled={createVisit.isPending} data-testid="btn-submit">
-            {createVisit.isPending ? "Creating..." : "Create visit"}
+            {createVisit.isPending ? t("creatingVisit") : t("createVisit")}
           </Button>
         </form>
       </Form>

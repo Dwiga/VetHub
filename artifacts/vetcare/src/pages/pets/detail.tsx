@@ -21,19 +21,21 @@ import { format } from "date-fns";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRole } from "@/contexts/RoleContext";
+import { useLang } from "@/contexts/LangContext";
 
 function MonitoringCharts({ petId }: { petId: number }) {
   const monitoring = useListMonitoring(petId, { query: { queryKey: ["monitoring", petId] } });
   const records = [...(monitoring.data ?? [])].reverse();
+  const { t } = useLang();
 
   if (monitoring.isLoading) return <div className="h-40 bg-muted animate-pulse rounded-xl" />;
   if (records.length === 0) return (
     <Card>
       <CardContent className="py-8 flex flex-col items-center gap-2">
         <Activity className="h-8 w-8 text-muted-foreground/40" />
-        <p className="text-sm text-muted-foreground">No monitoring records yet</p>
+        <p className="text-sm text-muted-foreground">{t("noMonitoringRecords")}</p>
         <Button asChild size="sm" variant="outline" data-testid="btn-add-monitoring-empty">
-          <Link href={`/pets/${petId}/monitoring/new`}>Add record</Link>
+          <Link href={`/pets/${petId}/monitoring/new`}>{t("addRecord")}</Link>
         </Button>
       </CardContent>
     </Card>
@@ -87,10 +89,11 @@ function MonitoringCharts({ petId }: { petId: number }) {
 function VisitHistory({ petId }: { petId: number }) {
   const visits = useListVisits(petId, { query: { queryKey: ["visits", petId] } });
   const visitList = visits.data ?? [];
+  const { t } = useLang();
 
   if (visits.isLoading) return <div className="h-20 bg-muted animate-pulse rounded-xl" />;
   if (visitList.length === 0) return (
-    <p className="text-sm text-muted-foreground text-center py-4">No visit history yet</p>
+    <p className="text-sm text-muted-foreground text-center py-4">{t("noVisitHistory")}</p>
   );
 
   return (
@@ -102,7 +105,7 @@ function VisitHistory({ petId }: { petId: number }) {
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-foreground">{v.visitDate}</p>
-                  <p className="text-xs text-muted-foreground truncate">{v.vetName ?? "No vet assigned"}</p>
+                  <p className="text-xs text-muted-foreground truncate">{v.vetName ?? t("noVetAssigned")}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <StatusBadge status={v.type ?? "outpatient"} />
@@ -137,6 +140,7 @@ function VaccinationSection({ petId }: { petId: number }) {
   const { activeRole } = useRole();
   const isVet = activeRole === "vet";
   const qc = useQueryClient();
+  const { t } = useLang();
   const vaccinationsQuery = useListVaccinations(petId, { query: { queryKey: getListVaccinationsQueryKey(petId) } });
   const addMutation = useAddVaccination();
   const deleteMutation = useDeleteVaccination();
@@ -171,7 +175,7 @@ function VaccinationSection({ petId }: { petId: number }) {
   }
 
   async function handleDelete(vaccinationId: number) {
-    if (!confirm("Delete this vaccination record?")) return;
+    if (!confirm(t("deleteVaccinationConfirm"))) return;
     await deleteMutation.mutateAsync({ vaccinationId });
     await qc.invalidateQueries({ queryKey: getListVaccinationsQueryKey(petId) });
   }
@@ -179,40 +183,40 @@ function VaccinationSection({ petId }: { petId: number }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-foreground text-sm">Vaccination records</h2>
+        <h2 className="font-semibold text-foreground text-sm">{t("vaccinationRecords")}</h2>
         {isVet && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button size="sm" variant="outline" data-testid="btn-add-vaccination">
-                <Plus className="h-4 w-4 mr-1" />Add
+                <Plus className="h-4 w-4 mr-1" />{t("add")}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-sm mx-auto">
               <DialogHeader>
-                <DialogTitle>Add vaccination</DialogTitle>
+                <DialogTitle>{t("addVaccination")}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-3 pt-1">
                 <div className="space-y-1">
-                  <Label htmlFor="vaccineName">Vaccine name *</Label>
+                  <Label htmlFor="vaccineName">{t("vaccineName")} *</Label>
                   <Input id="vaccineName" name="vaccineName" value={form.vaccineName} onChange={handleChange} placeholder="e.g. Rabies, DHPP" required />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="brand">Brand / manufacturer</Label>
+                  <Label htmlFor="brand">{t("brand")}</Label>
                   <Input id="brand" name="brand" value={form.brand} onChange={handleChange} placeholder="e.g. Nobivac" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label htmlFor="date">Date given *</Label>
+                    <Label htmlFor="date">{t("dateGiven")} *</Label>
                     <Input id="date" name="date" type="date" value={form.date} onChange={handleChange} required />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="nextDueDate">Next due date</Label>
+                    <Label htmlFor="nextDueDate">{t("nextDueDateLabel")}</Label>
                     <Input id="nextDueDate" name="nextDueDate" type="date" value={form.nextDueDate} onChange={handleChange} />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label htmlFor="batchNumber">Batch no.</Label>
+                    <Label htmlFor="batchNumber">{t("batchNo")}</Label>
                     <Input id="batchNumber" name="batchNumber" value={form.batchNumber} onChange={handleChange} placeholder="Optional" />
                   </div>
                   <div className="space-y-1">
@@ -221,15 +225,15 @@ function VaccinationSection({ petId }: { petId: number }) {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="administeredBy">Administered by</Label>
+                  <Label htmlFor="administeredBy">{t("administeredBy")}</Label>
                   <Input id="administeredBy" name="administeredBy" value={form.administeredBy} onChange={handleChange} placeholder="Vet name or clinic" />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea id="notes" name="notes" value={form.notes} onChange={handleChange} placeholder="Any additional notes..." rows={2} />
+                  <Label htmlFor="notes">{t("notes")}</Label>
+                  <Textarea id="notes" name="notes" value={form.notes} onChange={handleChange} rows={2} />
                 </div>
                 <Button type="submit" className="w-full" disabled={addMutation.isPending}>
-                  {addMutation.isPending ? "Saving..." : "Save vaccination"}
+                  {addMutation.isPending ? t("saving") : t("saveVaccination")}
                 </Button>
               </form>
             </DialogContent>
@@ -243,9 +247,9 @@ function VaccinationSection({ petId }: { petId: number }) {
         <Card>
           <CardContent className="py-8 flex flex-col items-center gap-2">
             <Syringe className="h-8 w-8 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">No vaccination records yet</p>
+            <p className="text-sm text-muted-foreground">{t("noVaccinationRecords")}</p>
             {isVet && (
-              <p className="text-xs text-muted-foreground">Use the Add button to log vaccines, including past records from the vaccine book</p>
+              <p className="text-xs text-muted-foreground text-center">{t("vaccinationTip")}</p>
             )}
           </CardContent>
         </Card>
@@ -259,14 +263,14 @@ function VaccinationSection({ petId }: { petId: number }) {
                     <p className="text-sm font-semibold text-foreground">{v.vaccineName}</p>
                     {v.brand && <p className="text-xs text-muted-foreground">{v.brand}</p>}
                     <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-                      <span>Given: <span className="text-foreground font-medium">{v.date}</span></span>
+                      <span>{t("givenLabel")} <span className="text-foreground font-medium">{v.date}</span></span>
                       {v.nextDueDate && (
-                        <span>Next due: <span className="text-foreground font-medium">{v.nextDueDate}</span></span>
+                        <span>{t("nextDueLabel")} <span className="text-foreground font-medium">{v.nextDueDate}</span></span>
                       )}
                     </div>
                     <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-                      {v.administeredBy && <span>By: {v.administeredBy}</span>}
-                      {v.batchNumber && <span>Batch: {v.batchNumber}</span>}
+                      {v.administeredBy && <span>{t("byLabel")} {v.administeredBy}</span>}
+                      {v.batchNumber && <span>{t("batchLabel")} {v.batchNumber}</span>}
                       {v.cost != null && v.cost > 0 && (
                         <span>Rp {(v.cost as number).toLocaleString("id-ID")}</span>
                       )}
@@ -299,6 +303,7 @@ export default function PetDetailPage() {
   const { petId } = useParams<{ petId: string }>();
   const id = parseInt(petId);
   const pet = useGetPet(id, { query: { queryKey: getGetPetQueryKey(id) } });
+  const { t } = useLang();
   const p = pet.data;
 
   if (pet.isLoading) return (
@@ -310,11 +315,18 @@ export default function PetDetailPage() {
     </AppShell>
   );
 
-  if (!p) return <AppShell><p className="text-center text-muted-foreground pt-8">Pet not found</p></AppShell>;
+  if (!p) return <AppShell><p className="text-center text-muted-foreground pt-8">{t("petNotFound")}</p></AppShell>;
 
   const age = p.dateOfBirth
-    ? `${Math.floor((Date.now() - new Date(p.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))} yrs`
+    ? `${Math.floor((Date.now() - new Date(p.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))} ${t("ageUnit")}`
     : null;
+
+  const infoRows = [
+    [t("gender"), p.gender],
+    [t("dateOfBirth"), age],
+    [t("colorMarkings"), p.color],
+    ["Owner", p.ownerName],
+  ].filter(([, v]) => v) as [string, string][];
 
   return (
     <AppShell>
@@ -345,17 +357,12 @@ export default function PetDetailPage() {
                 <div className="flex items-center gap-2 mb-2">
                   <StatusBadge status={p.status ?? "healthy"} />
                   {p.sterilized && (
-                    <span className="text-xs bg-muted text-muted-foreground rounded-full px-2 py-0.5">Sterilized</span>
+                    <span className="text-xs bg-muted text-muted-foreground rounded-full px-2 py-0.5">{t("sterilized")}</span>
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-y-1 text-sm">
-                  {[
-                    ["Gender", p.gender],
-                    ["Age", age],
-                    ["Color", p.color],
-                    ["Owner", p.ownerName],
-                  ].filter(([, v]) => v).map(([label, value]) => (
-                    <div key={label as string}>
+                  {infoRows.map(([label, value]) => (
+                    <div key={label}>
                       <span className="text-muted-foreground text-xs">{label}</span>
                       <p className="font-medium text-xs truncate">{value}</p>
                     </div>
@@ -367,9 +374,9 @@ export default function PetDetailPage() {
         </Card>
 
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-foreground text-sm">Health monitoring</h2>
+          <h2 className="font-semibold text-foreground text-sm">{t("healthMonitoring")}</h2>
           <Button asChild size="sm" variant="outline" data-testid="btn-add-monitoring">
-            <Link href={`/pets/${id}/monitoring/new`}><Plus className="h-4 w-4 mr-1" />Record</Link>
+            <Link href={`/pets/${id}/monitoring/new`}><Plus className="h-4 w-4 mr-1" />{t("record")}</Link>
           </Button>
         </div>
         <MonitoringCharts petId={id} />
@@ -377,7 +384,7 @@ export default function PetDetailPage() {
         <VaccinationSection petId={id} />
 
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-foreground text-sm">Visit history</h2>
+          <h2 className="font-semibold text-foreground text-sm">{t("visitHistory")}</h2>
         </div>
         <VisitHistory petId={id} />
       </div>

@@ -2,7 +2,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/shared/PageHeader";
 import {
   useGetMe, useGetMyClinic, useListStaff, useUpdateClinic, useInviteStaff, useRemoveStaff,
-  useListProducts, useCreateProduct, useUpdateProduct, useDeleteProduct,
+  useListProducts, useCreateProduct, useDeleteProduct,
   getGetMyClinicQueryKey, getListStaffQueryKey, getListProductsQueryKey
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -19,8 +19,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, User, Building2, Package, BarChart2 } from "lucide-react";
+import { Plus, Trash2, User, Building2, Package } from "lucide-react";
 import { useLocation } from "wouter";
+import { useLang } from "@/contexts/LangContext";
 
 const clinicSchema = z.object({
   name: z.string().min(1),
@@ -30,7 +31,7 @@ const clinicSchema = z.object({
 });
 
 const staffSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  name: z.string().min(1),
   email: z.string().optional(),
   phone: z.string().optional(),
 });
@@ -49,6 +50,7 @@ export default function ClinicPage() {
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useLang();
   const user = me.data;
   const clinicId = user?.clinicId;
 
@@ -89,7 +91,7 @@ export default function ClinicPage() {
     if (!clinicId) return;
     await updateClinic.mutateAsync({ clinicId, data: values });
     queryClient.invalidateQueries({ queryKey: getGetMyClinicQueryKey() });
-    toast({ title: "Clinic updated" });
+    toast({ title: t("clinicUpdated") });
   }
 
   async function addStaff(values: z.infer<typeof staffSchema>) {
@@ -98,14 +100,14 @@ export default function ClinicPage() {
     queryClient.invalidateQueries({ queryKey: getListStaffQueryKey(clinicId) });
     setStaffDialogOpen(false);
     staffForm.reset();
-    toast({ title: "Staff invited" });
+    toast({ title: t("staffInvited") });
   }
 
   async function deleteStaff(staffId: number) {
     if (!clinicId) return;
     await removeStaff.mutateAsync({ clinicId, staffId });
     queryClient.invalidateQueries({ queryKey: getListStaffQueryKey(clinicId) });
-    toast({ title: "Staff removed" });
+    toast({ title: t("staffRemoved") });
   }
 
   async function addProduct(values: z.infer<typeof productSchema>) {
@@ -124,13 +126,13 @@ export default function ClinicPage() {
     queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(clinicId) });
     setProductDialogOpen(false);
     productForm.reset();
-    toast({ title: "Product added" });
+    toast({ title: t("productAdded") });
   }
 
   async function removeProduct(productId: number) {
     await deleteProduct.mutateAsync({ productId });
     if (clinicId) queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(clinicId) });
-    toast({ title: "Product removed" });
+    toast({ title: t("productRemoved") });
   }
 
   if (!user?.isVetOwner && !me.isLoading) {
@@ -138,8 +140,8 @@ export default function ClinicPage() {
       <AppShell>
         <div className="pt-12 flex flex-col items-center gap-4">
           <Building2 className="h-16 w-16 text-muted-foreground/30" />
-          <p className="text-muted-foreground text-center">You need to register a clinic first.</p>
-          <Button asChild variant="outline" size="sm"><a href="/settings">Go to settings</a></Button>
+          <p className="text-muted-foreground text-center">{t("needRegisterClinic")}</p>
+          <Button asChild variant="outline" size="sm"><a href="/settings">{t("goToSettings")}</a></Button>
         </div>
       </AppShell>
     );
@@ -150,48 +152,48 @@ export default function ClinicPage() {
 
   return (
     <AppShell>
-      <PageHeader title="Clinic management" />
+      <PageHeader title={t("clinicManagement")} />
       <Tabs defaultValue="profile" onValueChange={v => { if (v === "reports") navigate("/clinic/reports"); }}>
         <TabsList className="w-full mb-5">
-          <TabsTrigger value="profile" className="flex-1" data-testid="tab-profile">Profile</TabsTrigger>
-          <TabsTrigger value="staff" className="flex-1" data-testid="tab-staff">Staff</TabsTrigger>
-          <TabsTrigger value="products" className="flex-1" data-testid="tab-products">Products</TabsTrigger>
-          <TabsTrigger value="reports" className="flex-1" data-testid="tab-reports">Reports</TabsTrigger>
+          <TabsTrigger value="profile" className="flex-1" data-testid="tab-profile">{t("profile")}</TabsTrigger>
+          <TabsTrigger value="staff" className="flex-1" data-testid="tab-staff">{t("staff")}</TabsTrigger>
+          <TabsTrigger value="products" className="flex-1" data-testid="tab-products">{t("products")}</TabsTrigger>
+          <TabsTrigger value="reports" className="flex-1" data-testid="tab-reports">{t("reports")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
           <Card>
-            <CardHeader className="pb-3"><CardTitle className="text-base">Clinic profile</CardTitle></CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base">{t("clinicProfile")}</CardTitle></CardHeader>
             <CardContent>
               <Form {...clinicForm}>
                 <form onSubmit={clinicForm.handleSubmit(saveClinic)} className="space-y-4">
                   <FormField control={clinicForm.control} name="name" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Clinic name</FormLabel>
+                      <FormLabel>{t("clinicNameLabel")}</FormLabel>
                       <FormControl><Input {...field} data-testid="input-clinic-name" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={clinicForm.control} name="address" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Address</FormLabel>
+                      <FormLabel>{t("addressLabel")}</FormLabel>
                       <FormControl><Input {...field} data-testid="input-address" /></FormControl>
                     </FormItem>
                   )} />
                   <FormField control={clinicForm.control} name="phone" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone</FormLabel>
+                      <FormLabel>{t("phone")}</FormLabel>
                       <FormControl><Input {...field} data-testid="input-phone" /></FormControl>
                     </FormItem>
                   )} />
                   <FormField control={clinicForm.control} name="email" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{t("email")}</FormLabel>
                       <FormControl><Input {...field} data-testid="input-email" /></FormControl>
                     </FormItem>
                   )} />
                   <Button type="submit" className="w-full" disabled={updateClinic.isPending} data-testid="btn-save-clinic">
-                    {updateClinic.isPending ? "Saving..." : "Save changes"}
+                    {updateClinic.isPending ? t("saving") : t("save")}
                   </Button>
                 </form>
               </Form>
@@ -201,37 +203,39 @@ export default function ClinicPage() {
 
         <TabsContent value="staff" className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">{staffList.length} staff member{staffList.length !== 1 ? "s" : ""}</p>
+            <p className="text-sm text-muted-foreground">
+              {staffList.length} {staffList.length === 1 ? t("staffMemberSingular") : t("staffMemberPlural")}
+            </p>
             <Dialog open={staffDialogOpen} onOpenChange={setStaffDialogOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" variant="outline" data-testid="btn-invite-staff">
-                  <Plus className="h-4 w-4 mr-1" />Invite
+                  <Plus className="h-4 w-4 mr-1" />{t("invite")}
                 </Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Invite staff</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{t("inviteStaff")}</DialogTitle></DialogHeader>
                 <Form {...staffForm}>
                   <form onSubmit={staffForm.handleSubmit(addStaff)} className="space-y-4 pt-2">
                     <FormField control={staffForm.control} name="name" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Name</FormLabel>
+                        <FormLabel>{t("name")}</FormLabel>
                         <FormControl><Input {...field} data-testid="input-staff-name" /></FormControl>
                       </FormItem>
                     )} />
                     <FormField control={staffForm.control} name="email" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>{t("email")}</FormLabel>
                         <FormControl><Input {...field} type="email" data-testid="input-staff-email" /></FormControl>
                       </FormItem>
                     )} />
                     <FormField control={staffForm.control} name="phone" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Phone</FormLabel>
+                        <FormLabel>{t("phone")}</FormLabel>
                         <FormControl><Input {...field} data-testid="input-staff-phone" /></FormControl>
                       </FormItem>
                     )} />
                     <Button type="submit" className="w-full" disabled={inviteStaff.isPending} data-testid="btn-submit-staff">
-                      {inviteStaff.isPending ? "Inviting..." : "Invite"}
+                      {inviteStaff.isPending ? t("inviting") : t("invite")}
                     </Button>
                   </form>
                 </Form>
@@ -265,7 +269,7 @@ export default function ClinicPage() {
               <Card>
                 <CardContent className="py-8 text-center">
                   <User className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No staff yet. Invite your first vet!</p>
+                  <p className="text-sm text-muted-foreground">{t("noStaffYet")}</p>
                 </CardContent>
               </Card>
             )}
@@ -274,33 +278,35 @@ export default function ClinicPage() {
 
         <TabsContent value="products" className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">{productList.length} product{productList.length !== 1 ? "s" : ""}</p>
+            <p className="text-sm text-muted-foreground">
+              {productList.length} {productList.length === 1 ? t("productSingular") : t("productPlural")}
+            </p>
             <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" variant="outline" data-testid="btn-add-product">
-                  <Plus className="h-4 w-4 mr-1" />Add
+                  <Plus className="h-4 w-4 mr-1" />{t("add")}
                 </Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Add product</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{t("addProduct")}</DialogTitle></DialogHeader>
                 <Form {...productForm}>
                   <form onSubmit={productForm.handleSubmit(addProduct)} className="space-y-4 pt-2">
                     <FormField control={productForm.control} name="name" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Name</FormLabel>
+                        <FormLabel>{t("name")}</FormLabel>
                         <FormControl><Input {...field} data-testid="input-product-name" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
                     <FormField control={productForm.control} name="category" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Category</FormLabel>
-                        <FormControl><Input {...field} placeholder="e.g. Medicine, Service" data-testid="input-product-category" /></FormControl>
+                        <FormLabel>{t("category")}</FormLabel>
+                        <FormControl><Input {...field} placeholder={t("categoryPlaceholder")} data-testid="input-product-category" /></FormControl>
                       </FormItem>
                     )} />
                     <FormField control={productForm.control} name="price" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Price (Rp)</FormLabel>
+                        <FormLabel>{t("price")}</FormLabel>
                         <FormControl><Input type="number" min="0" {...field} data-testid="input-product-price" /></FormControl>
                         <FormMessage />
                       </FormItem>
@@ -308,25 +314,25 @@ export default function ClinicPage() {
                     <div className="flex gap-3">
                       <FormField control={productForm.control} name="stock" render={({ field }) => (
                         <FormItem className="flex-1">
-                          <FormLabel>Stock</FormLabel>
+                          <FormLabel>{t("stock")}</FormLabel>
                           <FormControl><Input type="number" min="0" {...field} data-testid="input-product-stock" /></FormControl>
                         </FormItem>
                       )} />
                       <FormField control={productForm.control} name="unit" render={({ field }) => (
                         <FormItem className="flex-1">
-                          <FormLabel>Unit</FormLabel>
-                          <FormControl><Input {...field} placeholder="e.g. tablet" data-testid="input-product-unit" /></FormControl>
+                          <FormLabel>{t("unit")}</FormLabel>
+                          <FormControl><Input {...field} placeholder={t("unitPlaceholder")} data-testid="input-product-unit" /></FormControl>
                         </FormItem>
                       )} />
                     </div>
                     <FormField control={productForm.control} name="description" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Description</FormLabel>
+                        <FormLabel>{t("description")}</FormLabel>
                         <FormControl><Textarea {...field} rows={2} data-testid="input-product-desc" /></FormControl>
                       </FormItem>
                     )} />
                     <Button type="submit" className="w-full" disabled={createProduct.isPending} data-testid="btn-submit-product">
-                      {createProduct.isPending ? "Adding..." : "Add product"}
+                      {createProduct.isPending ? t("addingProduct") : t("addProduct")}
                     </Button>
                   </form>
                 </Form>
@@ -347,7 +353,7 @@ export default function ClinicPage() {
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Rp {(p.price ?? 0).toLocaleString("id-ID")}
-                      {p.stock != null ? ` · Stock: ${p.stock} ${p.unit ?? ""}` : ""}
+                      {p.stock != null ? ` · ${t("stockLabel")} ${p.stock} ${p.unit ?? ""}` : ""}
                     </p>
                   </div>
                   <Button
@@ -366,7 +372,7 @@ export default function ClinicPage() {
               <Card>
                 <CardContent className="py-8 text-center">
                   <Package className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No products yet</p>
+                  <p className="text-sm text-muted-foreground">{t("noProductsYet")}</p>
                 </CardContent>
               </Card>
             )}

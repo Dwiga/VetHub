@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useClerk } from "@clerk/react";
 import { Separator } from "@/components/ui/separator";
 import { normalizePhone } from "@/lib/phone";
+import { useLang, type Lang } from "@/contexts/LangContext";
+import { cn } from "@/lib/utils";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -34,6 +36,7 @@ export default function SettingsPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { signOut } = useClerk();
+  const { t, lang, setLang } = useLang();
 
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -48,51 +51,56 @@ export default function SettingsPage() {
   async function saveProfile(values: z.infer<typeof profileSchema>) {
     await updateMe.mutateAsync({ data: { ...values, phone: normalizePhone(values.phone) } });
     queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
-    toast({ title: "Profile updated" });
+    toast({ title: t("profileUpdated") });
   }
 
   async function registerPetOwner() {
     await registerAsPetOwner.mutateAsync(undefined);
     queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
-    toast({ title: "Registered as pet owner" });
+    toast({ title: t("registeredPetOwner") });
   }
 
   async function registerVet(values: z.infer<typeof vetSchema>) {
     await registerForVet.mutateAsync({ data: values });
     queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
-    toast({ title: "Clinic registered" });
+    toast({ title: t("clinicRegistered") });
   }
 
   const user = me.data;
 
+  const langs: { value: Lang; label: string }[] = [
+    { value: "en", label: t("langEn") },
+    { value: "id", label: t("langId") },
+  ];
+
   return (
     <AppShell>
-      <PageHeader title="Settings" />
+      <PageHeader title={t("settingsTitle")} />
 
       <div className="space-y-5">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Profile</CardTitle>
+            <CardTitle className="text-base">{t("profile")}</CardTitle>
           </CardHeader>
           <CardContent>
             <Form {...profileForm}>
               <form onSubmit={profileForm.handleSubmit(saveProfile)} className="space-y-4">
                 <FormField control={profileForm.control} name="name" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full name</FormLabel>
+                    <FormLabel>{t("fullName")}</FormLabel>
                     <FormControl><Input {...field} data-testid="input-name" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={profileForm.control} name="phone" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone number</FormLabel>
-                    <FormControl><Input {...field} placeholder="+62 812..." data-testid="input-phone" /></FormControl>
+                    <FormLabel>{t("phoneNumber")}</FormLabel>
+                    <FormControl><Input {...field} placeholder={t("phonePlaceholderSettings")} data-testid="input-phone" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <Button type="submit" className="w-full" disabled={updateMe.isPending} data-testid="btn-save-profile">
-                  {updateMe.isPending ? "Saving..." : "Save changes"}
+                  {updateMe.isPending ? t("saving") : t("save")}
                 </Button>
               </form>
             </Form>
@@ -101,52 +109,77 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Account roles</CardTitle>
+            <CardTitle className="text-base">{t("language")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground mb-3">{t("languageDesc")}</p>
+            <div className="flex gap-2">
+              {langs.map(l => (
+                <button
+                  key={l.value}
+                  onClick={() => setLang(l.value)}
+                  data-testid={`btn-lang-${l.value}`}
+                  className={cn(
+                    "flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all",
+                    lang === l.value
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                  )}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">{t("accountRoles")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {!user?.isPetOwner && (
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-medium">Pet owner</p>
-                  <p className="text-xs text-muted-foreground">Track your own pets</p>
+                  <p className="text-sm font-medium">{t("petOwnerRole")}</p>
+                  <p className="text-xs text-muted-foreground">{t("petOwnerRoleDesc")}</p>
                 </div>
                 <Button size="sm" variant="outline" onClick={registerPetOwner} disabled={registerAsPetOwner.isPending} data-testid="btn-register-pet-owner">
-                  {registerAsPetOwner.isPending ? "..." : "Enable"}
+                  {registerAsPetOwner.isPending ? "..." : t("enable")}
                 </Button>
               </div>
             )}
             {user?.isPetOwner && (
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-medium text-primary">Pet owner</p>
-                  <p className="text-xs text-muted-foreground">Active</p>
+                  <p className="text-sm font-medium text-primary">{t("petOwnerRole")}</p>
+                  <p className="text-xs text-muted-foreground">{t("activeLabel")}</p>
                 </div>
-                <span className="text-xs text-primary font-medium">Enabled</span>
+                <span className="text-xs text-primary font-medium">{t("enabled")}</span>
               </div>
             )}
             <Separator />
             {!user?.isVetOwner && (
               <div>
-                <p className="text-sm font-medium mb-1">Veterinary clinic</p>
-                <p className="text-xs text-muted-foreground mb-3">Register your clinic to manage visits and staff</p>
+                <p className="text-sm font-medium mb-1">{t("vetClinic")}</p>
+                <p className="text-xs text-muted-foreground mb-3">{t("vetClinicDesc")}</p>
                 <Form {...vetForm}>
                   <form onSubmit={vetForm.handleSubmit(registerVet)} className="space-y-3">
                     <FormField control={vetForm.control} name="name" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Clinic name</FormLabel>
+                        <FormLabel>{t("clinicNameLabel")}</FormLabel>
                         <FormControl><Input {...field} data-testid="input-clinic-name" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
                     <FormField control={vetForm.control} name="address" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Address</FormLabel>
+                        <FormLabel>{t("addressLabel")}</FormLabel>
                         <FormControl><Input {...field} data-testid="input-clinic-address" /></FormControl>
-                        <FormMessage />
                       </FormItem>
                     )} />
                     <Button type="submit" size="sm" className="w-full" disabled={registerForVet.isPending} data-testid="btn-register-vet">
-                      {registerForVet.isPending ? "Registering..." : "Register clinic"}
+                      {registerForVet.isPending ? t("registeringClinic") : t("registerClinicBtn")}
                     </Button>
                   </form>
                 </Form>
@@ -155,10 +188,10 @@ export default function SettingsPage() {
             {user?.isVetOwner && (
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-medium text-primary">Clinic owner</p>
-                  <p className="text-xs text-muted-foreground">Managing a clinic</p>
+                  <p className="text-sm font-medium text-primary">{t("clinicOwner")}</p>
+                  <p className="text-xs text-muted-foreground">{t("managingClinic")}</p>
                 </div>
-                <span className="text-xs text-primary font-medium">Enabled</span>
+                <span className="text-xs text-primary font-medium">{t("enabled")}</span>
               </div>
             )}
           </CardContent>
@@ -170,7 +203,7 @@ export default function SettingsPage() {
           onClick={() => signOut()}
           data-testid="btn-sign-out"
         >
-          Sign out
+          {t("signOut")}
         </Button>
       </div>
     </AppShell>
