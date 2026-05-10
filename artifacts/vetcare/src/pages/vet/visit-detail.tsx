@@ -5,6 +5,7 @@ import {
   useGetVisit, useUpdateVisit, useAddVisitItem, useDeleteVisitItem,
   useCreateDailyReport, getGetVisitQueryKey, useGetMe
 } from "@workspace/api-client-react";
+import { useRole } from "@/contexts/RoleContext";
 import { useParams, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -89,7 +90,8 @@ export default function VisitDetailPage() {
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
   const v = visit.data;
-  const isVet = me.data?.isVet || me.data?.isVetOwner;
+  const { activeRole } = useRole();
+  const isVet = activeRole === "vet";
   const today = new Date().toISOString().split("T")[0];
 
   const visitForm = useForm<z.infer<typeof visitSchema>>({
