@@ -11,6 +11,7 @@ A full-stack veterinary clinic and pet management web app for Indonesia. Connect
 - [Tech Stack](#tech-stack)
 - [Prerequisites](#prerequisites)
 - [Local Development](#local-development)
+- [Using Bun](#using-bun)
 - [Environment Variables](#environment-variables)
 - [Available Scripts](#available-scripts)
 - [Running with Docker](#running-with-docker)
@@ -28,6 +29,7 @@ A full-stack veterinary clinic and pet management web app for Indonesia. Connect
 | Auth | Clerk |
 | API contract | OpenAPI spec → Orval codegen (React Query hooks + Zod schemas) |
 | Package manager | pnpm workspaces (monorepo) |
+| JS runtime | Node.js 24 (dev) / Bun (Docker production API) |
 
 ---
 
@@ -37,6 +39,7 @@ A full-stack veterinary clinic and pet management web app for Indonesia. Connect
 - **pnpm 9+** — `npm install -g pnpm`
 - **PostgreSQL 15+** — running locally or via Docker
 - **Clerk account** — [clerk.com](https://clerk.com) (free tier works)
+- **Bun** (optional) — [bun.sh](https://bun.sh) — can replace `node`/`pnpm run` for script execution after installing deps with pnpm
 
 ---
 
@@ -89,6 +92,53 @@ If you modify `lib/api-spec/openapi.yaml`:
 ```bash
 pnpm --filter @workspace/api-spec run codegen
 ```
+
+---
+
+## Using Bun
+
+Bun is a fast, Node.js-compatible JavaScript runtime. You can use it as a drop-in replacement for `node` and `pnpm run` — but **package installation must still go through pnpm**.
+
+### Why pnpm for install, Bun for everything else?
+
+This workspace uses pnpm's `catalog:` version protocol and platform-specific package overrides in `pnpm-workspace.yaml`. Bun's package installer does not yet support these features, so `bun install` will fail. Once dependencies are installed with pnpm, Bun can run all scripts.
+
+### Install Bun
+
+```bash
+# macOS / Linux
+curl -fsSL https://bun.sh/install | bash
+
+# Or via npm
+npm install -g bun
+```
+
+### Local dev with Bun
+
+```bash
+# 1. Install dependencies — must use pnpm
+pnpm install
+
+# 2. Use bun run instead of pnpm run for scripts
+
+# API server dev (port 8080)
+bun --cwd artifacts/api-server run dev
+
+# React frontend dev server
+PORT=3000 BASE_PATH=/ bun --cwd artifacts/vetcare run dev
+
+# Push DB schema
+bun --cwd lib/db run push
+
+# Typecheck
+bun run typecheck
+```
+
+`bun run` reads the same `package.json` scripts as pnpm and uses the Bun runtime instead of Node.js — startup is noticeably faster, especially for the API server.
+
+### Bun in Docker
+
+The production API container (`api-runner` stage in `Dockerfile`) already uses `oven/bun:alpine`. The esbuild-bundled API server runs under Bun with no code changes needed — it's fully Node.js-compatible.
 
 ---
 

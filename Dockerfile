@@ -2,12 +2,19 @@
 # VetCare Pro — Multi-stage Dockerfile
 #
 # Build stages:
-#   base       — Node 24 slim (Debian) + pnpm
+#   base       — Node 24 slim (Debian) + pnpm  [build tooling]
 #   deps       — Install all workspace dependencies
 #   build-api  — Bundle the Express API server with esbuild
 #   build-web  — Build the React frontend with Vite
-#   api-runner — Minimal Node 24 Alpine image (production API)
-#   web-runner — nginx Alpine image (static frontend + reverse proxy)
+#   api-runner — oven/bun Alpine (Bun runtime, production API)
+#   web-runner — nginx Alpine (static frontend + reverse proxy)
+#
+# Runtime note:
+#   The API server runs on Bun (oven/bun:alpine) instead of Node.js.
+#   Bun is a drop-in Node.js-compatible runtime — the esbuild bundle runs
+#   unchanged, with faster startup and a smaller image footprint.
+#
+#   Package installation still uses pnpm (see bunfig.toml for why).
 #
 # Usage:
 #   docker compose up --build        (recommended — uses docker-compose.yml)
@@ -16,7 +23,9 @@
 # ────────────────────────────────────────────────────────────────────────────
 
 
-# ── Stage 1: pnpm base (Debian slim avoids musl issues with native build tools) ──
+# ── Stage 1: Build base — Node 24 slim (Debian/glibc, avoids musl issues) ────
+#    TailwindCSS v4, Rollup, and lightningcss ship glibc-only native binaries;
+#    the Alpine (musl) variants are excluded in pnpm-workspace.yaml overrides.
 FROM node:24-slim AS base
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
@@ -71,8 +80,10 @@ COPY artifacts/vetcare/ ./artifacts/vetcare/
 RUN pnpm --filter @workspace/vetcare run build
 
 
-# ── Stage 5: API server runtime (minimal Alpine) ──────────────────────────────
-FROM node:24-alpine AS api-runner
+# ── Stage 5: API server runtime (Bun on Alpine — fast startup, small image) ───
+#    oven/bun:alpine is a drop-in Node.js replacement.
+#    The esbuild bundle is fully Node-compatible and runs unchanged under Bun.
+FROM oven/bun:alpine AS api-runner
 
 WORKDIR /app
 ENV NODE_ENV=production
@@ -82,7 +93,8 @@ COPY --from=build-api /app/artifacts/api-server/dist ./dist
 
 EXPOSE 8080
 
-CMD ["node", "--enable-source-maps", "./dist/index.mjs"]
+# Bun runs the ESM bundle directly; --smol reduces memory usage on Alpine
+CMD ["bun", "--smol", "./dist/index.mjs"]
 
 
 # ── Stage 6: Frontend web server (nginx Alpine + static files) ────────────────
