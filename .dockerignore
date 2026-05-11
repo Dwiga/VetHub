@@ -1,0 +1,44 @@
+# Dependencies — reinstalled inside the image
+node_modules
+**/node_modules
+
+# Build outputs — rebuilt inside the image
+**/dist
+**/.vite
+
+# Mockup sandbox — not part of the production build
+artifacts/mockup-sandbox
+
+# Local env files — secrets must not enter the image
+.env
+.env.local
+.env.*.local
+
+# Git and editor
+.git
+.gitignore
+.github
+.vscode
+.idea
+
+# Replit workspace files
+.replit
+.config
+.cache
+.local
+
+# Attached assets and canvas state
+attached_assets
+.canvas
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs (not needed in the image)
+README.md
