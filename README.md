@@ -138,7 +138,7 @@ bun run typecheck
 
 ### Bun in Docker
 
-The production API container (`api-runner` stage in `Dockerfile`) already uses `oven/bun:alpine`. The esbuild-bundled API server runs under Bun with no code changes needed — it's fully Node.js-compatible.
+Bun is **not** used in the Docker setup — the production API container runs on `node:24-alpine` to keep things straightforward and pnpm-consistent. Bun stays a local-dev-only tool for faster script execution on your machine.
 
 ---
 
@@ -207,7 +207,7 @@ PORT=3000 BASE_PATH=/ pnpm --filter @workspace/vetcare run dev
 The Docker setup uses **Alpine-based images** to keep the footprint small. It includes:
 
 - `db` — PostgreSQL 16 (Alpine)
-- `api` — Node.js 24 (Alpine) running the Express API server
+- `api` — Node.js 24 Alpine running the Express API server (pnpm-built esbuild bundle)
 - `web` — nginx (Alpine) serving the built React frontend and proxying `/api` to the API server
 
 ### Prerequisites

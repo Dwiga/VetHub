@@ -1,20 +1,23 @@
 # ────────────────────────────────────────────────────────────────────────────
 # VetCare Pro — Multi-stage Dockerfile
 #
+# All runtime images are Alpine-based to keep the footprint small.
+#
 # Build stages:
-#   base       — Node 24 slim (Debian) + pnpm  [build tooling]
-#   deps       — Install all workspace dependencies
-#   build-api  — Bundle the Express API server with esbuild
-#   build-web  — Build the React frontend with Vite
-#   api-runner — oven/bun Alpine (Bun runtime, production API)
-#   web-runner — nginx Alpine (static frontend + reverse proxy)
+#   base       — node:24-slim (Debian/glibc) + pnpm  ← build tooling only
+#   deps       — install all workspace dependencies
+#   build-api  — bundle the Express API server with esbuild
+#   build-web  — build the React frontend with Vite
+#   api-runner — node:24-alpine  (production API server)
+#   web-runner — nginx:alpine    (static FE + /api reverse proxy)
 #
-# Runtime note:
-#   The API server runs on Bun (oven/bun:alpine) instead of Node.js.
-#   Bun is a drop-in Node.js-compatible runtime — the esbuild bundle runs
-#   unchanged, with faster startup and a smaller image footprint.
-#
-#   Package installation still uses pnpm (see bunfig.toml for why).
+# Notes:
+#   • Build stages use Debian slim because TailwindCSS v4, Rollup, and
+#     lightningcss ship glibc-only native binaries (the musl/Alpine variants
+#     are excluded in pnpm-workspace.yaml overrides).
+#   • Runtime stages are pure Alpine — the esbuild bundle needs no native
+#     deps, and nginx is statically linked, so both are safe on musl.
+#   • PostgreSQL is provided by docker-compose (postgres:16-alpine).
 #
 # Usage:
 #   docker compose up --build        (recommended — uses docker-compose.yml)
@@ -80,10 +83,8 @@ COPY artifacts/vetcare/ ./artifacts/vetcare/
 RUN pnpm --filter @workspace/vetcare run build
 
 
-# ── Stage 5: API server runtime (Bun on Alpine — fast startup, small image) ───
-#    oven/bun:alpine is a drop-in Node.js replacement.
-#    The esbuild bundle is fully Node-compatible and runs unchanged under Bun.
-FROM oven/bun:alpine AS api-runner
+# ── Stage 5: API server runtime — node:24-alpine (minimal, pnpm-managed) ─────
+FROM node:24-alpine AS api-runner
 
 WORKDIR /app
 ENV NODE_ENV=production
@@ -93,8 +94,7 @@ COPY --from=build-api /app/artifacts/api-server/dist ./dist
 
 EXPOSE 8080
 
-# Bun runs the ESM bundle directly; --smol reduces memory usage on Alpine
-CMD ["bun", "--smol", "./dist/index.mjs"]
+CMD ["node", "--enable-source-maps", "./dist/index.mjs"]
 
 
 # ── Stage 6: Frontend web server (nginx Alpine + static files) ────────────────
