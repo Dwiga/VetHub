@@ -35,6 +35,13 @@ attached_assets
 *.log
 npm-debug.log*
 pnpm-debug.log*
+bun-debug.log*
+
+# pnpm lockfile — bun.lock is used instead
+pnpm-lock.yaml
+
+# npm lockfile — generated on-the-fly inside Docker, not committed
+package-lock.json
 
 # OS
 .DS_Store
