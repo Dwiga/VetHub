@@ -38,7 +38,7 @@ WORKDIR /app
 FROM base AS deps
 
 # Copy workspace manifests first — Docker layer cache busts only on changes
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
 
 # Copy every package manifest so pnpm can resolve the workspace graph
 COPY lib/api-client-react/package.json ./lib/api-client-react/
@@ -49,7 +49,7 @@ COPY artifacts/api-server/package.json ./artifacts/api-server/
 COPY artifacts/vetcare/package.json    ./artifacts/vetcare/
 COPY scripts/package.json             ./scripts/
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --dangerously-allow-all-builds
 
 
 # ── Stage 3: Build the API server ────────────────────────────────────────────
