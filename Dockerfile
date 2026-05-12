@@ -66,11 +66,15 @@ FROM deps AS build-web
 
 # Clerk publishable key is baked into the JS bundle at build time.
 # It is intentionally public — safe to include in the image.
-ARG VITE_CLERK_PUBLISHABLE_KEY
+ARG VITE_CLERK_PUBLISHABLE_KEY=""
 ARG VITE_CLERK_PROXY_URL=""
 
 ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
 ENV VITE_CLERK_PROXY_URL=$VITE_CLERK_PROXY_URL
+ENV CLERK_SECRET_KEY="sk_test_FOPRmKS8IvIXTGck96PInlcycqfXB0Qv7BWx8a2gQn"
+ENV CLERK_PUBLISHABLE_KEY="pk_test_ZXF1YWwtYWRkZXItOTQuY2xlcmsuYWNjb3VudHMuZGV2JA"
+ENV VITE_CLERK_PUBLISHABLE_KEY=pk_test_ZXF1YWwtYWRkZXItOTQuY2xlcmsuYWNjb3VudHMuZGV2JA
+ENV SESSION_SECRET=replace-with-a-long-random-string
 
 # Required by vite.config.ts at config-evaluation time
 ENV PORT=3000

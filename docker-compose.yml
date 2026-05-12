@@ -1,5 +1,4 @@
 services:
-
   # ── PostgreSQL database ────────────────────────────────────────────────────
   db:
     image: postgres:16-alpine
@@ -28,9 +27,9 @@ services:
       NODE_ENV: production
       PORT: "8080"
       DATABASE_URL: postgres://vetcare:${POSTGRES_PASSWORD:-changeme}@db:5432/vetcare
-      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
-      CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY}
-      SESSION_SECRET: ${SESSION_SECRET}
+      CLERK_SECRET_KEY: sk_test_FOPRmKS8IvIXTGck96PInlcycqfXB0Qv7BWx8a2gQn
+      CLERK_PUBLISHABLE_KEY: pk_test_ZXF1YWwtYWRkZXItOTQuY2xlcmsuYWNjb3VudHMuZGV2JA
+      SESSION_SECRET: replace-with-a-long-random-string
     depends_on:
       db:
         condition: service_healthy
@@ -42,7 +41,7 @@ services:
       dockerfile: Dockerfile
       target: web-runner
       args:
-        VITE_CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY}
+        VITE_CLERK_PUBLISHABLE_KEY: pk_test_ZXF1YWwtYWRkZXItOTQuY2xlcmsuYWNjb3VudHMuZGV2JA
         VITE_CLERK_PROXY_URL: ${VITE_CLERK_PROXY_URL:-}
     restart: unless-stopped
     ports:
