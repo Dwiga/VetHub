@@ -27,8 +27,9 @@ services:
       NODE_ENV: production
       PORT: "8080"
       DATABASE_URL: postgres://vetcare:${POSTGRES_PASSWORD:-changeme}@db:5432/vetcare
-      CLERK_SECRET_KEY: sk_test_FOPRmKS8IvIXTGck96PInlcycqfXB0Qv7BWx8a2gQn
-      CLERK_PUBLISHABLE_KEY: pk_test_ZXF1YWwtYWRkZXItOTQuY2xlcmsuYWNjb3VudHMuZGV2JA
+      STACK_PROJECT_ID: ${STACK_PROJECT_ID:-your-project-id}
+      STACK_PUBLISHABLE_CLIENT_KEY: ${STACK_PUBLISHABLE_CLIENT_KEY:-pck_...}
+      STACK_SECRET_SERVER_KEY: ${STACK_SECRET_SERVER_KEY:-ssk_...}
       SESSION_SECRET: replace-with-a-long-random-string
     depends_on:
       db:
@@ -41,8 +42,8 @@ services:
       dockerfile: Dockerfile
       target: web-runner
       args:
-        VITE_CLERK_PUBLISHABLE_KEY: pk_test_ZXF1YWwtYWRkZXItOTQuY2xlcmsuYWNjb3VudHMuZGV2JA
-        VITE_CLERK_PROXY_URL: ${VITE_CLERK_PROXY_URL:-}
+        VITE_STACK_PROJECT_ID: ${STACK_PROJECT_ID:-your-project-id}
+        VITE_STACK_PUBLISHABLE_CLIENT_KEY: ${STACK_PUBLISHABLE_CLIENT_KEY:-pck_...}
     restart: unless-stopped
     ports:
       - "80:80"

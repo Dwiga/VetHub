@@ -1,5 +1,6 @@
 # Dependencies — reinstalled inside the image
 node_modules
+pnpm-lock.yaml
 **/node_modules
 
 # Build outputs — rebuilt inside the image

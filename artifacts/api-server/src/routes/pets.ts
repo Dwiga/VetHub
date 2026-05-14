@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
 import { usersTable, petsTable, speciesTable, monitoringTable, vaccinationsTable } from "@workspace/db";
-import { eq, desc, ilike } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { getOrCreateUser } from "./users";
+import { getStackUserId } from "../lib/auth";
 
 const router = Router();
 
@@ -20,9 +20,9 @@ async function petWithDetails(pet: typeof petsTable.$inferSelect) {
 
 // GET /api/pets
 router.get("/", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const user = await getOrCreateUser(clerkId);
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
+  const user = await getOrCreateUser(stackId);
   const pets = await db.query.petsTable.findMany({ where: eq(petsTable.ownerId, user.id), orderBy: [desc(petsTable.createdAt)] });
   const result = await Promise.all(pets.map(petWithDetails));
   res.json(result);
@@ -30,9 +30,9 @@ router.get("/", async (req, res) => {
 
 // POST /api/pets
 router.post("/", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const user = await getOrCreateUser(clerkId);
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
+  const user = await getOrCreateUser(stackId);
   const { name, dateOfBirth, gender, sterilized, color, speciesId, photoUrl } = req.body;
   if (!name || !speciesId) return res.status(400).json({ error: "Name and speciesId are required" });
   const [pet] = await db.insert(petsTable).values({
@@ -44,8 +44,8 @@ router.post("/", async (req, res) => {
 
 // GET /api/pets/:petId
 router.get("/:petId", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const pet = await db.query.petsTable.findFirst({ where: eq(petsTable.id, parseInt(req.params.petId)) });
   if (!pet) return res.status(404).json({ error: "Pet not found" });
   res.json(await petWithDetails(pet));
@@ -53,8 +53,8 @@ router.get("/:petId", async (req, res) => {
 
 // PATCH /api/pets/:petId
 router.patch("/:petId", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const petId = parseInt(req.params.petId);
   const { name, dateOfBirth, gender, sterilized, color, speciesId, photoUrl } = req.body;
   const [updated] = await db.update(petsTable).set({
@@ -72,8 +72,8 @@ router.patch("/:petId", async (req, res) => {
 
 // PATCH /api/pets/:petId/status
 router.patch("/:petId/status", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const petId = parseInt(req.params.petId);
   const { status } = req.body;
   if (!status) return res.status(400).json({ error: "Status is required" });
@@ -84,8 +84,8 @@ router.patch("/:petId/status", async (req, res) => {
 
 // GET /api/pets/:petId/monitoring
 router.get("/:petId/monitoring", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const petId = parseInt(req.params.petId);
   const records = await db.query.monitoringTable.findMany({
     where: eq(monitoringTable.petId, petId),
@@ -102,9 +102,9 @@ router.get("/:petId/monitoring", async (req, res) => {
 
 // POST /api/pets/:petId/monitoring
 router.post("/:petId/monitoring", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const user = await getOrCreateUser(clerkId);
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
+  const user = await getOrCreateUser(stackId);
   const petId = parseInt(req.params.petId);
   const { weight, height, temperature, notes } = req.body;
   const [record] = await db.insert(monitoringTable).values({
@@ -113,7 +113,7 @@ router.post("/:petId/monitoring", async (req, res) => {
     height: height !== undefined ? String(height) : undefined,
     temperature: temperature !== undefined ? String(temperature) : undefined,
     notes,
-    recordedBy: user.name ?? user.email ?? clerkId,
+    recordedBy: user.name ?? user.email ?? stackId,
   }).returning();
   res.status(201).json({
     ...record,
@@ -125,8 +125,8 @@ router.post("/:petId/monitoring", async (req, res) => {
 
 // GET /api/pets/:petId/visits
 router.get("/:petId/visits", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const petId = parseInt(req.params.petId);
   const { visitsTable, visitItemsTable, dailyReportsTable } = await import("@workspace/db");
   const visits = await db.query.visitsTable.findMany({
@@ -151,8 +151,8 @@ router.get("/:petId/visits", async (req, res) => {
 
 // POST /api/pets/:petId/visits
 router.post("/:petId/visits", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const petId = parseInt(req.params.petId);
   const { clinicId, vetId, type, anamnesis, therapy, visitDate } = req.body;
   if (!clinicId || !type) return res.status(400).json({ error: "clinicId and type are required" });
@@ -161,7 +161,6 @@ router.post("/:petId/visits", async (req, res) => {
   const [visit] = await db.insert(visitsTable).values({
     petId, clinicId, vetId, type, anamnesis, therapy, visitDate: today, status: "active",
   }).returning();
-  // Update pet status if inpatient
   if (type === "inpatient") {
     await db.update(petsTable).set({ status: "hospitalized" }).where(eq(petsTable.id, petId));
   } else {
@@ -178,8 +177,8 @@ router.post("/:petId/visits", async (req, res) => {
 
 // GET /api/pets/:petId/vaccinations
 router.get("/:petId/vaccinations", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const petId = parseInt(req.params.petId);
   const records = await db.query.vaccinationsTable.findMany({
     where: eq(vaccinationsTable.petId, petId),
@@ -190,9 +189,9 @@ router.get("/:petId/vaccinations", async (req, res) => {
 
 // POST /api/pets/:petId/vaccinations
 router.post("/:petId/vaccinations", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const user = await getOrCreateUser(clerkId);
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
+  const user = await getOrCreateUser(stackId);
   const petId = parseInt(req.params.petId);
   const { vaccineName, brand, date, nextDueDate, batchNumber, administeredBy, cost, notes } = req.body;
   if (!vaccineName || !date) return res.status(400).json({ error: "vaccineName and date are required" });

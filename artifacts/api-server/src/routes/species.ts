@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
 import { speciesTable } from "@workspace/db";
+import { getStackUserId } from "../lib/auth";
 
 const router = Router();
 
@@ -13,8 +13,8 @@ router.get("/", async (req, res) => {
 
 // POST /api/species
 router.post("/", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const { name, icon } = req.body;
   if (!name) return res.status(400).json({ error: "Name is required" });
   const [species] = await db.insert(speciesTable).values({ name, icon }).returning();

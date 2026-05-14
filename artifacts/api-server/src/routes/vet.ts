@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
 import { usersTable, petsTable, speciesTable } from "@workspace/db";
-import { eq, ilike, or, inArray } from "drizzle-orm";
+import { eq, ilike, inArray } from "drizzle-orm";
 import { getOrCreateUser } from "./users";
+import { getStackUserId } from "../lib/auth";
 import { normalizePhone, phoneVariants } from "../utils/phone";
 
 const router = Router();
@@ -21,8 +21,8 @@ async function petWithDetails(pet: typeof petsTable.$inferSelect) {
 
 // GET /api/vet/search-owner?phone=...
 router.get("/search-owner", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const phone = req.query.phone as string;
   if (!phone) return res.status(400).json({ error: "phone is required" });
   const variants = phoneVariants(phone);
@@ -39,7 +39,7 @@ router.get("/search-owner", async (req, res) => {
   else if (owner.isVet) role = "vet";
   res.json({
     owner: {
-      id: owner.id, clerkId: owner.clerkId, name: owner.name, phone: owner.phone,
+      id: owner.id, stackId: owner.stackId, name: owner.name, phone: owner.phone,
       email: owner.email, role, isPetOwner: owner.isPetOwner, isVet: owner.isVet,
       isVetOwner: owner.isVetOwner, clinicId: owner.clinicId, createdAt: owner.createdAt,
     },
@@ -47,10 +47,10 @@ router.get("/search-owner", async (req, res) => {
   });
 });
 
-// GET /api/vet/search-pet?name=...&clinicId=...
+// GET /api/vet/search-pet?name=...
 router.get("/search-pet", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const name = req.query.name as string;
   if (!name) return res.status(400).json({ error: "name is required" });
   const pets = await db.query.petsTable.findMany({ where: ilike(petsTable.name, `%${name}%`) });
@@ -68,16 +68,19 @@ router.get("/search-pet", async (req, res) => {
 
 // POST /api/vet/add-pet-for-owner
 router.post("/add-pet-for-owner", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const { ownerPhone, name, dateOfBirth, gender, sterilized, color, speciesId } = req.body;
   if (!ownerPhone || !name || !speciesId) return res.status(400).json({ error: "ownerPhone, name, speciesId required" });
   const canonicalPhone = normalizePhone(ownerPhone);
   const variants = phoneVariants(ownerPhone);
   let owner = await db.query.usersTable.findFirst({ where: inArray(usersTable.phone, variants) });
   if (!owner) {
+    // Create a placeholder user for phone-only owners (no Stack Auth account yet)
     const [created] = await db.insert(usersTable).values({
-      clerkId: `phone_${canonicalPhone}_${Date.now()}`, phone: canonicalPhone, isPetOwner: true,
+      stackId: `phone_${canonicalPhone}_${Date.now()}`,
+      phone: canonicalPhone,
+      isPetOwner: true,
     }).returning();
     owner = created;
   } else if (!owner.isPetOwner) {

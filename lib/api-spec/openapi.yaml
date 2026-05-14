@@ -898,7 +898,7 @@ components:
       type: object
       properties:
         id: { type: integer }
-        clerkId: { type: string }
+        stackId: { type: string }
         name: { type: ["string", "null"] }
         phone: { type: ["string", "null"] }
         email: { type: ["string", "null"] }
@@ -910,7 +910,7 @@ components:
         isVetOwner: { type: boolean }
         clinicId: { type: ["integer", "null"] }
         createdAt: { type: string }
-      required: [id, clerkId, role, isPetOwner, isVet, isVetOwner, createdAt]
+      required: [id, stackId, role, isPetOwner, isVet, isVetOwner, createdAt]
 
     UserProfileUpdate:
       type: object

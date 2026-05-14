@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useClerk } from "@clerk/react";
+import { useUser } from "@stackframe/react";
 import { Separator } from "@/components/ui/separator";
 import { normalizePhone } from "@/lib/phone";
 import { useLang, type Lang } from "@/contexts/LangContext";
@@ -35,7 +35,8 @@ export default function SettingsPage() {
   const registerForVet = useRegisterForVet();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { signOut } = useClerk();
+  const user = useUser({ or: "redirect" });
+  const signOut = () => user.signOut();
   const { t, lang, setLang } = useLang();
 
   const profileForm = useForm<z.infer<typeof profileSchema>>({

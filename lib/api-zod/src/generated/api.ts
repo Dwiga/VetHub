@@ -19,7 +19,7 @@ export const HealthCheckResponse = zod.object({
  */
 export const GetMeResponse = zod.object({
   id: zod.number(),
-  clerkId: zod.string(),
+  stackId: zod.string(),
   name: zod.string().nullish(),
   phone: zod.string().nullish(),
   email: zod.string().nullish(),
@@ -41,7 +41,7 @@ export const UpdateMeBody = zod.object({
 
 export const UpdateMeResponse = zod.object({
   id: zod.number(),
-  clerkId: zod.string(),
+  stackId: zod.string(),
   name: zod.string().nullish(),
   phone: zod.string().nullish(),
   email: zod.string().nullish(),
@@ -58,7 +58,7 @@ export const UpdateMeResponse = zod.object({
  */
 export const RegisterAsPetOwnerResponse = zod.object({
   id: zod.number(),
-  clerkId: zod.string(),
+  stackId: zod.string(),
   name: zod.string().nullish(),
   phone: zod.string().nullish(),
   email: zod.string().nullish(),
@@ -372,7 +372,7 @@ export const SearchPetOwnerQueryParams = zod.object({
 export const SearchPetOwnerResponse = zod.object({
   owner: zod.object({
     id: zod.number(),
-    clerkId: zod.string(),
+    stackId: zod.string(),
     name: zod.string().nullish(),
     phone: zod.string().nullish(),
     email: zod.string().nullish(),

@@ -22,14 +22,14 @@
 # Usage:
 #   docker compose up --build        (recommended — uses docker-compose.yml)
 #   docker build --target api-runner -t vetcare-api .
-#   docker build --target web-runner --build-arg VITE_CLERK_PUBLISHABLE_KEY=pk_... -t vetcare-web .
+#   docker build --target web-runner --build-arg VITE_STACK_PROJECT_ID=... --build-arg VITE_STACK_PUBLISHABLE_CLIENT_KEY=pck_... -t vetcare-web .
 # ────────────────────────────────────────────────────────────────────────────
 
 
 # ── Stage 1: Build base — Node 24 slim (Debian/glibc, avoids musl issues) ────
 #    TailwindCSS v4, Rollup, and lightningcss ship glibc-only native binaries;
 #    the Alpine (musl) variants are excluded in pnpm-workspace.yaml overrides.
-FROM node:24-slim AS base
+FROM node:24-alpine3.22  AS base
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
@@ -38,7 +38,7 @@ WORKDIR /app
 FROM base AS deps
 
 # Copy workspace manifests first — Docker layer cache busts only on changes
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
+COPY package.json pnpm-workspace.yaml tsconfig.base.json ./
 
 # Copy every package manifest so pnpm can resolve the workspace graph
 COPY lib/api-client-react/package.json ./lib/api-client-react/
@@ -65,16 +65,13 @@ RUN pnpm --filter @workspace/api-server run build
 # ── Stage 4: Build the React frontend ────────────────────────────────────────
 FROM deps AS build-web
 
-# Clerk publishable key is baked into the JS bundle at build time.
-# It is intentionally public — safe to include in the image.
-ARG VITE_CLERK_PUBLISHABLE_KEY=""
-ARG VITE_CLERK_PROXY_URL=""
+# Stack Auth keys are baked into the JS bundle at build time.
+# The publishable client key is intentionally public — safe to include in the image.
+ARG VITE_STACK_PROJECT_ID=""
+ARG VITE_STACK_PUBLISHABLE_CLIENT_KEY=""
 
-ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
-ENV VITE_CLERK_PROXY_URL=$VITE_CLERK_PROXY_URL
-ENV CLERK_SECRET_KEY="sk_test_FOPRmKS8IvIXTGck96PInlcycqfXB0Qv7BWx8a2gQn"
-ENV CLERK_PUBLISHABLE_KEY="pk_test_ZXF1YWwtYWRkZXItOTQuY2xlcmsuYWNjb3VudHMuZGV2JA"
-ENV VITE_CLERK_PUBLISHABLE_KEY=pk_test_ZXF1YWwtYWRkZXItOTQuY2xlcmsuYWNjb3VudHMuZGV2JA
+ENV VITE_STACK_PROJECT_ID=$VITE_STACK_PROJECT_ID
+ENV VITE_STACK_PUBLISHABLE_CLIENT_KEY=$VITE_STACK_PUBLISHABLE_CLIENT_KEY
 ENV SESSION_SECRET=replace-with-a-long-random-string
 
 # Required by vite.config.ts at config-evaluation time
@@ -89,7 +86,7 @@ RUN pnpm --filter @workspace/vetcare run build
 
 
 # ── Stage 5: API server runtime — node:24-alpine (minimal, pnpm-managed) ─────
-FROM node:24-alpine AS api-runner
+FROM node:24-alpine3.22  AS api-runner
 
 WORKDIR /app
 ENV NODE_ENV=production
@@ -103,7 +100,7 @@ CMD ["node", "--enable-source-maps", "./dist/index.mjs"]
 
 
 # ── Stage 6: Frontend web server (nginx Alpine + static files) ────────────────
-FROM nginx:alpine AS web-runner
+FROM nginx:alpine3.22 AS web-runner
 
 # Copy the built React SPA
 COPY --from=build-web /app/artifacts/vetcare/dist/public /var/www/html

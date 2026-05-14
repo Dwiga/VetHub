@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
 import { usersTable, petsTable, visitsTable, visitItemsTable, dailyReportsTable } from "@workspace/db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { getOrCreateUser } from "./users";
+import { getStackUserId } from "../lib/auth";
 
 const router = Router();
 
@@ -29,16 +29,14 @@ async function buildVisitDetail(visitId: number) {
     totalPrice: parseFloat(i.unitPrice) * parseFloat(i.quantity),
     isPaid: i.isPaid,
   }));
-  const formattedReports = reports.map(r => {
-    return { ...r, cost: parseFloat(r.cost), vetName: null };
-  });
+  const formattedReports = reports.map(r => ({ ...r, cost: parseFloat(r.cost), vetName: null }));
   return { ...visit, petName: pet?.name ?? null, vetName, deposit, totalCost, billedCost, items: formattedItems, dailyReports: formattedReports };
 }
 
 // GET /api/visits/:visitId
 router.get("/:visitId", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const detail = await buildVisitDetail(parseInt(req.params.visitId));
   if (!detail) return res.status(404).json({ error: "Visit not found" });
   res.json(detail);
@@ -46,8 +44,8 @@ router.get("/:visitId", async (req, res) => {
 
 // PATCH /api/visits/:visitId
 router.patch("/:visitId", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const visitId = parseInt(req.params.visitId);
   const { anamnesis, therapy, status, dischargeDate, vetId, deposit } = req.body;
   const [updated] = await db.update(visitsTable).set({
@@ -59,7 +57,6 @@ router.patch("/:visitId", async (req, res) => {
     ...(deposit !== undefined && { deposit: deposit !== null ? String(deposit) : null }),
   }).where(eq(visitsTable.id, visitId)).returning();
   if (!updated) return res.status(404).json({ error: "Visit not found" });
-  // Update pet status when visit completed
   if (status === "completed") {
     await db.update(petsTable).set({ status: "healthy" }).where(eq(petsTable.id, updated.petId));
   }
@@ -69,8 +66,8 @@ router.patch("/:visitId", async (req, res) => {
 
 // POST /api/visits/:visitId/items
 router.post("/:visitId/items", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const visitId = parseInt(req.params.visitId);
   const { category, name, description, quantity, unitPrice, itemDate } = req.body;
   if (!category || !name || !quantity || unitPrice === undefined) {
@@ -92,8 +89,8 @@ router.post("/:visitId/items", async (req, res) => {
 
 // GET /api/visits/:visitId/daily-reports
 router.get("/:visitId/daily-reports", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const visitId = parseInt(req.params.visitId);
   const reports = await db.query.dailyReportsTable.findMany({
     where: eq(dailyReportsTable.visitId, visitId),
@@ -104,9 +101,9 @@ router.get("/:visitId/daily-reports", async (req, res) => {
 
 // POST /api/visits/:visitId/daily-reports
 router.post("/:visitId/daily-reports", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const user = await getOrCreateUser(clerkId);
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
+  const user = await getOrCreateUser(stackId);
   const visitId = parseInt(req.params.visitId);
   const { reportDate, condition, treatment, notes, cost } = req.body;
   if (!reportDate) return res.status(400).json({ error: "reportDate is required" });

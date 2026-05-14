@@ -31,7 +31,7 @@ export const UserProfileRole = {
 
 export interface UserProfile {
   id: number;
-  clerkId: string;
+  stackId: string;
   /** @nullable */
   name?: string | null;
   /** @nullable */

@@ -1,17 +1,17 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
 import { usersTable, clinicsTable, staffTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, gte, lte } from "drizzle-orm";
 import { getOrCreateUser } from "./users";
+import { getStackUserId } from "../lib/auth";
 
 const router = Router();
 
 // GET /api/clinics/mine
 router.get("/mine", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const user = await getOrCreateUser(clerkId);
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
+  const user = await getOrCreateUser(stackId);
   if (!user.clinicId) return res.status(404).json({ error: "No clinic found" });
   const clinic = await db.query.clinicsTable.findFirst({ where: eq(clinicsTable.id, user.clinicId) });
   if (!clinic) return res.status(404).json({ error: "Clinic not found" });
@@ -20,9 +20,9 @@ router.get("/mine", async (req, res) => {
 
 // PATCH /api/clinics/:clinicId
 router.patch("/:clinicId", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const user = await getOrCreateUser(clerkId);
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
+  const user = await getOrCreateUser(stackId);
   const clinicId = parseInt(req.params.clinicId);
   const clinic = await db.query.clinicsTable.findFirst({ where: eq(clinicsTable.id, clinicId) });
   if (!clinic) return res.status(404).json({ error: "Clinic not found" });
@@ -43,23 +43,17 @@ router.patch("/:clinicId", async (req, res) => {
 
 // GET /api/clinics/:clinicId/staff
 router.get("/:clinicId/staff", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const clinicId = parseInt(req.params.clinicId);
   const staffList = await db.query.staffTable.findMany({ where: eq(staffTable.clinicId, clinicId) });
   const result = await Promise.all(
     staffList.map(async (s) => {
       const u = await db.query.usersTable.findFirst({ where: eq(usersTable.id, s.userId) });
       return {
-        id: s.id,
-        clinicId: s.clinicId,
-        userId: s.userId,
-        name: u?.name ?? null,
-        email: u?.email ?? null,
-        phone: u?.phone ?? null,
-        role: s.role,
-        status: s.status,
-        createdAt: s.createdAt,
+        id: s.id, clinicId: s.clinicId, userId: s.userId,
+        name: u?.name ?? null, email: u?.email ?? null, phone: u?.phone ?? null,
+        role: s.role, status: s.status, createdAt: s.createdAt,
       };
     })
   );
@@ -68,19 +62,22 @@ router.get("/:clinicId/staff", async (req, res) => {
 
 // POST /api/clinics/:clinicId/staff
 router.post("/:clinicId/staff", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const user = await getOrCreateUser(clerkId);
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
+  const user = await getOrCreateUser(stackId);
   const clinicId = parseInt(req.params.clinicId);
   const clinic = await db.query.clinicsTable.findFirst({ where: eq(clinicsTable.id, clinicId) });
   if (!clinic || clinic.ownerId !== user.id) return res.status(403).json({ error: "Forbidden" });
   const { email, phone, name } = req.body;
-  // Find or create user by email or phone
   let targetUser = null;
   if (email) targetUser = await db.query.usersTable.findFirst({ where: eq(usersTable.email, email) });
   if (!targetUser && phone) targetUser = await db.query.usersTable.findFirst({ where: eq(usersTable.phone, phone) });
   if (!targetUser) {
-    const [created] = await db.insert(usersTable).values({ clerkId: `invited_${Date.now()}`, name, email, phone, isVet: true, clinicId }).returning();
+    // Create a placeholder user for invited staff (no Stack Auth account yet)
+    const [created] = await db.insert(usersTable).values({
+      stackId: `invited_${Date.now()}`,
+      name, email, phone, isVet: true, clinicId,
+    }).returning();
     targetUser = created;
   } else {
     await db.update(usersTable).set({ isVet: true, clinicId }).where(eq(usersTable.id, targetUser.id));
@@ -95,9 +92,9 @@ router.post("/:clinicId/staff", async (req, res) => {
 
 // DELETE /api/clinics/:clinicId/staff/:staffId
 router.delete("/:clinicId/staff/:staffId", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const user = await getOrCreateUser(clerkId);
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
+  const user = await getOrCreateUser(stackId);
   const clinicId = parseInt(req.params.clinicId);
   const staffId = parseInt(req.params.staffId);
   const clinic = await db.query.clinicsTable.findFirst({ where: eq(clinicsTable.id, clinicId) });
@@ -108,8 +105,8 @@ router.delete("/:clinicId/staff/:staffId", async (req, res) => {
 
 // GET /api/clinics/:clinicId/visits/active
 router.get("/:clinicId/visits/active", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const clinicId = parseInt(req.params.clinicId);
   const { visitsTable, petsTable, usersTable: ut, speciesTable, dailyReportsTable } = await import("@workspace/db");
   const { desc } = await import("drizzle-orm");
@@ -142,8 +139,8 @@ function getPeriodRange(period: string, date: string): { startDate: string; endD
   if (period === "daily") {
     return { startDate: date, endDate: date };
   } else if (period === "weekly") {
-    const day = d.getDay(); // 0=Sun
-    const diffToMon = (day === 0 ? -6 : 1 - day);
+    const day = d.getDay();
+    const diffToMon = day === 0 ? -6 : 1 - day;
     const mon = new Date(d); mon.setDate(d.getDate() + diffToMon);
     const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
     return { startDate: mon.toISOString().split("T")[0], endDate: sun.toISOString().split("T")[0] };
@@ -165,25 +162,16 @@ function getPeriodRange(period: string, date: string): { startDate: string; endD
   }
 }
 
-async function calcVisitRevenue(visitId: number, visitItemsTable: any, dailyReportsTable: any): Promise<number> {
-  const items = await db.query.visitItemsTable.findMany({ where: eq(visitItemsTable.id, visitId) });
-  const reports = await db.query.dailyReportsTable.findMany({ where: eq(dailyReportsTable.visitId, visitId) });
-  return items.reduce((s: number, i: any) => s + parseFloat(i.unitPrice) * parseFloat(i.quantity), 0)
-    + reports.reduce((s: number, r: any) => s + parseFloat(r.cost), 0);
-}
-
 // GET /api/clinics/:clinicId/reports/summary
 router.get("/:clinicId/reports/summary", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const clinicId = parseInt(req.params.clinicId);
   const period = (req.query.period as string) || "monthly";
   const date = (req.query.date as string) || new Date().toISOString().split("T")[0];
   const { visitsTable, visitItemsTable, dailyReportsTable, petsTable } = await import("@workspace/db");
-  const { gte, lte } = await import("drizzle-orm");
 
   const { startDate, endDate } = getPeriodRange(period, date);
-
   const visits = await db.query.visitsTable.findMany({
     where: and(eq(visitsTable.clinicId, clinicId), gte(visitsTable.visitDate, startDate), lte(visitsTable.visitDate, endDate)),
   });
@@ -205,7 +193,6 @@ router.get("/:clinicId/reports/summary", async (req, res) => {
       serviceMap[i.name].revenue += amt;
     }
     for (const r of reports) totalRevenue += parseFloat(r.cost);
-
     if (v.status === "cancelled") {
       earlyDischargeCount++;
     } else if (v.status === "completed" && v.type === "inpatient") {
@@ -221,29 +208,23 @@ router.get("/:clinicId/reports/summary", async (req, res) => {
     .slice(0, 5);
 
   res.json({
-    period, date,
-    totalRevenue,
+    period, date, totalRevenue,
     totalVisits: visits.length,
     inpatientVisits: visits.filter(v => v.type === "inpatient").length,
     outpatientVisits: visits.filter(v => v.type === "outpatient").length,
     averageRevenuePerVisit: visits.length > 0 ? totalRevenue / visits.length : 0,
-    diedCount,
-    survivedCount,
-    earlyDischargeCount,
-    topServices,
-    topProducts: [],
+    diedCount, survivedCount, earlyDischargeCount, topServices, topProducts: [],
   });
 });
 
 // GET /api/clinics/:clinicId/reports/visits
 router.get("/:clinicId/reports/visits", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const clinicId = parseInt(req.params.clinicId);
   const period = (req.query.period as string) || "monthly";
   const date = (req.query.date as string) || new Date().toISOString().split("T")[0];
   const { visitsTable, visitItemsTable, dailyReportsTable } = await import("@workspace/db");
-  const { gte, lte } = await import("drizzle-orm");
 
   const d = new Date(date);
   const labels: string[] = [];
@@ -265,17 +246,14 @@ router.get("/:clinicId/reports/visits", async (req, res) => {
   }
 
   if (period === "daily" || period === "weekly") {
-    // Last 7 days
     for (let i = 6; i >= 0; i--) {
       const day = new Date(d); day.setDate(d.getDate() - i);
       const dayStr = day.toISOString().split("T")[0];
-      labels.push(dayStr.slice(5)); // MM-DD
+      labels.push(dayStr.slice(5));
       const { count, revenue } = await bucketRevenue(dayStr, dayStr);
-      visitCounts.push(count);
-      revenues.push(revenue);
+      visitCounts.push(count); revenues.push(revenue);
     }
   } else if (period === "monthly") {
-    // Last 12 months
     for (let i = 11; i >= 0; i--) {
       const m = new Date(d.getFullYear(), d.getMonth() - i, 1);
       const y = m.getFullYear(), mo = m.getMonth() + 1;
@@ -284,15 +262,13 @@ router.get("/:clinicId/reports/visits", async (req, res) => {
       const start = `${monthStr}-01`;
       const end = `${monthStr}-${new Date(y, mo, 0).getDate()}`;
       const { count, revenue } = await bucketRevenue(start, end);
-      visitCounts.push(count);
-      revenues.push(revenue);
+      visitCounts.push(count); revenues.push(revenue);
     }
   } else if (period === "quarterly") {
-    // Last 8 quarters
     for (let i = 7; i >= 0; i--) {
       const totalMonths = d.getFullYear() * 12 + d.getMonth() - i * 3;
       const qYear = Math.floor(totalMonths / 12);
-      const qMonth = totalMonths % 12; // 0-indexed start month of quarter's base
+      const qMonth = totalMonths % 12;
       const qNum = Math.floor(qMonth / 3) + 1;
       const startMonth = (qNum - 1) * 3 + 1;
       const endMonth = startMonth + 2;
@@ -300,17 +276,14 @@ router.get("/:clinicId/reports/visits", async (req, res) => {
       const start = `${qYear}-${String(startMonth).padStart(2, "0")}-01`;
       const end = `${qYear}-${String(endMonth).padStart(2, "0")}-${new Date(qYear, endMonth, 0).getDate()}`;
       const { count, revenue } = await bucketRevenue(start, end);
-      visitCounts.push(count);
-      revenues.push(revenue);
+      visitCounts.push(count); revenues.push(revenue);
     }
   } else {
-    // Last 5 years
     for (let i = 4; i >= 0; i--) {
       const year = d.getFullYear() - i;
       labels.push(String(year));
       const { count, revenue } = await bucketRevenue(`${year}-01-01`, `${year}-12-31`);
-      visitCounts.push(count);
-      revenues.push(revenue);
+      visitCounts.push(count); revenues.push(revenue);
     }
   }
 
@@ -319,8 +292,8 @@ router.get("/:clinicId/reports/visits", async (req, res) => {
 
 // GET /api/clinics/:clinicId/products
 router.get("/:clinicId/products", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const clinicId = parseInt(req.params.clinicId);
   const { productsTable } = await import("@workspace/db");
   const products = await db.query.productsTable.findMany({ where: eq(productsTable.clinicId, clinicId) });
@@ -329,8 +302,8 @@ router.get("/:clinicId/products", async (req, res) => {
 
 // POST /api/clinics/:clinicId/products
 router.post("/:clinicId/products", async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const stackId = await getStackUserId(req);
+  if (!stackId) return res.status(401).json({ error: "Unauthorized" });
   const clinicId = parseInt(req.params.clinicId);
   const { productsTable } = await import("@workspace/db");
   const { name, category, description, price, stock, unit } = req.body;
