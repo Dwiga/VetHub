@@ -29,6 +29,7 @@ import type {
   GetReportSummaryParams,
   GetVisitStatsParams,
   HealthStatus,
+  ListVetVisitsParams,
   MonitoringInput,
   MonitoringRecord,
   OwnerWithPets,
@@ -62,6 +63,7 @@ import type {
   VisitItemUpdate,
   VisitShare,
   VisitStats,
+  VisitSummary,
   VisitUpdate,
   VisitWithPet,
 } from "./api.schemas";
@@ -1625,6 +1627,100 @@ export const useAddMonitoring = <
 > => {
   return useMutation(getAddMonitoringMutationOptions(options));
 };
+
+/**
+ * @summary List all visits for a clinic (including completed history), sorted by date
+ */
+export const getListVetVisitsUrl = (params: ListVetVisitsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/vet/visits?${stringifiedParams}`
+    : `/api/vet/visits`;
+};
+
+export const listVetVisits = async (
+  params: ListVetVisitsParams,
+  options?: RequestInit,
+): Promise<VisitSummary[]> => {
+  return customFetch<VisitSummary[]>(getListVetVisitsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListVetVisitsQueryKey = (params?: ListVetVisitsParams) => {
+  return [`/api/vet/visits`, ...(params ? [params] : [])] as const;
+};
+
+export const getListVetVisitsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listVetVisits>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListVetVisitsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listVetVisits>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListVetVisitsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listVetVisits>>> = ({
+    signal,
+  }) => listVetVisits(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listVetVisits>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListVetVisitsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listVetVisits>>
+>;
+export type ListVetVisitsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all visits for a clinic (including completed history), sorted by date
+ */
+
+export function useListVetVisits<
+  TData = Awaited<ReturnType<typeof listVetVisits>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListVetVisitsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listVetVisits>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListVetVisitsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Search pet owner by phone number
