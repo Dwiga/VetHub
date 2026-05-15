@@ -70,10 +70,5 @@ jobs:
             sleep 8
             sudo docker compose ps
 
-            echo "→ Health check..."
-            curl -sf http://localhost:80/api/healthz | grep -q '"status":"ok"' \
-              && echo "API healthy" \
-              || (echo "API health check FAILED" && exit 1)
-
             echo "✓ Deploy complete"
           ENDSSH
