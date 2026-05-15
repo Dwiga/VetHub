@@ -23,7 +23,10 @@ import { createProxyMiddleware } from "http-proxy-middleware";
 import type { RequestHandler } from "express";
 import type { IncomingHttpHeaders } from "http";
 
-const CLERK_FAPI = "https://frontend-api.clerk.dev";
+// For production instances with a custom domain the Frontend API lives at
+// https://clerk.<your-domain> — set CLERK_FRONTEND_API_URL in .env to override.
+const CLERK_FAPI =
+  process.env.CLERK_FRONTEND_API_URL || "https://frontend-api.clerk.dev";
 export const CLERK_PROXY_PATH = "/api/__clerk";
 
 /**
