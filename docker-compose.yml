@@ -46,7 +46,7 @@ services:
         VITE_CLERK_PROXY_URL: ${VITE_CLERK_PROXY_URL:-}
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "127.0.0.1:8080:80"   # Caddy (on host) proxies here; not exposed publicly
     depends_on:
       - api
 

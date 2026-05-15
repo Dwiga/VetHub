@@ -1,0 +1,26 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# VetCare Pro — Caddyfile
+#
+# Currently serving HTTP on port 80 (IP-based, no domain yet).
+#
+# TO ADD YOUR DOMAIN AND ENABLE HTTPS:
+#   1. Point your domain's A record to:  43.129.52.81
+#   2. Replace ":80" with your domain, e.g.:
+#
+#        vetcarepro.com {
+#            ...
+#        }
+#
+#   3. Run:  sudo systemctl reload caddy
+#
+#   Caddy will automatically obtain and renew a free TLS certificate
+#   from Let's Encrypt — nothing else needed.
+# ─────────────────────────────────────────────────────────────────────────────
+
+:80 {
+	encode gzip
+
+	reverse_proxy localhost:8080 {
+		header_up X-Real-IP {remote_host}
+	}
+}
