@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
-import { usersTable, petsTable, speciesTable } from "@workspace/db";
-import { eq, ilike, or, inArray } from "drizzle-orm";
+import { usersTable, petsTable, speciesTable, visitsTable, visitItemsTable, dailyReportsTable } from "@workspace/db";
+import { eq, ilike, inArray, desc } from "drizzle-orm";
 import { getOrCreateUser } from "./users";
 import { normalizePhone, phoneVariants } from "../utils/phone";
 
@@ -92,6 +92,47 @@ router.post("/add-pet-for-owner", async (req, res) => {
     ...pet, speciesName: species?.name ?? null,
     ownerName: owner.name, ownerPhone: owner.phone,
   });
+});
+
+// GET /api/vet/visits?clinicId=... — all visits for a clinic (history)
+router.get("/visits", async (req, res) => {
+  const { userId: clerkId } = getAuth(req);
+  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const clinicId = parseInt(req.query.clinicId as string);
+  if (!clinicId) return res.status(400).json({ error: "clinicId is required" });
+
+  const visits = await db.query.visitsTable.findMany({
+    where: eq(visitsTable.clinicId, clinicId),
+    orderBy: [desc(visitsTable.visitDate), desc(visitsTable.createdAt)],
+  });
+
+  const result = await Promise.all(visits.map(async (v) => {
+    const pet = await db.query.petsTable.findFirst({ where: eq(petsTable.id, v.petId) });
+    const items = await db.query.visitItemsTable.findMany({ where: eq(visitItemsTable.visitId, v.id) });
+    const reports = await db.query.dailyReportsTable.findMany({ where: eq(dailyReportsTable.visitId, v.id) });
+    const totalCost = items.reduce((s, i) => s + parseFloat(String(i.unitPrice ?? 0)) * parseFloat(String(i.quantity ?? 1)), 0)
+      + reports.reduce((s, r) => s + parseFloat(String(r.cost ?? 0)), 0);
+    let vetName = null;
+    if (v.vetId) {
+      const vet = await db.query.usersTable.findFirst({ where: eq(usersTable.id, v.vetId) });
+      vetName = vet?.name ?? null;
+    }
+    return {
+      id: v.id,
+      petId: v.petId,
+      petName: pet?.name ?? null,
+      clinicId: v.clinicId,
+      type: v.type,
+      status: v.status,
+      visitDate: v.visitDate,
+      totalCost,
+      vetId: v.vetId ?? null,
+      vetName,
+      createdAt: v.createdAt,
+    };
+  }));
+
+  res.json(result);
 });
 
 export default router;
