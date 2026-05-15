@@ -319,6 +319,23 @@ export interface Visit {
   createdAt: string;
 }
 
+export interface VisitSummary {
+  id: number;
+  petId: number;
+  /** @nullable */
+  petName?: string | null;
+  clinicId: number;
+  type: string;
+  status: string;
+  visitDate: string;
+  totalCost: number;
+  /** @nullable */
+  vetId?: number | null;
+  /** @nullable */
+  vetName?: string | null;
+  createdAt: string;
+}
+
 export interface VisitWithPet {
   id: number;
   petId: number;
@@ -633,6 +650,10 @@ export interface VisitStats {
   visitCounts: number[];
   revenues: number[];
 }
+
+export type ListVetVisitsParams = {
+  clinicId: number;
+};
 
 export type SearchPetOwnerParams = {
   phone: string;
