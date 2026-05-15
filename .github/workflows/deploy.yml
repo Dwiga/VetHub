@@ -70,5 +70,19 @@ jobs:
             sleep 8
             sudo docker compose ps
 
+            echo "→ Running DB migrations..."
+            sudo docker compose exec -T db psql -U vetcare -d vetcare -c "
+              ALTER TABLE visits ADD COLUMN IF NOT EXISTS share_token TEXT UNIQUE;
+            "
+
+            echo "→ Seeding species..."
+            sudo docker compose exec -T db psql -U vetcare -d vetcare -c "
+              INSERT INTO species (name) VALUES
+                ('Anjing'), ('Kucing'), ('Kelinci'), ('Burung'),
+                ('Hamster'), ('Guinea Pig'), ('Reptil'), ('Ikan'),
+                ('Ular'), ('Kura-kura')
+              ON CONFLICT (name) DO NOTHING;
+            "
+
             echo "✓ Deploy complete"
           ENDSSH
