@@ -49,12 +49,13 @@ COPY artifacts/api-server/package.json ./artifacts/api-server/
 COPY artifacts/vetcare/package.json    ./artifacts/vetcare/
 COPY scripts/package.json             ./scripts/
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 
 # ── Stage 3: Build the API server ────────────────────────────────────────────
 FROM deps AS build-api
 
+COPY tsconfig.base.json ./
 COPY lib/              ./lib/
 COPY artifacts/api-server/ ./artifacts/api-server/
 
@@ -77,6 +78,7 @@ ENV PORT=3000
 ENV BASE_PATH=/
 ENV NODE_ENV=production
 
+COPY tsconfig.base.json ./
 COPY lib/           ./lib/
 COPY artifacts/vetcare/ ./artifacts/vetcare/
 
