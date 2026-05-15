@@ -335,6 +335,11 @@ export interface VisitWithPet {
   latestReport?: string | null;
 }
 
+export interface VisitShare {
+  shareToken: string;
+  shareUrl: string;
+}
+
 export type VisitItemCategory =
   (typeof VisitItemCategory)[keyof typeof VisitItemCategory];
 
@@ -398,6 +403,8 @@ export interface VisitDetail {
   deposit?: number | null;
   totalCost: number;
   billedCost: number;
+  /** @nullable */
+  shareToken?: string | null;
   items: VisitItem[];
   dailyReports: DailyReport[];
   createdAt: string;
