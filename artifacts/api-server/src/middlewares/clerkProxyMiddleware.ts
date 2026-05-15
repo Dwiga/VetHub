@@ -27,6 +27,9 @@ import type { IncomingHttpHeaders } from "http";
 // https://clerk.<your-domain> — set CLERK_FRONTEND_API_URL in .env to override.
 const CLERK_FAPI =
   process.env.CLERK_FRONTEND_API_URL || "https://frontend-api.clerk.dev";
+// When using a custom FAPI (CNAME approach), Clerk identifies the instance via
+// the Host header — Clerk-Proxy-Url is only needed for the generic proxy approach.
+const IS_PROXY_APPROACH = CLERK_FAPI === "https://frontend-api.clerk.dev";
 export const CLERK_PROXY_PATH = "/api/__clerk";
 
 /**
@@ -77,7 +80,17 @@ export function clerkProxyMiddleware(): RequestHandler {
         const host = getClerkProxyHost(req) || "";
         const proxyUrl = `${protocol}://${host}${CLERK_PROXY_PATH}`;
 
-        proxyReq.setHeader("Clerk-Proxy-Url", proxyUrl);
+        // Proxy-URL header only needed for the generic FAPI proxy approach.
+        // Custom FAPI (CNAME) approach: Clerk identifies the instance via Host.
+        if (IS_PROXY_APPROACH) {
+          proxyReq.setHeader("Clerk-Proxy-Url", proxyUrl);
+        } else {
+          // Strip infrastructure forwarding headers so Clerk uses the Host
+          // header (clerk.<domain>) for instance lookup, not X-Forwarded-Host
+          // (which would be the app domain and cause host_invalid).
+          proxyReq.removeHeader("x-forwarded-host");
+          proxyReq.removeHeader("x-forwarded-proto");
+        }
         proxyReq.setHeader("Clerk-Secret-Key", secretKey);
 
         const xff = req.headers["x-forwarded-for"];
