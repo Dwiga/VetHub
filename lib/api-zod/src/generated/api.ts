@@ -369,6 +369,28 @@ export const AddMonitoringBody = zod.object({
 });
 
 /**
+ * @summary List all visits for a clinic (including completed history), sorted by date
+ */
+export const ListVetVisitsQueryParams = zod.object({
+  clinicId: zod.coerce.number(),
+});
+
+export const ListVetVisitsResponseItem = zod.object({
+  id: zod.number(),
+  petId: zod.number(),
+  petName: zod.string().nullish(),
+  clinicId: zod.number(),
+  type: zod.string(),
+  status: zod.string(),
+  visitDate: zod.string(),
+  totalCost: zod.number(),
+  vetId: zod.number().nullish(),
+  vetName: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+export const ListVetVisitsResponse = zod.array(ListVetVisitsResponseItem);
+
+/**
  * @summary Search pet owner by phone number
  */
 export const SearchPetOwnerQueryParams = zod.object({
