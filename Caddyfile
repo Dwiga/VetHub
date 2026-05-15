@@ -3,14 +3,13 @@
 #
 # Serving pethub.silvertech.dev over HTTPS (auto-cert via Let's Encrypt).
 #
-# Before this works, point your DNS:
-#   pethub.silvertech.dev  A  43.129.52.81
-#
 # To reload after changes:
 #   sudo systemctl reload caddy
 # ─────────────────────────────────────────────────────────────────────────────
 
 pethub.silvertech.dev {
+	tls Dwi.hyuga@gmail.com
+
 	encode gzip
 
 	reverse_proxy localhost:8080 {
