@@ -384,6 +384,26 @@ paths:
               schema:
                 $ref: "#/components/schemas/MonitoringRecord"
 
+  /vet/visits:
+    get:
+      operationId: listVetVisits
+      tags: [vet]
+      summary: List all visits for a clinic (including completed history), sorted by date
+      parameters:
+        - name: clinicId
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: All clinic visits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VisitSummary"
+
   # ── Vet: Search pet owners ────────────────────────────────────────────────
   /vet/search-owner:
     get:
@@ -1309,6 +1329,22 @@ components:
         createdAt: { type: string }
       required:
         [id, petId, clinicId, type, status, visitDate, totalCost, createdAt]
+
+    VisitSummary:
+      type: object
+      properties:
+        id: { type: integer }
+        petId: { type: integer }
+        petName: { type: ["string", "null"] }
+        clinicId: { type: integer }
+        type: { type: string }
+        status: { type: string }
+        visitDate: { type: string }
+        totalCost: { type: number }
+        vetId: { type: ["integer", "null"] }
+        vetName: { type: ["string", "null"] }
+        createdAt: { type: string }
+      required: [id, petId, clinicId, type, status, visitDate, totalCost, createdAt]
 
     VisitWithPet:
       type: object
