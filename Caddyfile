@@ -1,23 +1,16 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# VetCare Pro — Caddyfile
+# PetHub — Caddyfile
 #
-# Currently serving HTTP on port 80 (IP-based, no domain yet).
+# Serving pethub.silvertech.dev over HTTPS (auto-cert via Let's Encrypt).
 #
-# TO ADD YOUR DOMAIN AND ENABLE HTTPS:
-#   1. Point your domain's A record to:  43.129.52.81
-#   2. Replace ":80" with your domain, e.g.:
+# Before this works, point your DNS:
+#   pethub.silvertech.dev  A  43.129.52.81
 #
-#        vetcarepro.com {
-#            ...
-#        }
-#
-#   3. Run:  sudo systemctl reload caddy
-#
-#   Caddy will automatically obtain and renew a free TLS certificate
-#   from Let's Encrypt — nothing else needed.
+# To reload after changes:
+#   sudo systemctl reload caddy
 # ─────────────────────────────────────────────────────────────────────────────
 
-:80 {
+pethub.silvertech.dev {
 	encode gzip
 
 	reverse_proxy localhost:8080 {

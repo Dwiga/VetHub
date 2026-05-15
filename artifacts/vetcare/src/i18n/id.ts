@@ -20,7 +20,7 @@ export const id: Record<LangKeys, string> = {
   enabled: "Aktif",
 
   welcome: "Selamat datang",
-  chooseRole: "Pilih cara Anda menggunakan VetHub:",
+  chooseRole: "Pilih cara Anda menggunakan PetHub:",
   petOwner: "Pemilik hewan",
   petOwnerDesc:
     "Pantau kesehatan, berat badan, dan riwayat kunjungan hewan peliharaan Anda",

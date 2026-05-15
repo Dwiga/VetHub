@@ -18,7 +18,7 @@ export const en = {
   enabled: "Enabled",
 
   welcome: "Welcome",
-  chooseRole: "Choose how you want to use VetHub:",
+  chooseRole: "Choose how you want to use PetHub:",
   petOwner: "Pet owner",
   petOwnerDesc: "Track your pets' health, weight, and visit history",
   vetClinic: "Veterinary clinic",

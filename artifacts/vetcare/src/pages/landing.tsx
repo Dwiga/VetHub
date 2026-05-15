@@ -19,7 +19,7 @@ const copy = {
     heroTitle2: "to care for every pet",
     heroAccent: "every pet",
     heroSub:
-      "VetHub connects pet owners, veterinarians, and clinic owners — so pets get the care they deserve and clinics run smoothly.",
+      "PetHub connects pet owners, veterinarians, and clinic owners — so pets get the care they deserve and clinics run smoothly.",
     ctaPrimary: "Get started free",
     ctaSecondary: "Sign in",
     stat1Val: "100%",
@@ -30,7 +30,7 @@ const copy = {
     stat3Lbl: "Designed for you",
     impactBannerTitle: "5% of our revenue goes to street animal rescue",
     impactBannerSub:
-      "Every clinic that uses VetHub helps fund stray animal care across Indonesia.",
+      "Every clinic that uses PetHub helps fund stray animal care across Indonesia.",
     featuresEyebrow: "Everything you need",
     featuresTitle: "One platform. Every role.",
     featuresSub:
@@ -57,7 +57,7 @@ const copy = {
         desc: "Your clinic data and patient records are protected. Role-based access ensures every team member sees only what they need.",
       },
     ],
-    whoTitle: "Who is VetHub for?",
+    whoTitle: "Who is PetHub for?",
     roles: [
       {
         title: "Pet owners",
@@ -109,13 +109,13 @@ const copy = {
     ],
     impactTitle: "Healing pets. Helping strays.",
     impactBody:
-      "5% of every rupiah we earn is donated to street animal rescue organizations across Indonesia. When you use VetHub, you're not just caring for your pet — you're giving countless stray animals a chance at a better life.",
+      "5% of every rupiah we earn is donated to street animal rescue organizations across Indonesia. When you use PetHub, you're not just caring for your pet — you're giving countless stray animals a chance at a better life.",
     impactTag:
       "Every clinic subscription · Every visit logged · Every feature used",
     impactTagAccent: "5% reaches the strays who need it most",
     ctaSectionTitle: "Ready to get started?",
     ctaSectionSub:
-      "Join clinics and pet owners across Indonesia who trust VetHub for every visit, every vaccination, every check-up.",
+      "Join clinics and pet owners across Indonesia who trust PetHub for every visit, every vaccination, every check-up.",
     ctaSecondaryFull: "Sign in to your account",
     footerTagline: "Built for clinics that care.",
     footerImpact: "5% for street animal rescue",
@@ -126,7 +126,7 @@ const copy = {
     heroTitle2: "merawat setiap hewan",
     heroAccent: "setiap hewan",
     heroSub:
-      "VetHub menghubungkan pemilik hewan, dokter hewan, dan pemilik klinik — agar hewan mendapat perawatan terbaik dan klinik berjalan lancar.",
+      "PetHub menghubungkan pemilik hewan, dokter hewan, dan pemilik klinik — agar hewan mendapat perawatan terbaik dan klinik berjalan lancar.",
     ctaPrimary: "Mulai gratis",
     ctaSecondary: "Masuk",
     stat1Val: "100%",
@@ -138,7 +138,7 @@ const copy = {
     impactBannerTitle:
       "5% pendapatan kami digunakan untuk menyelamatkan hewan liar",
     impactBannerSub:
-      "Setiap klinik yang menggunakan VetHub turut mendanai perawatan hewan liar di seluruh Indonesia.",
+      "Setiap klinik yang menggunakan PetHub turut mendanai perawatan hewan liar di seluruh Indonesia.",
     featuresEyebrow: "Semua yang Anda butuhkan",
     featuresTitle: "Satu platform. Semua peran.",
     featuresSub:
@@ -165,7 +165,7 @@ const copy = {
         desc: "Data klinik dan catatan pasien Anda dilindungi. Akses berbasis peran memastikan setiap anggota tim hanya melihat yang mereka butuhkan.",
       },
     ],
-    whoTitle: "VetHub untuk siapa?",
+    whoTitle: "PetHub untuk siapa?",
     roles: [
       {
         title: "Pemilik hewan",
@@ -217,13 +217,13 @@ const copy = {
     ],
     impactTitle: "Merawat hewan peliharaan. Membantu hewan liar.",
     impactBody:
-      "5% dari setiap rupiah yang kami hasilkan disumbangkan ke organisasi penyelamatan hewan liar di seluruh Indonesia. Saat Anda menggunakan VetHub, Anda tidak hanya merawat hewan peliharaan — Anda memberikan kesempatan hidup lebih baik bagi hewan-hewan liar.",
+      "5% dari setiap rupiah yang kami hasilkan disumbangkan ke organisasi penyelamatan hewan liar di seluruh Indonesia. Saat Anda menggunakan PetHub, Anda tidak hanya merawat hewan peliharaan — Anda memberikan kesempatan hidup lebih baik bagi hewan-hewan liar.",
     impactTag:
       "Setiap langganan klinik · Setiap kunjungan tercatat · Setiap fitur digunakan",
     impactTagAccent: "5% menjangkau hewan liar yang paling membutuhkan",
     ctaSectionTitle: "Siap untuk memulai?",
     ctaSectionSub:
-      "Bergabung bersama klinik dan pemilik hewan di seluruh Indonesia yang mempercayai VetHub untuk setiap kunjungan, vaksinasi, dan pemeriksaan.",
+      "Bergabung bersama klinik dan pemilik hewan di seluruh Indonesia yang mempercayai PetHub untuk setiap kunjungan, vaksinasi, dan pemeriksaan.",
     ctaSecondaryFull: "Masuk ke akun Anda",
     footerTagline: "Dibangun untuk klinik yang peduli.",
     footerImpact: "5% untuk penyelamatan hewan liar",
@@ -258,7 +258,7 @@ export default function LandingPage() {
               <PawPrint className="w-5 h-5 text-white" />
             </div>
             <span className="text-lg font-bold text-[hsl(175,70%,25%)]">
-              VetHub
+              PetHub
             </span>
           </div>
 
@@ -593,8 +593,8 @@ export default function LandingPage() {
                 : "5% dari setiap rupiah yang kami hasilkan"}
             </strong>{" "}
             {lang === "en"
-              ? " is donated to street animal rescue organizations across Indonesia. When you use VetHub, you're not just caring for your pet — you're giving countless stray animals a chance at a better life."
-              : " disumbangkan ke organisasi penyelamatan hewan liar di seluruh Indonesia. Saat Anda menggunakan VetHub, Anda tidak hanya merawat hewan peliharaan — Anda memberikan kesempatan hidup lebih baik bagi hewan-hewan liar."}
+              ? " is donated to street animal rescue organizations across Indonesia. When you use PetHub, you're not just caring for your pet — you're giving countless stray animals a chance at a better life."
+              : " disumbangkan ke organisasi penyelamatan hewan liar di seluruh Indonesia. Saat Anda menggunakan PetHub, Anda tidak hanya merawat hewan peliharaan — Anda memberikan kesempatan hidup lebih baik bagi hewan-hewan liar."}
           </p>
           <div className="inline-block bg-white/8 border border-white/15 rounded-xl px-6 py-4">
             <p className="text-[13px] text-white/65 mb-2">{c.impactTag}</p>
@@ -639,11 +639,11 @@ export default function LandingPage() {
             <div className="w-8 h-8 rounded-lg bg-white/12 flex items-center justify-center">
               <PawPrint className="w-4 h-4 text-[#7ae8d8]" />
             </div>
-            <span className="text-base font-bold text-white">VetHub</span>
+            <span className="text-base font-bold text-white">PetHub</span>
           </div>
           <div className="border-t border-white/10 pt-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <p className="text-[12px] text-white/40">
-              © 2026 VetHub. {c.footerTagline}
+              © 2026 PetHub. {c.footerTagline}
             </p>
             <p className="text-[12px] text-[#7ae8d8] flex items-center gap-1.5">
               <Heart className="w-3 h-3" /> {c.footerImpact}
