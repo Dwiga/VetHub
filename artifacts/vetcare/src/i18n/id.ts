@@ -234,4 +234,15 @@ export const id: Record<LangKeys, string> = {
 
   petNotFound: "Hewan tidak ditemukan",
   visitNotFound: "Kunjungan tidak ditemukan",
+
+  weight: "Berat (kg)",
+  height: "Tinggi (cm)",
+  temperature: "Suhu (°C)",
+  addMonitoring: "Catat monitoring",
+  monitoringAdded: "Data monitoring dicatat",
+  vaccinationAdded: "Vaksinasi disimpan",
+  markDeceased: "Tandai meninggal",
+  deceasedDone: "Hewan ditandai meninggal",
+  costLabel: "Biaya (Rp)",
+  vetVisitHistory: "Semua kunjungan",
 };
