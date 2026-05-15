@@ -560,6 +560,7 @@ export const GetVisitResponse = zod.object({
   deposit: zod.number().nullish(),
   totalCost: zod.number(),
   billedCost: zod.number(),
+  shareToken: zod.string().nullish(),
   items: zod.array(
     zod.object({
       id: zod.number(),
@@ -622,6 +623,7 @@ export const UpdateVisitResponse = zod.object({
   deposit: zod.number().nullish(),
   totalCost: zod.number(),
   billedCost: zod.number(),
+  shareToken: zod.string().nullish(),
   items: zod.array(
     zod.object({
       id: zod.number(),
@@ -737,6 +739,72 @@ export const CreateDailyReportBody = zod.object({
   treatment: zod.string().optional(),
   notes: zod.string().optional(),
   cost: zod.number(),
+});
+
+/**
+ * @summary Generate or return a public share token for a visit
+ */
+export const ShareVisitParams = zod.object({
+  visitId: zod.coerce.number(),
+});
+
+export const ShareVisitResponse = zod.object({
+  shareToken: zod.string(),
+  shareUrl: zod.string(),
+});
+
+/**
+ * @summary Get a visit by share token (public, no auth required)
+ */
+export const GetSharedVisitParams = zod.object({
+  token: zod.coerce.string(),
+});
+
+export const GetSharedVisitResponse = zod.object({
+  id: zod.number(),
+  petId: zod.number(),
+  petName: zod.string().nullish(),
+  clinicId: zod.number(),
+  vetId: zod.number().nullish(),
+  vetName: zod.string().nullish(),
+  type: zod.string(),
+  status: zod.string(),
+  anamnesis: zod.string().nullish(),
+  therapy: zod.string().nullish(),
+  visitDate: zod.string(),
+  dischargeDate: zod.string().nullish(),
+  deposit: zod.number().nullish(),
+  totalCost: zod.number(),
+  billedCost: zod.number(),
+  shareToken: zod.string().nullish(),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      visitId: zod.number(),
+      category: zod.enum(["service", "medicine", "supporting", "other"]),
+      name: zod.string(),
+      description: zod.string().nullish(),
+      quantity: zod.number(),
+      unitPrice: zod.number(),
+      totalPrice: zod.number(),
+      itemDate: zod.string(),
+      isPaid: zod.boolean(),
+    }),
+  ),
+  dailyReports: zod.array(
+    zod.object({
+      id: zod.number(),
+      visitId: zod.number(),
+      reportDate: zod.string(),
+      condition: zod.string().nullish(),
+      treatment: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      cost: zod.number(),
+      vetName: zod.string().nullish(),
+      createdAt: zod.string(),
+    }),
+  ),
+  createdAt: zod.string(),
 });
 
 /**

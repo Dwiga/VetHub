@@ -22,8 +22,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { Printer, Plus, Trash2, CheckCircle2, Circle, Banknote } from "lucide-react";
+import { Printer, Plus, Trash2, CheckCircle2, Circle, Banknote, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useShareVisit } from "@workspace/api-client-react";
 
 const itemSchema = z.object({
   itemDate: z.string().min(1),
@@ -136,6 +137,37 @@ export default function VisitDetailPage() {
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [isSharing, setIsSharing] = useState(false);
+  const shareVisit = useShareVisit();
+
+  async function handleShare() {
+    setIsSharing(true);
+    try {
+      const result = await shareVisit.mutateAsync({ visitId: id });
+      const url = result.shareUrl;
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: "Link disalin",
+        description: (
+          <div className="flex flex-col gap-2 mt-1">
+            <span className="text-xs break-all text-muted-foreground">{url}</span>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(`Lihat ringkasan kunjungan: ${url}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-green-600 font-medium hover:underline"
+            >
+              Bagikan lewat WhatsApp
+            </a>
+          </div>
+        ),
+      });
+    } catch {
+      toast({ title: "Gagal membuat link", variant: "destructive" });
+    } finally {
+      setIsSharing(false);
+    }
+  }
 
   const v = visit.data;
   const { activeRole } = useRole();
@@ -258,9 +290,14 @@ export default function VisitDetailPage() {
         subtitle={[v.visitDate, v.vetName].filter(Boolean).join(" · ")}
         back
         action={
-          <Button size="sm" variant="ghost" onClick={() => window.print()} data-testid="btn-print">
-            <Printer className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button size="sm" variant="ghost" onClick={handleShare} disabled={isSharing} title="Bagikan kunjungan">
+              <Share2 className="h-4 w-4" />
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => window.print()} data-testid="btn-print">
+              <Printer className="h-4 w-4" />
+            </Button>
+          </div>
         }
       />
 

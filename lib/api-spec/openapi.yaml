@@ -687,6 +687,44 @@ paths:
               schema:
                 $ref: "#/components/schemas/DailyReport"
 
+  /visits/{visitId}/share:
+    post:
+      operationId: shareVisit
+      tags: [visits]
+      summary: Generate or return a public share token for a visit
+      parameters:
+        - name: visitId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Share info with token and URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisitShare"
+
+  /visits/shared/{token}:
+    get:
+      operationId: getSharedVisit
+      tags: [visits]
+      summary: Get a visit by share token (public, no auth required)
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Visit with full details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisitDetail"
+        "404":
+          description: Not found
+
   /daily-reports/{reportId}:
     get:
       operationId: getDailyReport
@@ -1149,6 +1187,13 @@ components:
       required:
         [id, petId, petName, clinicId, type, status, visitDate, totalCost]
 
+    VisitShare:
+      type: object
+      properties:
+        shareToken: { type: string }
+        shareUrl: { type: string }
+      required: [shareToken, shareUrl]
+
     VisitDetail:
       type: object
       properties:
@@ -1167,6 +1212,7 @@ components:
         deposit: { type: ["number", "null"] }
         totalCost: { type: number }
         billedCost: { type: number }
+        shareToken: { type: ["string", "null"] }
         items:
           type: array
           items:

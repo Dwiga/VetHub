@@ -1,8 +1,9 @@
 import { Router } from "express";
+import { randomUUID } from "crypto";
 import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
 import { usersTable, petsTable, visitsTable, visitItemsTable, dailyReportsTable } from "@workspace/db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { getOrCreateUser } from "./users";
 
 const router = Router();
@@ -34,6 +35,32 @@ async function buildVisitDetail(visitId: number) {
   });
   return { ...visit, petName: pet?.name ?? null, vetName, deposit, totalCost, billedCost, items: formattedItems, dailyReports: formattedReports };
 }
+
+// POST /api/visits/:visitId/share — auth required, idempotent (returns existing token)
+router.post("/:visitId/share", async (req, res) => {
+  const { userId: clerkId } = getAuth(req);
+  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const visitId = parseInt(req.params.visitId);
+  const visit = await db.query.visitsTable.findFirst({ where: eq(visitsTable.id, visitId) });
+  if (!visit) return res.status(404).json({ error: "Visit not found" });
+  let token = visit.shareToken;
+  if (!token) {
+    token = randomUUID();
+    await db.update(visitsTable).set({ shareToken: token }).where(eq(visitsTable.id, visitId));
+  }
+  const proto = (req.headers["x-forwarded-proto"] as string | undefined)?.split(",")[0]?.trim() ?? "https";
+  const host = (req.headers["x-forwarded-host"] as string | undefined)?.split(",")[0]?.trim() ?? req.headers.host ?? "";
+  const shareUrl = `${proto}://${host}/visit/share/${token}`;
+  res.json({ shareToken: token, shareUrl });
+});
+
+// GET /api/visits/shared/:token — public, no auth required
+router.get("/shared/:token", async (req, res) => {
+  const visit = await db.query.visitsTable.findFirst({ where: eq(visitsTable.shareToken, req.params.token) });
+  if (!visit) return res.status(404).json({ error: "Not found" });
+  const detail = await buildVisitDetail(visit.id);
+  res.json(detail);
+});
 
 // GET /api/visits/:visitId
 router.get("/:visitId", async (req, res) => {

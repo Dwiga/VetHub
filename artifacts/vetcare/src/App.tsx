@@ -37,6 +37,7 @@ import AddPetForOwnerPage from "@/pages/vet/add-pet";
 import ClinicPage from "@/pages/clinic/index";
 import ClinicReportsPage from "@/pages/clinic/reports";
 import SettingsPage from "@/pages/settings";
+import SharedVisitPage from "@/pages/shared-visit";
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -316,6 +317,7 @@ function ClerkProviderWithRoutes() {
                   path="/settings"
                   component={() => <AuthedRoute component={SettingsPage} />}
                 />
+                <Route path="/visit/share/:token" component={SharedVisitPage} />
                 <Route component={NotFound} />
               </Switch>
             </TooltipProvider>

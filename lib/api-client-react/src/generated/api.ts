@@ -55,6 +55,7 @@ import type {
   VisitItem,
   VisitItemInput,
   VisitItemUpdate,
+  VisitShare,
   VisitStats,
   VisitUpdate,
   VisitWithPet,
@@ -2930,6 +2931,177 @@ export const useCreateDailyReport = <
 > => {
   return useMutation(getCreateDailyReportMutationOptions(options));
 };
+
+/**
+ * @summary Generate or return a public share token for a visit
+ */
+export const getShareVisitUrl = (visitId: number) => {
+  return `/api/visits/${visitId}/share`;
+};
+
+export const shareVisit = async (
+  visitId: number,
+  options?: RequestInit,
+): Promise<VisitShare> => {
+  return customFetch<VisitShare>(getShareVisitUrl(visitId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getShareVisitMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof shareVisit>>,
+    TError,
+    { visitId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof shareVisit>>,
+  TError,
+  { visitId: number },
+  TContext
+> => {
+  const mutationKey = ["shareVisit"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof shareVisit>>,
+    { visitId: number }
+  > = (props) => {
+    const { visitId } = props ?? {};
+
+    return shareVisit(visitId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ShareVisitMutationResult = NonNullable<
+  Awaited<ReturnType<typeof shareVisit>>
+>;
+
+export type ShareVisitMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Generate or return a public share token for a visit
+ */
+export const useShareVisit = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof shareVisit>>,
+    TError,
+    { visitId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof shareVisit>>,
+  TError,
+  { visitId: number },
+  TContext
+> => {
+  return useMutation(getShareVisitMutationOptions(options));
+};
+
+/**
+ * @summary Get a visit by share token (public, no auth required)
+ */
+export const getGetSharedVisitUrl = (token: string) => {
+  return `/api/visits/shared/${token}`;
+};
+
+export const getSharedVisit = async (
+  token: string,
+  options?: RequestInit,
+): Promise<VisitDetail> => {
+  return customFetch<VisitDetail>(getGetSharedVisitUrl(token), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSharedVisitQueryKey = (token: string) => {
+  return [`/api/visits/shared/${token}`] as const;
+};
+
+export const getGetSharedVisitQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSharedVisit>>,
+  TError = ErrorType<void>,
+>(
+  token: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSharedVisit>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetSharedVisitQueryKey(token);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getSharedVisit>>> = ({
+    signal,
+  }) => getSharedVisit(token, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!token,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSharedVisit>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSharedVisitQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSharedVisit>>
+>;
+export type GetSharedVisitQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a visit by share token (public, no auth required)
+ */
+
+export function useGetSharedVisit<
+  TData = Awaited<ReturnType<typeof getSharedVisit>>,
+  TError = ErrorType<void>,
+>(
+  token: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSharedVisit>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSharedVisitQueryOptions(token, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get a daily report

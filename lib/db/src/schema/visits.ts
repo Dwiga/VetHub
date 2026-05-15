@@ -14,6 +14,7 @@ export const visitsTable = pgTable("visits", {
   visitDate: text("visit_date").notNull(),
   dischargeDate: text("discharge_date"),
   deposit: numeric("deposit", { precision: 15, scale: 2 }),
+  shareToken: text("share_token").unique(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
