@@ -382,12 +382,11 @@ export function Indonesian() {
                 marginBottom: 4,
               }}
             >
-              5% pendapatan kami digunakan untuk menyelamatkan hewan liar
+              5% pendapatan kami digunakan untuk menyelamatkan hewan terlantar
             </p>
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)" }}>
-              Setiap klinik yang menggunakan VetHub turut mendanai perawatan
-              hewan liar di seluruh Indonesia. Merawat hewan peliharaan,
-              membantu hewan liar.
+              Setiap klinik yang menggunakan PetHub, sudah turut berpartisipasi
+              dalam merawat beberapa hewan terlantar.
             </p>
           </div>
         </div>
@@ -726,7 +725,7 @@ export function Indonesian() {
               marginBottom: 16,
             }}
           >
-            Merawat hewan peliharaan. Membantu hewan liar.
+            Merawat hewan peliharaan. Membantu hewan terlantar.
           </h2>
           <p
             style={{
@@ -739,10 +738,10 @@ export function Indonesian() {
             <strong style={{ color: "#7ae8d8" }}>
               5% dari setiap rupiah yang kami hasilkan
             </strong>{" "}
-            disumbangkan ke organisasi penyelamatan hewan liar di seluruh
-            Indonesia. Saat Anda menggunakan VetHub, Anda tidak hanya merawat
-            hewan peliharaan — Anda memberikan kesempatan hidup lebih baik bagi
-            hewan-hewan liar.
+            disumbangkan ke organisasi penyelamatan hewan terlantar di beberapa
+            wilayah Kediri. Saat Anda menggunakan PetHub, Anda tidak hanya
+            merawat hewan peliharaan — Anda memberikan kesempatan hidup lebih
+            baik bagi hewan-hewan terlantar.
           </p>
           <div
             style={{
@@ -799,7 +798,7 @@ export function Indonesian() {
             }}
           >
             Bergabung bersama klinik dan pemilik hewan di seluruh Indonesia yang
-            mempercayai VetHub untuk setiap kunjungan, vaksinasi, dan
+            mempercayai PetHub untuk setiap kunjungan, vaksinasi, dan
             pemeriksaan.
           </p>
           <div
