@@ -230,6 +230,17 @@ export const en = {
 
   petNotFound: "Pet not found",
   visitNotFound: "Visit not found",
+
+  weight: "Weight (kg)",
+  height: "Height (cm)",
+  temperature: "Temp (°C)",
+  addMonitoring: "Record monitoring",
+  monitoringAdded: "Monitoring recorded",
+  vaccinationAdded: "Vaccination saved",
+  markDeceased: "Mark as deceased",
+  deceasedDone: "Pet marked as deceased",
+  costLabel: "Cost (Rp)",
+  vetVisitHistory: "All visits",
 };
 
 export type LangKeys = keyof typeof en;
