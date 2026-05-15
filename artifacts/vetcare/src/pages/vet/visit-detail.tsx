@@ -3,7 +3,8 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import {
   useGetVisit, useUpdateVisit, useAddVisitItem, useDeleteVisitItem, useUpdateVisitItem,
-  useCreateDailyReport, getGetVisitQueryKey, useGetMe
+  useCreateDailyReport, getGetVisitQueryKey, useGetMe,
+  useAddMonitoring, useAddVaccination, useUpdatePetStatus
 } from "@workspace/api-client-react";
 import { useRole } from "@/contexts/RoleContext";
 import { useLang } from "@/contexts/LangContext";
@@ -22,7 +23,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { Printer, Plus, Trash2, CheckCircle2, Circle, Banknote, Share2 } from "lucide-react";
+import { Printer, Plus, Trash2, CheckCircle2, Circle, Banknote, Share2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useShareVisit } from "@workspace/api-client-react";
 
@@ -49,6 +50,22 @@ const visitSchema = z.object({
   status: z.enum(["active", "completed", "cancelled"]).optional(),
   dischargeDate: z.string().optional(),
   deposit: z.string().optional(),
+});
+
+const monitoringSchema = z.object({
+  weight: z.string().optional(),
+  height: z.string().optional(),
+  temperature: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+const vaccinationSchema = z.object({
+  vaccineName: z.string().min(1),
+  brand: z.string().optional(),
+  date: z.string().min(1),
+  nextDueDate: z.string().optional(),
+  cost: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 function formatDate(dateStr: string) {
@@ -139,6 +156,11 @@ export default function VisitDetailPage() {
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [isSharing, setIsSharing] = useState(false);
   const shareVisit = useShareVisit();
+  const addMonitoring = useAddMonitoring();
+  const addVaccination = useAddVaccination();
+  const updatePetStatus = useUpdatePetStatus();
+  const [monitoringDialogOpen, setMonitoringDialogOpen] = useState(false);
+  const [vaccinationDialogOpen, setVaccinationDialogOpen] = useState(false);
 
   async function handleShare() {
     setIsSharing(true);
@@ -193,6 +215,16 @@ export default function VisitDetailPage() {
   const reportForm = useForm<z.infer<typeof reportSchema>>({
     resolver: zodResolver(reportSchema),
     defaultValues: { reportDate: today, condition: "", treatment: "", notes: "", cost: "0" },
+  });
+
+  const monitoringForm = useForm<z.infer<typeof monitoringSchema>>({
+    resolver: zodResolver(monitoringSchema),
+    defaultValues: { weight: "", height: "", temperature: "", notes: "" },
+  });
+
+  const vaccinationForm = useForm<z.infer<typeof vaccinationSchema>>({
+    resolver: zodResolver(vaccinationSchema),
+    defaultValues: { vaccineName: "", brand: "", date: today, nextDueDate: "", cost: "", notes: "" },
   });
 
   async function saveVisit(values: z.infer<typeof visitSchema>) {
@@ -262,6 +294,46 @@ export default function VisitDetailPage() {
     toast({ title: t("reportAdded") });
   }
 
+  async function addMonitoringRecord(values: z.infer<typeof monitoringSchema>) {
+    if (!v?.petId) return;
+    await addMonitoring.mutateAsync({
+      petId: v.petId,
+      data: {
+        weight: values.weight ? parseFloat(values.weight) : undefined,
+        height: values.height ? parseFloat(values.height) : undefined,
+        temperature: values.temperature ? parseFloat(values.temperature) : undefined,
+        notes: values.notes || undefined,
+      },
+    });
+    monitoringForm.reset();
+    setMonitoringDialogOpen(false);
+    toast({ title: t("monitoringAdded") });
+  }
+
+  async function addVaccinationRecord(values: z.infer<typeof vaccinationSchema>) {
+    if (!v?.petId) return;
+    await addVaccination.mutateAsync({
+      petId: v.petId,
+      data: {
+        vaccineName: values.vaccineName,
+        brand: values.brand || undefined,
+        date: values.date,
+        nextDueDate: values.nextDueDate || undefined,
+        cost: values.cost ? parseFloat(values.cost) : undefined,
+        notes: values.notes || undefined,
+      },
+    });
+    vaccinationForm.reset({ vaccineName: "", brand: "", date: today, nextDueDate: "", cost: "", notes: "" });
+    setVaccinationDialogOpen(false);
+    toast({ title: t("vaccinationAdded") });
+  }
+
+  async function markDeceased() {
+    if (!v?.petId) return;
+    await updatePetStatus.mutateAsync({ petId: v.petId, data: { status: "passed_away" } });
+    toast({ title: t("deceasedDone") });
+  }
+
   if (visit.isLoading) return (
     <AppShell>
       <div className="space-y-4 pt-4">
@@ -287,7 +359,7 @@ export default function VisitDetailPage() {
     <AppShell>
       <PageHeader
         title={`${t("newVisit").split(" ")[0]} — ${v.petName}`}
-        subtitle={[v.visitDate, v.vetName].filter(Boolean).join(" · ")}
+        subtitle={[v.visitDate, v.vetName ? `drh. ${v.vetName}` : null].filter(Boolean).join(" · ")}
         back
         action={
           <div className="flex items-center gap-1">
@@ -617,6 +689,145 @@ export default function VisitDetailPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {isVet && (
+          <Card>
+            <CardHeader className="pb-3 flex-row items-center justify-between">
+              <CardTitle className="text-sm">{t("healthMonitoring")}</CardTitle>
+              <Dialog open={monitoringDialogOpen} onOpenChange={setMonitoringDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline" data-testid="btn-add-monitoring">
+                    <Plus className="h-4 w-4 mr-1" />{t("add")}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>{t("addMonitoring")}</DialogTitle></DialogHeader>
+                  <Form {...monitoringForm}>
+                    <form onSubmit={monitoringForm.handleSubmit(addMonitoringRecord)} className="space-y-4 pt-2">
+                      <div className="grid grid-cols-3 gap-3">
+                        <FormField control={monitoringForm.control} name="weight" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">{t("weight")}</FormLabel>
+                            <FormControl><Input type="number" step="0.01" min="0" placeholder="—" {...field} data-testid="input-weight" /></FormControl>
+                          </FormItem>
+                        )} />
+                        <FormField control={monitoringForm.control} name="height" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">{t("height")}</FormLabel>
+                            <FormControl><Input type="number" step="0.01" min="0" placeholder="—" {...field} data-testid="input-height" /></FormControl>
+                          </FormItem>
+                        )} />
+                        <FormField control={monitoringForm.control} name="temperature" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">{t("temperature")}</FormLabel>
+                            <FormControl><Input type="number" step="0.1" min="0" placeholder="—" {...field} data-testid="input-temperature" /></FormControl>
+                          </FormItem>
+                        )} />
+                      </div>
+                      <FormField control={monitoringForm.control} name="notes" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("notes")}</FormLabel>
+                          <FormControl><Textarea {...field} rows={2} data-testid="input-monitoring-notes" /></FormControl>
+                        </FormItem>
+                      )} />
+                      <Button type="submit" className="w-full" disabled={addMonitoring.isPending} data-testid="btn-submit-monitoring">
+                        {addMonitoring.isPending ? t("saving") : t("addMonitoring")}
+                      </Button>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <p className="text-xs text-muted-foreground text-center py-2">{t("noMonitoringRecords")}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {isVet && (
+          <Card>
+            <CardHeader className="pb-3 flex-row items-center justify-between">
+              <CardTitle className="text-sm">{t("vaccinationRecords")}</CardTitle>
+              <Dialog open={vaccinationDialogOpen} onOpenChange={setVaccinationDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline" data-testid="btn-add-vaccination">
+                    <Plus className="h-4 w-4 mr-1" />{t("add")}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>{t("addVaccination")}</DialogTitle></DialogHeader>
+                  <Form {...vaccinationForm}>
+                    <form onSubmit={vaccinationForm.handleSubmit(addVaccinationRecord)} className="space-y-4 pt-2">
+                      <FormField control={vaccinationForm.control} name="vaccineName" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("vaccineName")}</FormLabel>
+                          <FormControl><Input {...field} data-testid="input-vaccine-name" /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <div className="flex gap-3">
+                        <FormField control={vaccinationForm.control} name="date" render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel>{t("dateGiven")}</FormLabel>
+                            <FormControl><Input type="date" {...field} data-testid="input-vaccine-date" /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={vaccinationForm.control} name="nextDueDate" render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel>{t("nextDueDateLabel")}</FormLabel>
+                            <FormControl><Input type="date" {...field} data-testid="input-vaccine-next-date" /></FormControl>
+                          </FormItem>
+                        )} />
+                      </div>
+                      <FormField control={vaccinationForm.control} name="brand" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("brand")}</FormLabel>
+                          <FormControl><Input {...field} data-testid="input-vaccine-brand" /></FormControl>
+                        </FormItem>
+                      )} />
+                      <FormField control={vaccinationForm.control} name="cost" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("costLabel")}</FormLabel>
+                          <FormControl><Input type="number" min="0" {...field} data-testid="input-vaccine-cost" /></FormControl>
+                        </FormItem>
+                      )} />
+                      <FormField control={vaccinationForm.control} name="notes" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("notes")}</FormLabel>
+                          <FormControl><Textarea {...field} rows={2} data-testid="input-vaccine-notes" /></FormControl>
+                        </FormItem>
+                      )} />
+                      <Button type="submit" className="w-full" disabled={addVaccination.isPending} data-testid="btn-submit-vaccination">
+                        {addVaccination.isPending ? t("saving") : t("saveVaccination")}
+                      </Button>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <p className="text-xs text-muted-foreground text-center py-2">{t("noVaccinationRecords")}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {isVet && (
+          <div className="rounded-xl border border-destructive/20 p-4">
+            <p className="text-xs text-muted-foreground mb-2">{t("statusPassedAway")}</p>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="w-full text-destructive border-destructive/40 hover:bg-destructive/10"
+              onClick={markDeceased}
+              disabled={updatePetStatus.isPending}
+              data-testid="btn-mark-deceased"
+            >
+              <AlertTriangle className="h-3.5 w-3.5 mr-1" />{t("markDeceased")}
+            </Button>
+          </div>
         )}
 
         <BillingSummary v={v} />
