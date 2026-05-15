@@ -23,10 +23,12 @@ export const GetMeResponse = zod.object({
   name: zod.string().nullish(),
   phone: zod.string().nullish(),
   email: zod.string().nullish(),
-  role: zod.enum(["pet_owner", "vet", "vet_owner", "both"]),
+  role: zod.enum(["pet_owner", "vet", "vet_owner", "both", "none"]),
   isPetOwner: zod.boolean(),
   isVet: zod.boolean(),
   isVetOwner: zod.boolean(),
+  vetStatus: zod.string().nullish(),
+  isAdmin: zod.boolean(),
   clinicId: zod.number().nullish(),
   createdAt: zod.string(),
 });
@@ -45,10 +47,12 @@ export const UpdateMeResponse = zod.object({
   name: zod.string().nullish(),
   phone: zod.string().nullish(),
   email: zod.string().nullish(),
-  role: zod.enum(["pet_owner", "vet", "vet_owner", "both"]),
+  role: zod.enum(["pet_owner", "vet", "vet_owner", "both", "none"]),
   isPetOwner: zod.boolean(),
   isVet: zod.boolean(),
   isVetOwner: zod.boolean(),
+  vetStatus: zod.string().nullish(),
+  isAdmin: zod.boolean(),
   clinicId: zod.number().nullish(),
   createdAt: zod.string(),
 });
@@ -62,10 +66,12 @@ export const RegisterAsPetOwnerResponse = zod.object({
   name: zod.string().nullish(),
   phone: zod.string().nullish(),
   email: zod.string().nullish(),
-  role: zod.enum(["pet_owner", "vet", "vet_owner", "both"]),
+  role: zod.enum(["pet_owner", "vet", "vet_owner", "both", "none"]),
   isPetOwner: zod.boolean(),
   isVet: zod.boolean(),
   isVetOwner: zod.boolean(),
+  vetStatus: zod.string().nullish(),
+  isAdmin: zod.boolean(),
   clinicId: zod.number().nullish(),
   createdAt: zod.string(),
 });
@@ -376,10 +382,12 @@ export const SearchPetOwnerResponse = zod.object({
     name: zod.string().nullish(),
     phone: zod.string().nullish(),
     email: zod.string().nullish(),
-    role: zod.enum(["pet_owner", "vet", "vet_owner", "both"]),
+    role: zod.enum(["pet_owner", "vet", "vet_owner", "both", "none"]),
     isPetOwner: zod.boolean(),
     isVet: zod.boolean(),
     isVetOwner: zod.boolean(),
+    vetStatus: zod.string().nullish(),
+    isAdmin: zod.boolean(),
     clinicId: zod.number().nullish(),
     createdAt: zod.string(),
   }),
@@ -850,6 +858,94 @@ export const UpdateDailyReportResponse = zod.object({
   cost: zod.number(),
   vetName: zod.string().nullish(),
   createdAt: zod.string(),
+});
+
+/**
+ * @summary Check if current user is admin
+ */
+export const GetAdminStatusResponse = zod.object({
+  isAdmin: zod.boolean(),
+});
+
+/**
+ * @summary List all vet registrations with approval status
+ */
+export const ListVetApplicationsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string().nullish(),
+  email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  isVet: zod.boolean(),
+  isVetOwner: zod.boolean(),
+  vetStatus: zod.string().nullish(),
+  clinicId: zod.number().nullish(),
+  createdAt: zod.string(),
+});
+export const ListVetApplicationsResponse = zod.array(
+  ListVetApplicationsResponseItem,
+);
+
+/**
+ * @summary Approve or reject a vet registration
+ */
+export const UpdateVetApplicationParams = zod.object({
+  userId: zod.coerce.number(),
+});
+
+export const UpdateVetApplicationBody = zod.object({
+  vetStatus: zod.enum(["pending", "approved", "rejected"]),
+});
+
+export const UpdateVetApplicationResponse = zod.object({
+  id: zod.number(),
+  name: zod.string().nullish(),
+  email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  isVet: zod.boolean(),
+  isVetOwner: zod.boolean(),
+  vetStatus: zod.string().nullish(),
+  clinicId: zod.number().nullish(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Add a new species (admin only)
+ */
+
+export const AdminAddSpeciesBody = zod.object({
+  name: zod.string().min(1),
+  icon: zod.string().optional(),
+});
+
+/**
+ * @summary Delete a species (admin only)
+ */
+export const AdminDeleteSpeciesParams = zod.object({
+  speciesId: zod.coerce.number(),
+});
+
+/**
+ * @summary List all admins
+ */
+export const ListAdminsResponseItem = zod.object({
+  id: zod.number(),
+  email: zod.string(),
+  createdAt: zod.string(),
+});
+export const ListAdminsResponse = zod.array(ListAdminsResponseItem);
+
+/**
+ * @summary Add a new admin by email
+ */
+export const AddAdminBody = zod.object({
+  email: zod.string(),
+});
+
+/**
+ * @summary Remove an admin
+ */
+export const DeleteAdminParams = zod.object({
+  adminId: zod.coerce.number(),
 });
 
 /**

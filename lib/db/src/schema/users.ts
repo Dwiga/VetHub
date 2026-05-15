@@ -12,6 +12,7 @@ export const usersTable = pgTable("users", {
   isVet: boolean("is_vet").notNull().default(false),
   isVetOwner: boolean("is_vet_owner").notNull().default(false),
   clinicId: integer("clinic_id"),
+  vetStatus: text("vet_status"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

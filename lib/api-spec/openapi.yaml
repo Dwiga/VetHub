@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: admin
+    description: Admin operations
   - name: users
     description: User profile operations
   - name: clinics
@@ -765,6 +767,144 @@ paths:
               schema:
                 $ref: "#/components/schemas/DailyReport"
 
+  # ── Admin ──────────────────────────────────────────────────────────────────
+  /admin/me:
+    get:
+      operationId: getAdminStatus
+      tags: [admin]
+      summary: Check if current user is admin
+      responses:
+        "200":
+          description: Admin status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isAdmin: { type: boolean }
+                required: [isAdmin]
+
+  /admin/vets:
+    get:
+      operationId: listVetApplications
+      tags: [admin]
+      summary: List all vet registrations with approval status
+      responses:
+        "200":
+          description: Vet applications list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VetApplication"
+
+  /admin/vets/{userId}:
+    patch:
+      operationId: updateVetApplication
+      tags: [admin]
+      summary: Approve or reject a vet registration
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VetApplicationUpdate"
+      responses:
+        "200":
+          description: Updated vet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VetApplication"
+
+  /admin/species:
+    post:
+      operationId: adminAddSpecies
+      tags: [admin]
+      summary: Add a new species (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpeciesInput"
+      responses:
+        "201":
+          description: Created species
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Species"
+
+  /admin/species/{speciesId}:
+    delete:
+      operationId: adminDeleteSpecies
+      tags: [admin]
+      summary: Delete a species (admin only)
+      parameters:
+        - name: speciesId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  /admin/admins:
+    get:
+      operationId: listAdmins
+      tags: [admin]
+      summary: List all admins
+      responses:
+        "200":
+          description: Admin list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminRecord"
+    post:
+      operationId: addAdmin
+      tags: [admin]
+      summary: Add a new admin by email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+              required: [email]
+      responses:
+        "201":
+          description: Created admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminRecord"
+
+  /admin/admins/{adminId}:
+    delete:
+      operationId: deleteAdmin
+      tags: [admin]
+      summary: Remove an admin
+      parameters:
+        - name: adminId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
   # ── Products (POS) ────────────────────────────────────────────────────────
   /clinics/{clinicId}/products:
     get:
@@ -942,13 +1082,15 @@ components:
         email: { type: ["string", "null"] }
         role:
           type: string
-          enum: [pet_owner, vet, vet_owner, both]
+          enum: [pet_owner, vet, vet_owner, both, none]
         isPetOwner: { type: boolean }
         isVet: { type: boolean }
         isVetOwner: { type: boolean }
+        vetStatus: { type: ["string", "null"] }
+        isAdmin: { type: boolean }
         clinicId: { type: ["integer", "null"] }
         createdAt: { type: string }
-      required: [id, clerkId, role, isPetOwner, isVet, isVetOwner, createdAt]
+      required: [id, clerkId, role, isPetOwner, isVet, isVetOwner, isAdmin, createdAt]
 
     UserProfileUpdate:
       type: object
@@ -1381,6 +1523,36 @@ components:
         stock: { type: integer }
         unit: { type: string }
         isActive: { type: boolean }
+
+    VetApplication:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: ["string", "null"] }
+        email: { type: ["string", "null"] }
+        phone: { type: ["string", "null"] }
+        isVet: { type: boolean }
+        isVetOwner: { type: boolean }
+        vetStatus: { type: ["string", "null"] }
+        clinicId: { type: ["integer", "null"] }
+        createdAt: { type: string }
+      required: [id, isVet, isVetOwner, createdAt]
+
+    VetApplicationUpdate:
+      type: object
+      properties:
+        vetStatus:
+          type: string
+          enum: [pending, approved, rejected]
+      required: [vetStatus]
+
+    AdminRecord:
+      type: object
+      properties:
+        id: { type: integer }
+        email: { type: string }
+        createdAt: { type: string }
+      required: [id, email, createdAt]
 
     Vaccination:
       type: object

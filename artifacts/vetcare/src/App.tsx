@@ -38,6 +38,7 @@ import ClinicPage from "@/pages/clinic/index";
 import ClinicReportsPage from "@/pages/clinic/reports";
 import SettingsPage from "@/pages/settings";
 import SharedVisitPage from "@/pages/shared-visit";
+import AdminPage from "@/pages/admin";
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -318,6 +319,10 @@ function ClerkProviderWithRoutes() {
                   component={() => <AuthedRoute component={SettingsPage} />}
                 />
                 <Route path="/visit/share/:token" component={SharedVisitPage} />
+                <Route
+                  path="/admin"
+                  component={() => <AuthedRoute component={AdminPage} />}
+                />
                 <Route component={NotFound} />
               </Switch>
             </TooltipProvider>

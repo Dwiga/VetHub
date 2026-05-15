@@ -1,21 +1,39 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth, createClerkClient } from "@clerk/express";
 import { db } from "@workspace/db";
-import { usersTable, clinicsTable, staffTable } from "@workspace/db";
+import { usersTable, clinicsTable, adminsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
 const router = Router();
 
-async function getOrCreateUser(clerkId: string, email?: string) {
+const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! });
+
+async function syncEmailFromClerk(clerkId: string): Promise<string | undefined> {
+  try {
+    const clerkUser = await clerk.users.getUser(clerkId);
+    return clerkUser.emailAddresses.find(e => e.id === clerkUser.primaryEmailAddressId)?.emailAddress;
+  } catch {
+    return undefined;
+  }
+}
+
+async function getOrCreateUser(clerkId: string) {
   let user = await db.query.usersTable.findFirst({ where: eq(usersTable.clerkId, clerkId) });
   if (!user) {
+    const email = await syncEmailFromClerk(clerkId);
     const [created] = await db.insert(usersTable).values({ clerkId, email }).returning();
     user = created;
+  } else if (!user.email) {
+    const email = await syncEmailFromClerk(clerkId);
+    if (email) {
+      const [updated] = await db.update(usersTable).set({ email }).where(eq(usersTable.id, user.id)).returning();
+      user = updated;
+    }
   }
   return user;
 }
 
-function buildUserProfile(user: typeof usersTable.$inferSelect) {
+function buildUserProfile(user: typeof usersTable.$inferSelect, isAdmin = false) {
   let role = "none";
   if (user.isPetOwner && user.isVetOwner) role = "both";
   else if (user.isPetOwner) role = "pet_owner";
@@ -31,9 +49,17 @@ function buildUserProfile(user: typeof usersTable.$inferSelect) {
     isPetOwner: user.isPetOwner,
     isVet: user.isVet,
     isVetOwner: user.isVetOwner,
+    vetStatus: user.vetStatus ?? null,
     clinicId: user.clinicId,
+    isAdmin,
     createdAt: user.createdAt,
   };
+}
+
+async function checkIsAdmin(email: string | null | undefined): Promise<boolean> {
+  if (!email) return false;
+  const admin = await db.query.adminsTable.findFirst({ where: eq(adminsTable.email, email) });
+  return !!admin;
 }
 
 // GET /api/users/me
@@ -41,7 +67,8 @@ router.get("/me", async (req, res) => {
   const { userId: clerkId } = getAuth(req);
   if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
   const user = await getOrCreateUser(clerkId);
-  res.json(buildUserProfile(user));
+  const isAdmin = await checkIsAdmin(user.email);
+  res.json(buildUserProfile(user, isAdmin));
 });
 
 // PATCH /api/users/me
@@ -55,7 +82,8 @@ router.patch("/me", async (req, res) => {
     .set({ ...(name !== undefined && { name }), ...(phone !== undefined && { phone }) })
     .where(eq(usersTable.id, user.id))
     .returning();
-  res.json(buildUserProfile(updated));
+  const isAdmin = await checkIsAdmin(updated.email);
+  res.json(buildUserProfile(updated, isAdmin));
 });
 
 // POST /api/users/register-as-pet-owner
@@ -68,7 +96,8 @@ router.post("/register-as-pet-owner", async (req, res) => {
     .set({ isPetOwner: true })
     .where(eq(usersTable.id, user.id))
     .returning();
-  res.json(buildUserProfile(updated));
+  const isAdmin = await checkIsAdmin(updated.email);
+  res.json(buildUserProfile(updated, isAdmin));
 });
 
 // POST /api/users/register-for-vet
@@ -82,7 +111,9 @@ router.post("/register-for-vet", async (req, res) => {
     .insert(clinicsTable)
     .values({ name, address, phone: clinicPhone, email: clinicEmail, ownerId: user.id })
     .returning();
-  await db.update(usersTable).set({ isVetOwner: true, clinicId: clinic.id }).where(eq(usersTable.id, user.id));
+  await db.update(usersTable)
+    .set({ isVetOwner: true, clinicId: clinic.id, vetStatus: "pending" })
+    .where(eq(usersTable.id, user.id));
   res.status(201).json(clinic);
 });
 

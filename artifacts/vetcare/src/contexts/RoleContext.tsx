@@ -25,9 +25,9 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   const me = useGetMe();
   const user = me.data;
 
-  const isVet = !!(user?.isVet || user?.isVetOwner);
+  const isVetApproved = !!(user?.isVet || user?.isVetOwner) && user?.vetStatus === "approved";
   const isPetOwner = !!user?.isPetOwner;
-  const hasBothRoles = isVet && isPetOwner;
+  const hasBothRoles = isVetApproved && isPetOwner;
 
   const [activeRole, setActiveRoleState] = useState<ActiveRole>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -38,14 +38,14 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     if (!me.isLoading && user) {
       const stored = localStorage.getItem(STORAGE_KEY) as ActiveRole | null;
       if (!stored) {
-        setActiveRoleState(isVet && !isPetOwner ? "vet" : "pet-owner");
-      } else if (stored === "vet" && !isVet) {
+        setActiveRoleState(isVetApproved && !isPetOwner ? "vet" : "pet-owner");
+      } else if (stored === "vet" && !isVetApproved) {
         setActiveRoleState("pet-owner");
-      } else if (stored === "pet-owner" && !isPetOwner && isVet) {
+      } else if (stored === "pet-owner" && !isPetOwner && isVetApproved) {
         setActiveRoleState("vet");
       }
     }
-  }, [me.isLoading, isVet, isPetOwner, user]);
+  }, [me.isLoading, isVetApproved, isPetOwner, user]);
 
   const setActiveRole = useCallback((role: ActiveRole) => {
     setActiveRoleState(role);
@@ -58,7 +58,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
         activeRole,
         setActiveRole,
         hasBothRoles,
-        canSwitchToVet: isVet,
+        canSwitchToVet: isVetApproved,
         canSwitchToPetOwner: isPetOwner,
       }}
     >

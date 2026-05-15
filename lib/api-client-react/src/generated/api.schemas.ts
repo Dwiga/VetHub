@@ -27,6 +27,7 @@ export const UserProfileRole = {
   vet: "vet",
   vet_owner: "vet_owner",
   both: "both",
+  none: "none",
 } as const;
 
 export interface UserProfile {
@@ -42,6 +43,9 @@ export interface UserProfile {
   isPetOwner: boolean;
   isVet: boolean;
   isVetOwner: boolean;
+  /** @nullable */
+  vetStatus?: string | null;
+  isAdmin: boolean;
   /** @nullable */
   clinicId?: number | null;
   createdAt: string;
@@ -527,6 +531,42 @@ export interface ProductUpdate {
   isActive?: boolean;
 }
 
+export interface VetApplication {
+  id: number;
+  /** @nullable */
+  name?: string | null;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  isVet: boolean;
+  isVetOwner: boolean;
+  /** @nullable */
+  vetStatus?: string | null;
+  /** @nullable */
+  clinicId?: number | null;
+  createdAt: string;
+}
+
+export type VetApplicationUpdateVetStatus =
+  (typeof VetApplicationUpdateVetStatus)[keyof typeof VetApplicationUpdateVetStatus];
+
+export const VetApplicationUpdateVetStatus = {
+  pending: "pending",
+  approved: "approved",
+  rejected: "rejected",
+} as const;
+
+export interface VetApplicationUpdate {
+  vetStatus: VetApplicationUpdateVetStatus;
+}
+
+export interface AdminRecord {
+  id: number;
+  email: string;
+  createdAt: string;
+}
+
 export interface Vaccination {
   id: number;
   petId: number;
@@ -601,6 +641,14 @@ export type SearchPetOwnerParams = {
 export type SearchPetParams = {
   name: string;
   clinicId?: number;
+};
+
+export type GetAdminStatus200 = {
+  isAdmin: boolean;
+};
+
+export type AddAdminBody = {
+  email: string;
 };
 
 export type GetReportSummaryParams = {

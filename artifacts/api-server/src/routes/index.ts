@@ -10,6 +10,7 @@ import dailyReportsRouter from "./dailyReports";
 import productsRouter from "./products";
 import vetRouter from "./vet";
 import vaccinationsRouter from "./vaccinations";
+import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use("/daily-reports", dailyReportsRouter);
 router.use("/products", productsRouter);
 router.use("/vet", vetRouter);
 router.use("/vaccinations", vaccinationsRouter);
+router.use("/admin", adminRouter);
 
 export default router;

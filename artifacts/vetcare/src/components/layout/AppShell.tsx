@@ -1,6 +1,6 @@
 import { useGetMe } from "@workspace/api-client-react";
 import { useLocation, Link } from "wouter";
-import { Home, PawPrint, Stethoscope, Building2, Settings } from "lucide-react";
+import { Home, PawPrint, Stethoscope, Building2, Settings, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/contexts/RoleContext";
 import { useLang } from "@/contexts/LangContext";
@@ -13,22 +13,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const user = me.data;
   const isVetOwner = !!user?.isVetOwner;
+  const isAdmin = !!user?.isAdmin;
+
+  const adminNavItem = { href: "/admin", icon: ShieldCheck, label: "Admin" };
 
   const petOwnerNav = [
     { href: "/dashboard", icon: Home, label: t("nav_home") },
     { href: "/pets", icon: PawPrint, label: t("nav_pets") },
     { href: "/settings", icon: Settings, label: t("nav_settings") },
+    ...(isAdmin ? [adminNavItem] : []),
   ];
 
   const vetNav = [
     { href: "/vet", icon: Stethoscope, label: t("nav_clinic") },
     { href: "/settings", icon: Settings, label: t("nav_settings") },
+    ...(isAdmin ? [adminNavItem] : []),
   ];
 
   const vetOwnerNav = [
     { href: "/vet", icon: Stethoscope, label: t("nav_clinic") },
     { href: "/clinic", icon: Building2, label: t("nav_manage") },
     { href: "/settings", icon: Settings, label: t("nav_settings") },
+    ...(isAdmin ? [adminNavItem] : []),
   ];
 
   const PET_PATHS = ["/dashboard", "/pets"];
