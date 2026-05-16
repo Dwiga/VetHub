@@ -121,9 +121,9 @@ const copy = {
     footerImpact: "5% for street animal rescue",
   },
   id: {
-    badge: "Dirancang di Indonesia",
+    badge: "Dibuat di Indonesia",
     heroTitle1: "Cara paling cerdas",
-    heroTitle2: "merawat setiap hewan",
+    heroTitle2: "me-manage majikan berbulu",
     heroAccent: "setiap hewan",
     heroSub:
       "PetHub menghubungkan pemilik hewan, dokter hewan, dan pemilik klinik — agar hewan mendapat perawatan terbaik dan klinik berjalan lancar.",
@@ -131,14 +131,14 @@ const copy = {
     ctaSecondary: "Masuk",
     stat1Val: "100%",
     stat1Lbl: "Gratis untuk 1 bulan pertama.",
-    stat2Val: "Semua-dalam-satu",
+    stat2Val: "All-in-one",
     stat2Lbl: "Platform pet + klinik",
-    stat3Val: "Indonesia",
-    stat3Lbl: "Dirancang untuk Anda",
+    stat3Val: "Growing",
+    stat3Lbl: "Terus berkembang sesuai kebutuhan pengguna",
     impactBannerTitle:
-      "5% pendapatan kami digunakan untuk menyelamatkan hewan liar",
+      "5% kentungan aplikasi akan digunakan untuk membantu hewan terlantar",
     impactBannerSub:
-      "Setiap klinik yang menggunakan PetHub turut mendanai perawatan hewan liar di seluruh Indonesia.",
+      "Setiap klinik yang menggunakan PetHub turut mendanai perawatan hewan terlantar terdekat lokasi admin.",
     featuresEyebrow: "Semua yang Anda butuhkan",
     featuresTitle: "Satu platform. Semua peran.",
     featuresSub:
@@ -215,18 +215,18 @@ const copy = {
         desc: "Gunakan analitik untuk memahami pola pendapatan, kinerja staf, dan alur pasien.",
       },
     ],
-    impactTitle: "Merawat hewan peliharaan. Membantu hewan liar.",
+    impactTitle: "Merawat hewan peliharaan. Membantu hewan terlantar.",
     impactBody:
-      "5% dari setiap rupiah yang kami hasilkan disumbangkan ke organisasi penyelamatan hewan liar di seluruh Indonesia. Saat Anda menggunakan PetHub, Anda tidak hanya merawat hewan peliharaan — Anda memberikan kesempatan hidup lebih baik bagi hewan-hewan liar.",
+      "5% dari setiap rupiah yang kami hasilkan disumbangkan ke organisasi penyelamatan hewan terlantar. Saat Anda menggunakan PetHub, Anda tidak hanya merawat hewan peliharaan — Anda memberikan kesempatan hidup lebih baik bagi hewan-hewan terlatar.",
     impactTag:
       "Setiap langganan klinik · Setiap kunjungan tercatat · Setiap fitur digunakan",
-    impactTagAccent: "5% menjangkau hewan liar yang paling membutuhkan",
+    impactTagAccent: "5% menjangkau hewan terlantar yang paling membutuhkan",
     ctaSectionTitle: "Siap untuk memulai?",
     ctaSectionSub:
       "Bergabung bersama klinik dan pemilik hewan di seluruh Indonesia yang mempercayai PetHub untuk setiap kunjungan, vaksinasi, dan pemeriksaan.",
     ctaSecondaryFull: "Masuk ke akun Anda",
     footerTagline: "Dibangun untuk klinik yang peduli.",
-    footerImpact: "5% untuk penyelamatan hewan liar",
+    footerImpact: "5% untuk penyelamatan hewan terlantar",
   },
 };
 
@@ -594,7 +594,7 @@ export default function LandingPage() {
             </strong>{" "}
             {lang === "en"
               ? " is donated to street animal rescue organizations across Indonesia. When you use PetHub, you're not just caring for your pet — you're giving countless stray animals a chance at a better life."
-              : " disumbangkan ke organisasi penyelamatan hewan liar di seluruh Indonesia. Saat Anda menggunakan PetHub, Anda tidak hanya merawat hewan peliharaan — Anda memberikan kesempatan hidup lebih baik bagi hewan-hewan liar."}
+              : " disumbangkan ke organisasi penyelamatan hewan terlantar. Saat Anda menggunakan PetHub, Anda tidak hanya merawat hewan peliharaan — Anda memberikan kesempatan hidup lebih baik bagi hewan-hewan terlantar."}
           </p>
           <div className="inline-block bg-white/8 border border-white/15 rounded-xl px-6 py-4">
             <p className="text-[13px] text-white/65 mb-2">{c.impactTag}</p>
