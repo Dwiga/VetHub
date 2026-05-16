@@ -49,7 +49,7 @@ function RoleSelector() {
           </div>
         </CardContent>
       </Card>
-      <Link href="/settings">
+      {/* <Link href="/settings">
         <Card
           className="cursor-pointer hover:border-primary transition-colors"
           data-testid="card-vet"
@@ -66,7 +66,7 @@ function RoleSelector() {
             </div>
           </CardContent>
         </Card>
-      </Link>
+      </Link> */}
     </div>
   );
 }
