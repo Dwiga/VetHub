@@ -1,5 +1,4 @@
 services:
-
   # ── PostgreSQL database ────────────────────────────────────────────────────
   db:
     image: postgres:16-alpine
@@ -18,40 +17,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-
-  # ── Express API server ────────────────────────────────────────────────────
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: api-runner
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      PORT: "8080"
-      DATABASE_URL: postgres://vetcare:${POSTGRES_PASSWORD:-changeme}@db:5432/vetcare
-      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
-      CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY}
-      CLERK_FRONTEND_API_URL: ${CLERK_FRONTEND_API_URL:-}
-      SESSION_SECRET: ${SESSION_SECRET}
-    depends_on:
-      db:
-        condition: service_healthy
-
-  # ── nginx: serves the frontend and proxies /api to the API server ─────────
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-      target: web-runner
-      args:
-        VITE_CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY}
-        VITE_CLERK_PROXY_URL: ${VITE_CLERK_PROXY_URL:-}
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:8080:8000"   # Caddy (on host) proxies here; not exposed publicly
-    depends_on:
-      - api
 
 volumes:
   postgres_data:
