@@ -545,6 +545,44 @@ export const DeleteVaccinationParams = zod.object({
 });
 
 /**
+ * @summary List health events for a pet (deworming, anti-flea, etc.)
+ */
+export const ListHealthEventsParams = zod.object({
+  petId: zod.coerce.number(),
+});
+
+export const ListHealthEventsResponseItem = zod.object({
+  id: zod.number(),
+  petId: zod.number(),
+  title: zod.string(),
+  notes: zod.string().nullish(),
+  eventDate: zod.string(),
+  createdAt: zod.string(),
+});
+export const ListHealthEventsResponse = zod.array(ListHealthEventsResponseItem);
+
+/**
+ * @summary Add a health event record
+ */
+export const AddHealthEventParams = zod.object({
+  petId: zod.coerce.number(),
+});
+
+export const AddHealthEventBody = zod.object({
+  title: zod.string().min(1),
+  notes: zod.string().optional(),
+  eventDate: zod.string().optional(),
+});
+
+/**
+ * @summary Delete a health event
+ */
+export const DeleteHealthEventParams = zod.object({
+  petId: zod.coerce.number(),
+  eventId: zod.coerce.number(),
+});
+
+/**
  * @summary List all visits for a pet
  */
 export const ListVisitsParams = zod.object({

@@ -542,6 +542,67 @@ paths:
         "204":
           description: Deleted
 
+  # ── Health Events ─────────────────────────────────────────────────────────
+  /pets/{petId}/health-events:
+    get:
+      operationId: listHealthEvents
+      tags: [pets]
+      summary: List health events for a pet (deworming, anti-flea, etc.)
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Health events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HealthEvent"
+    post:
+      operationId: addHealthEvent
+      tags: [pets]
+      summary: Add a health event record
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HealthEventInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthEvent"
+
+  /pets/{petId}/health-events/{eventId}:
+    delete:
+      operationId: deleteHealthEvent
+      tags: [pets]
+      summary: Delete a health event
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: eventId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
   # ── Hospital Visits ───────────────────────────────────────────────────────
   /pets/{petId}/visits:
     get:

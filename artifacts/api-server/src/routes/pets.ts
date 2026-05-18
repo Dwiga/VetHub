@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
-import { usersTable, petsTable, speciesTable, monitoringTable, vaccinationsTable } from "@workspace/db";
+import { usersTable, petsTable, speciesTable, monitoringTable, vaccinationsTable, healthEventsTable } from "@workspace/db";
 import { eq, desc, ilike } from "drizzle-orm";
 import { getOrCreateUser } from "./users";
 
@@ -203,6 +203,43 @@ router.post("/:petId/vaccinations", async (req, res) => {
     notes, vetId: user.id,
   }).returning();
   res.status(201).json({ ...record, cost: record.cost ? parseFloat(record.cost) : null });
+});
+
+// GET /api/pets/:petId/health-events
+router.get("/:petId/health-events", async (req, res) => {
+  const { userId: clerkId } = getAuth(req);
+  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const petId = parseInt(req.params.petId);
+  const events = await db.query.healthEventsTable.findMany({
+    where: eq(healthEventsTable.petId, petId),
+    orderBy: [desc(healthEventsTable.eventDate)],
+  });
+  res.json(events);
+});
+
+// POST /api/pets/:petId/health-events
+router.post("/:petId/health-events", async (req, res) => {
+  const { userId: clerkId } = getAuth(req);
+  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const petId = parseInt(req.params.petId);
+  const { title, notes, eventDate } = req.body;
+  if (!title) return res.status(400).json({ error: "title is required" });
+  const [event] = await db.insert(healthEventsTable).values({
+    petId,
+    title,
+    notes: notes || null,
+    eventDate: eventDate || new Date().toISOString().split("T")[0],
+  }).returning();
+  res.status(201).json(event);
+});
+
+// DELETE /api/pets/:petId/health-events/:eventId
+router.delete("/:petId/health-events/:eventId", async (req, res) => {
+  const { userId: clerkId } = getAuth(req);
+  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const eventId = parseInt(req.params.eventId);
+  await db.delete(healthEventsTable).where(eq(healthEventsTable.id, eventId));
+  res.status(204).send();
 });
 
 export default router;

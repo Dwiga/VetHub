@@ -5,6 +5,8 @@ import {
   useGetPet, useListMonitoring, useListVisits, getGetPetQueryKey,
   useListVaccinations, getListVaccinationsQueryKey,
   useAddVaccination, useDeleteVaccination,
+  useListHealthEvents, getListHealthEventsQueryKey,
+  useAddHealthEvent, useDeleteHealthEvent,
 } from "@workspace/api-client-react";
 import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +18,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Edit, Plus, Activity, Syringe, Trash2 } from "lucide-react";
+import { Edit, Plus, Activity, Syringe, Trash2, ClipboardList } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -299,6 +301,110 @@ function VaccinationSection({ petId }: { petId: number }) {
   );
 }
 
+function HealthEventsSection({ petId }: { petId: number }) {
+  const { t } = useLang();
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ title: "", notes: "", eventDate: new Date().toISOString().split("T")[0] });
+
+  const eventsQuery = useListHealthEvents(petId, { query: { queryKey: getListHealthEventsQueryKey(petId) } });
+  const addMutation = useAddHealthEvent();
+  const deleteMutation = useDeleteHealthEvent();
+  const events = eventsQuery.data ?? [];
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.title) return;
+    await addMutation.mutateAsync({ petId, data: { title: form.title, notes: form.notes || undefined, eventDate: form.eventDate } });
+    await qc.invalidateQueries({ queryKey: getListHealthEventsQueryKey(petId) });
+    setForm({ title: "", notes: "", eventDate: new Date().toISOString().split("T")[0] });
+    setOpen(false);
+  }
+
+  async function handleDelete(eventId: number) {
+    if (!confirm(t("deleteHealthEventConfirm"))) return;
+    await deleteMutation.mutateAsync({ petId, eventId });
+    await qc.invalidateQueries({ queryKey: getListHealthEventsQueryKey(petId) });
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold text-foreground text-sm">{t("healthEvents")}</h2>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm" variant="outline" data-testid="btn-add-health-event">
+              <Plus className="h-4 w-4 mr-1" />{t("add")}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-sm mx-auto">
+            <DialogHeader>
+              <DialogTitle>{t("addHealthEvent")}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-3 pt-1">
+              <div className="space-y-1">
+                <Label htmlFor="he-title">{t("eventTitle")} *</Label>
+                <Input id="he-title" name="title" value={form.title} onChange={handleChange}
+                  placeholder={t("healthEventPlaceholder")} required data-testid="input-health-event-title" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="he-date">{t("date")}</Label>
+                <Input id="he-date" name="eventDate" type="date" value={form.eventDate} onChange={handleChange} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="he-notes">{t("notes")}</Label>
+                <Textarea id="he-notes" name="notes" value={form.notes} onChange={handleChange} rows={2} />
+              </div>
+              <Button type="submit" className="w-full" disabled={addMutation.isPending} data-testid="btn-save-health-event">
+                {addMutation.isPending ? t("saving") : t("save")}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {eventsQuery.isLoading ? (
+        <div className="h-16 bg-muted animate-pulse rounded-xl" />
+      ) : events.length === 0 ? (
+        <Card>
+          <CardContent className="py-8 flex flex-col items-center gap-2">
+            <ClipboardList className="h-8 w-8 text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">{t("noHealthEvents")}</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {events.map((ev: any) => (
+            <Card key={ev.id}>
+              <CardContent className="py-3 flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">{ev.title}</p>
+                  <p className="text-xs text-muted-foreground">{ev.eventDate}</p>
+                  {ev.notes && <p className="text-xs text-muted-foreground italic mt-0.5">{ev.notes}</p>}
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
+                  onClick={() => handleDelete(ev.id)}
+                  disabled={deleteMutation.isPending}
+                  data-testid={`btn-delete-health-event-${ev.id}`}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PetDetailPage() {
   const { petId } = useParams<{ petId: string }>();
   const id = parseInt(petId);
@@ -382,6 +488,8 @@ export default function PetDetailPage() {
         <MonitoringCharts petId={id} />
 
         <VaccinationSection petId={id} />
+
+        <HealthEventsSection petId={id} />
 
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-foreground text-sm">{t("visitHistory")}</h2>

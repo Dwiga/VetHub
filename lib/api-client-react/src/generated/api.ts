@@ -28,6 +28,8 @@ import type {
   GetAdminStatus200,
   GetReportSummaryParams,
   GetVisitStatsParams,
+  HealthEvent,
+  HealthEventInput,
   HealthStatus,
   HotelRegistrationInput,
   ListVetVisitsParams,
@@ -2339,6 +2341,265 @@ export const useDeleteVaccination = <
   TContext
 > => {
   return useMutation(getDeleteVaccinationMutationOptions(options));
+};
+
+/**
+ * @summary List health events for a pet (deworming, anti-flea, etc.)
+ */
+export const getListHealthEventsUrl = (petId: number) => {
+  return `/api/pets/${petId}/health-events`;
+};
+
+export const listHealthEvents = async (
+  petId: number,
+  options?: RequestInit,
+): Promise<HealthEvent[]> => {
+  return customFetch<HealthEvent[]>(getListHealthEventsUrl(petId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListHealthEventsQueryKey = (petId: number) => {
+  return [`/api/pets/${petId}/health-events`] as const;
+};
+
+export const getListHealthEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listHealthEvents>>,
+  TError = ErrorType<unknown>,
+>(
+  petId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listHealthEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListHealthEventsQueryKey(petId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listHealthEvents>>
+  > = ({ signal }) => listHealthEvents(petId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!petId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listHealthEvents>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListHealthEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listHealthEvents>>
+>;
+export type ListHealthEventsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List health events for a pet (deworming, anti-flea, etc.)
+ */
+
+export function useListHealthEvents<
+  TData = Awaited<ReturnType<typeof listHealthEvents>>,
+  TError = ErrorType<unknown>,
+>(
+  petId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listHealthEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListHealthEventsQueryOptions(petId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add a health event record
+ */
+export const getAddHealthEventUrl = (petId: number) => {
+  return `/api/pets/${petId}/health-events`;
+};
+
+export const addHealthEvent = async (
+  petId: number,
+  healthEventInput: HealthEventInput,
+  options?: RequestInit,
+): Promise<HealthEvent> => {
+  return customFetch<HealthEvent>(getAddHealthEventUrl(petId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(healthEventInput),
+  });
+};
+
+export const getAddHealthEventMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addHealthEvent>>,
+    TError,
+    { petId: number; data: BodyType<HealthEventInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addHealthEvent>>,
+  TError,
+  { petId: number; data: BodyType<HealthEventInput> },
+  TContext
+> => {
+  const mutationKey = ["addHealthEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addHealthEvent>>,
+    { petId: number; data: BodyType<HealthEventInput> }
+  > = (props) => {
+    const { petId, data } = props ?? {};
+
+    return addHealthEvent(petId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddHealthEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addHealthEvent>>
+>;
+export type AddHealthEventMutationBody = BodyType<HealthEventInput>;
+export type AddHealthEventMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Add a health event record
+ */
+export const useAddHealthEvent = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addHealthEvent>>,
+    TError,
+    { petId: number; data: BodyType<HealthEventInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addHealthEvent>>,
+  TError,
+  { petId: number; data: BodyType<HealthEventInput> },
+  TContext
+> => {
+  return useMutation(getAddHealthEventMutationOptions(options));
+};
+
+/**
+ * @summary Delete a health event
+ */
+export const getDeleteHealthEventUrl = (petId: number, eventId: number) => {
+  return `/api/pets/${petId}/health-events/${eventId}`;
+};
+
+export const deleteHealthEvent = async (
+  petId: number,
+  eventId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteHealthEventUrl(petId, eventId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteHealthEventMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteHealthEvent>>,
+    TError,
+    { petId: number; eventId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteHealthEvent>>,
+  TError,
+  { petId: number; eventId: number },
+  TContext
+> => {
+  const mutationKey = ["deleteHealthEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteHealthEvent>>,
+    { petId: number; eventId: number }
+  > = (props) => {
+    const { petId, eventId } = props ?? {};
+
+    return deleteHealthEvent(petId, eventId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteHealthEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteHealthEvent>>
+>;
+
+export type DeleteHealthEventMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a health event
+ */
+export const useDeleteHealthEvent = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteHealthEvent>>,
+    TError,
+    { petId: number; eventId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteHealthEvent>>,
+  TError,
+  { petId: number; eventId: number },
+  TContext
+> => {
+  return useMutation(getDeleteHealthEventMutationOptions(options));
 };
 
 /**
