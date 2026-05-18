@@ -41,8 +41,10 @@ export default function OnboardingPage() {
       await updateMe.mutateAsync({ data: { ...values, phone: normalizePhone(values.phone) } });
       await queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
       setLocation("/dashboard");
-    } catch {
+    } catch(e: any) {
       toast({ title: "Something went wrong", variant: "destructive" });
+      const msg = e.response?.data?.error || e.message || "Failed to update profile";
+      form.setError("root", { message: msg });
     }
   }
 
@@ -102,6 +104,11 @@ export default function OnboardingPage() {
                 </FormItem>
               )}
             />
+            {form.formState.errors.root && (
+              <p className="text-sm font-medium text-destructive">
+                {form.formState.errors.root.message}
+              </p>
+            )}
             <Button
               type="submit"
               className="w-full"

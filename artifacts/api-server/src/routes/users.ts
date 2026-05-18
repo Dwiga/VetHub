@@ -72,18 +72,22 @@ router.get("/me", async (req, res) => {
 });
 
 // PATCH /api/users/me
-router.patch("/me", async (req, res) => {
+router.patch("/me", async (req, res, next) => {
   const { userId: clerkId } = getAuth(req);
   if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
   const user = await getOrCreateUser(clerkId);
   const { name, phone } = req.body;
-  const [updated] = await db
-    .update(usersTable)
-    .set({ ...(name !== undefined && { name }), ...(phone !== undefined && { phone }) })
-    .where(eq(usersTable.id, user.id))
-    .returning();
-  const isAdmin = await checkIsAdmin(updated.email);
-  res.json(buildUserProfile(updated, isAdmin));
+  try {
+    const [updated] = await db
+      .update(usersTable)
+      .set({ ...(name !== undefined && { name }), ...(phone !== undefined && { phone }) })
+      .where(eq(usersTable.id, user.id))
+      .returning();
+    const isAdmin = await checkIsAdmin(updated.email);
+    res.json(buildUserProfile(updated, isAdmin));
+  } catch (e: any) {
+    res.status(500).json({ error: "Nomor hp sudah terdaftar" });
+  }
 });
 
 // POST /api/users/register-as-pet-owner
