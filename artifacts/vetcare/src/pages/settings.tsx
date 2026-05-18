@@ -49,9 +49,14 @@ export default function SettingsPage() {
   });
 
   async function saveProfile(values: z.infer<typeof profileSchema>) {
-    await updateMe.mutateAsync({ data: { ...values, phone: normalizePhone(values.phone) } });
-    queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
-    toast({ title: t("profileUpdated") });
+    try {
+      await updateMe.mutateAsync({ data: { ...values, phone: normalizePhone(values.phone) } });
+      queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+      toast({ title: t("profileUpdated") });
+    } catch (e: any) {
+      const msg = e.response?.data?.error || e.message || "Failed to update profile";
+      profileForm.setError("root", { message: msg });
+    }
   }
 
   async function registerPetOwner() {
@@ -99,6 +104,11 @@ export default function SettingsPage() {
                     <FormMessage />
                   </FormItem>
                 )} />
+                {profileForm.formState.errors.root && (
+                  <p className="text-sm font-medium text-destructive">
+                    {profileForm.formState.errors.root.message}
+                  </p>
+                )}
                 <Button type="submit" className="w-full" disabled={updateMe.isPending} data-testid="btn-save-profile">
                   {updateMe.isPending ? t("saving") : t("save")}
                 </Button>
