@@ -17,6 +17,19 @@ services:
       retries: 5
       start_period: 10s
 
+  # ── Database Migrator ──────────────────────────────────────────────────────
+  migrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: build-api
+    environment:
+      DATABASE_URL: postgres://vetcare:${POSTGRES_PASSWORD:-changeme}@db:5432/vetcare
+    command: ["pnpm", "--filter", "@workspace/db", "run", "push-force"]
+    depends_on:
+      db:
+        condition: service_healthy
+
   # ── Express API server ────────────────────────────────────────────────────
   api:
     build:
@@ -36,8 +49,8 @@ services:
       - 8.8.8.8
       - 1.1.1.1
     depends_on:
-      db:
-        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
 
   # ── nginx: serves the frontend and proxies /api to the API server ─────────
   web:
