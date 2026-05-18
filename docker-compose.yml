@@ -8,6 +8,8 @@ services:
       POSTGRES_DB: vetcare
       POSTGRES_USER: vetcare
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    ports:
+      - "127.0.0.1:5432:5432"   # SSH-tunnel only; not exposed to public internet
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
