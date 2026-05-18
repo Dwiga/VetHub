@@ -59,7 +59,6 @@ COPY tsconfig.base.json ./
 COPY lib/              ./lib/
 COPY artifacts/api-server/ ./artifacts/api-server/
 
-RUN pnpm --filter @workspace/db run push
 RUN pnpm --filter @workspace/api-server run build
 
 
