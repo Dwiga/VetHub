@@ -7,8 +7,46 @@ import { getOrCreateUser } from "./users";
 
 const router = Router();
 
+// POST /api/hotel/standalone — create booking without a registered pet
+router.post("/standalone", async (req, res) => {
+  const { userId: clerkId } = getAuth(req);
+  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const { clinicId, guestName, guestPhone, petNameRaw, petTypeRaw, checkIn, dailyFee, notes } = req.body;
+  if (!clinicId || !checkIn) return res.status(400).json({ error: "clinicId and checkIn are required" });
+  const [booking] = await db.insert(hotelBookingsTable).values({
+    clinicId: parseInt(String(clinicId)),
+    petId: null,
+    guestName: guestName || null,
+    guestPhone: guestPhone || null,
+    petNameRaw: petNameRaw || null,
+    petTypeRaw: petTypeRaw || null,
+    checkIn,
+    dailyFee: dailyFee !== undefined ? String(dailyFee) : null,
+    notes: notes || null,
+    status: "active",
+  }).returning();
+  res.status(201).json({ ...booking, dailyFee: booking.dailyFee ? parseFloat(booking.dailyFee) : null });
+});
+
+// GET /api/hotel/clinic/:clinicId/bookings — list bookings for hotel-only owners
+router.get("/clinic/:clinicId/bookings", async (req, res) => {
+  const { userId: clerkId } = getAuth(req);
+  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const clinicId = parseInt(req.params.clinicId);
+  const { status } = req.query as { status?: string };
+  const { and } = await import("drizzle-orm");
+  const conditions: any[] = [eq(hotelBookingsTable.clinicId, clinicId)];
+  if (status) conditions.push(eq(hotelBookingsTable.status, status));
+  const bookings = await db.query.hotelBookingsTable.findMany({
+    where: and(...conditions),
+    orderBy: [desc(hotelBookingsTable.createdAt)],
+  });
+  const result = await Promise.all(bookings.map(b => bookingWithDetails(b)));
+  res.json(result);
+});
+
 async function bookingWithDetails(booking: typeof hotelBookingsTable.$inferSelect) {
-  const pet = await db.query.petsTable.findFirst({ where: eq(petsTable.id, booking.petId) });
+  const pet = booking.petId ? await db.query.petsTable.findFirst({ where: eq(petsTable.id, booking.petId) }) : null;
   const species = pet ? await db.query.speciesTable.findFirst({ where: eq(speciesTable.id, pet.speciesId) }) : null;
   const owner = pet ? await db.query.usersTable.findFirst({ where: eq(usersTable.id, pet.ownerId) }) : null;
   const logs = await db.query.hotelDailyLogsTable.findMany({ where: eq(hotelDailyLogsTable.bookingId, booking.id) });
@@ -29,10 +67,10 @@ async function bookingWithDetails(booking: typeof hotelBookingsTable.$inferSelec
   return {
     ...booking,
     dailyFee: booking.dailyFee ? parseFloat(booking.dailyFee) : null,
-    petName: pet?.name ?? null,
-    petSpecies: species?.name ?? null,
-    ownerName: owner?.name ?? null,
-    ownerPhone: owner?.phone ?? null,
+    petName: pet?.name ?? booking.petNameRaw ?? null,
+    petSpecies: species?.name ?? booking.petTypeRaw ?? null,
+    ownerName: owner?.name ?? booking.guestName ?? null,
+    ownerPhone: owner?.phone ?? booking.guestPhone ?? null,
     totalDays,
     totalCost,
   };
@@ -95,6 +133,23 @@ router.post("/:bookingId/logs", async (req, res) => {
     cost: cost !== undefined ? String(cost) : "0",
   }).returning();
   res.status(201).json({ ...log, cost: parseFloat(log.cost) });
+});
+
+// GET /api/hotel/clinic/:clinicId/bookings - for hotel-only owners
+router.get("/clinic/:clinicId/bookings", async (req, res) => {
+  const { userId: clerkId } = getAuth(req);
+  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const clinicId = parseInt(req.params.clinicId);
+  const { status } = req.query as { status?: string };
+  const { and } = await import("drizzle-orm");
+  const conditions = [eq(hotelBookingsTable.clinicId, clinicId)];
+  if (status) conditions.push(eq(hotelBookingsTable.status, status));
+  const bookings = await db.query.hotelBookingsTable.findMany({
+    where: and(...conditions),
+    orderBy: [desc(hotelBookingsTable.createdAt)],
+  });
+  const result = await Promise.all(bookings.map(b => bookingWithDetails(b)));
+  res.json(result);
 });
 
 // DELETE /api/hotel/:bookingId/logs/:logId

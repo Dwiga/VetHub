@@ -9,6 +9,7 @@ export const clinicsTable = pgTable("clinics", {
   phone: text("phone"),
   email: text("email"),
   ownerId: integer("owner_id").notNull(),
+  type: text("type").notNull().default("vet"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

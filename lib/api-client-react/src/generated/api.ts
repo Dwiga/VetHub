@@ -29,6 +29,7 @@ import type {
   GetReportSummaryParams,
   GetVisitStatsParams,
   HealthStatus,
+  HotelRegistrationInput,
   ListVetVisitsParams,
   MonitoringInput,
   MonitoringRecord,
@@ -380,6 +381,92 @@ export const useRegisterAsPetOwner = <
   TContext
 > => {
   return useMutation(getRegisterAsPetOwnerMutationOptions(options));
+};
+
+/**
+ * @summary Register as hotel owner (creates a hotel entity)
+ */
+export const getRegisterForHotelUrl = () => {
+  return `/api/users/register-for-hotel`;
+};
+
+export const registerForHotel = async (
+  hotelRegistrationInput: HotelRegistrationInput,
+  options?: RequestInit,
+): Promise<Clinic> => {
+  return customFetch<Clinic>(getRegisterForHotelUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(hotelRegistrationInput),
+  });
+};
+
+export const getRegisterForHotelMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerForHotel>>,
+    TError,
+    { data: BodyType<HotelRegistrationInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof registerForHotel>>,
+  TError,
+  { data: BodyType<HotelRegistrationInput> },
+  TContext
+> => {
+  const mutationKey = ["registerForHotel"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof registerForHotel>>,
+    { data: BodyType<HotelRegistrationInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return registerForHotel(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RegisterForHotelMutationResult = NonNullable<
+  Awaited<ReturnType<typeof registerForHotel>>
+>;
+export type RegisterForHotelMutationBody = BodyType<HotelRegistrationInput>;
+export type RegisterForHotelMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Register as hotel owner (creates a hotel entity)
+ */
+export const useRegisterForHotel = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerForHotel>>,
+    TError,
+    { data: BodyType<HotelRegistrationInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof registerForHotel>>,
+  TError,
+  { data: BodyType<HotelRegistrationInput> },
+  TContext
+> => {
+  return useMutation(getRegisterForHotelMutationOptions(options));
 };
 
 /**

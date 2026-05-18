@@ -74,11 +74,51 @@ jobs:
             sudo docker compose exec -T db psql -U vetcare -d vetcare -c "
               ALTER TABLE visits ADD COLUMN IF NOT EXISTS share_token TEXT UNIQUE;
               ALTER TABLE users ADD COLUMN IF NOT EXISTS vet_status TEXT;
+              ALTER TABLE users ADD COLUMN IF NOT EXISTS is_hotel_owner BOOLEAN NOT NULL DEFAULT FALSE;
+              ALTER TABLE users ADD COLUMN IF NOT EXISTS hotel_id INTEGER;
+              ALTER TABLE clinics ADD COLUMN IF NOT EXISTS type TEXT NOT NULL DEFAULT 'vet';
               CREATE TABLE IF NOT EXISTS admins (
                 id SERIAL PRIMARY KEY,
                 email TEXT UNIQUE NOT NULL,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
               );
+              CREATE TABLE IF NOT EXISTS health_events (
+                id SERIAL PRIMARY KEY,
+                pet_id INTEGER NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
+                title TEXT NOT NULL,
+                notes TEXT,
+                event_date TEXT NOT NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+              );
+              CREATE TABLE IF NOT EXISTS hotel_bookings (
+                id SERIAL PRIMARY KEY,
+                clinic_id INTEGER NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
+                pet_id INTEGER REFERENCES pets(id) ON DELETE SET NULL,
+                guest_name TEXT,
+                guest_phone TEXT,
+                pet_name_raw TEXT,
+                pet_type_raw TEXT,
+                check_in TEXT NOT NULL,
+                check_out TEXT,
+                daily_fee NUMERIC,
+                status TEXT NOT NULL DEFAULT 'active',
+                notes TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+              );
+              CREATE TABLE IF NOT EXISTS hotel_daily_logs (
+                id SERIAL PRIMARY KEY,
+                booking_id INTEGER NOT NULL REFERENCES hotel_bookings(id) ON DELETE CASCADE,
+                log_date TEXT NOT NULL,
+                condition TEXT,
+                feeding TEXT,
+                notes TEXT,
+                cost NUMERIC NOT NULL DEFAULT 0,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+              );
+              ALTER TABLE hotel_bookings ADD COLUMN IF NOT EXISTS guest_name TEXT;
+              ALTER TABLE hotel_bookings ADD COLUMN IF NOT EXISTS guest_phone TEXT;
+              ALTER TABLE hotel_bookings ADD COLUMN IF NOT EXISTS pet_name_raw TEXT;
+              ALTER TABLE hotel_bookings ADD COLUMN IF NOT EXISTS pet_type_raw TEXT;
               UPDATE users SET vet_status = 'approved' WHERE (is_vet = true OR is_vet_owner = true) AND vet_status IS NULL;
               INSERT INTO admins (email) VALUES ('ahmad_dwis@yahoo.com') ON CONFLICT (email) DO NOTHING;
             "

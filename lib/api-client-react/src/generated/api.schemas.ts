@@ -43,11 +43,14 @@ export interface UserProfile {
   isPetOwner: boolean;
   isVet: boolean;
   isVetOwner: boolean;
+  isHotelOwner: boolean;
   /** @nullable */
   vetStatus?: string | null;
   isAdmin: boolean;
   /** @nullable */
   clinicId?: number | null;
+  /** @nullable */
+  hotelId?: number | null;
   createdAt: string;
 }
 
@@ -649,6 +652,129 @@ export interface VisitStats {
   labels: string[];
   visitCounts: number[];
   revenues: number[];
+}
+
+export interface HealthEvent {
+  id: number;
+  petId: number;
+  title: string;
+  /** @nullable */
+  notes?: string | null;
+  eventDate: string;
+  createdAt: string;
+}
+
+export interface HealthEventInput {
+  /** @minLength 1 */
+  title: string;
+  notes?: string;
+  eventDate?: string;
+}
+
+export interface HotelBooking {
+  id: number;
+  /** @nullable */
+  petId?: number | null;
+  clinicId: number;
+  /** @nullable */
+  guestName?: string | null;
+  /** @nullable */
+  guestPhone?: string | null;
+  /** @nullable */
+  petNameRaw?: string | null;
+  /** @nullable */
+  petTypeRaw?: string | null;
+  checkIn: string;
+  /** @nullable */
+  checkOut?: string | null;
+  /** @nullable */
+  dailyFee?: number | null;
+  status: string;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface HotelBookingDetail {
+  id: number;
+  /** @nullable */
+  petId?: number | null;
+  /** @nullable */
+  petName?: string | null;
+  /** @nullable */
+  petSpecies?: string | null;
+  /** @nullable */
+  ownerName?: string | null;
+  /** @nullable */
+  ownerPhone?: string | null;
+  /** @nullable */
+  guestName?: string | null;
+  /** @nullable */
+  guestPhone?: string | null;
+  /** @nullable */
+  petNameRaw?: string | null;
+  /** @nullable */
+  petTypeRaw?: string | null;
+  clinicId: number;
+  checkIn: string;
+  /** @nullable */
+  checkOut?: string | null;
+  /** @nullable */
+  dailyFee?: number | null;
+  status: string;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  totalDays?: number | null;
+  totalCost: number;
+  createdAt: string;
+}
+
+export interface HotelBookingInput {
+  checkIn: string;
+  dailyFee?: number;
+  notes?: string;
+  guestName?: string;
+  guestPhone?: string;
+  petNameRaw?: string;
+  petTypeRaw?: string;
+}
+
+export interface HotelBookingUpdate {
+  checkOut?: string;
+  status?: string;
+  dailyFee?: number;
+  notes?: string;
+}
+
+export interface HotelDailyLog {
+  id: number;
+  bookingId: number;
+  logDate: string;
+  /** @nullable */
+  condition?: string | null;
+  /** @nullable */
+  feeding?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  cost: number;
+  createdAt: string;
+}
+
+export interface HotelDailyLogInput {
+  logDate: string;
+  condition?: string;
+  feeding?: string;
+  notes?: string;
+  cost?: number;
+}
+
+export interface HotelRegistrationInput {
+  /** @minLength 1 */
+  name: string;
+  address?: string;
+  phone?: string;
+  email?: string;
 }
 
 export type ListVetVisitsParams = {

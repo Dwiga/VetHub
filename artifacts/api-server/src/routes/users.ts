@@ -49,8 +49,10 @@ function buildUserProfile(user: typeof usersTable.$inferSelect, isAdmin = false)
     isPetOwner: user.isPetOwner,
     isVet: user.isVet,
     isVetOwner: user.isVetOwner,
+    isHotelOwner: user.isHotelOwner,
     vetStatus: user.vetStatus ?? null,
     clinicId: user.clinicId,
+    hotelId: user.hotelId,
     isAdmin,
     createdAt: user.createdAt,
   };
@@ -102,6 +104,23 @@ router.post("/register-as-pet-owner", async (req, res) => {
     .returning();
   const isAdmin = await checkIsAdmin(updated.email);
   res.json(buildUserProfile(updated, isAdmin));
+});
+
+// POST /api/users/register-for-hotel
+router.post("/register-for-hotel", async (req, res) => {
+  const { userId: clerkId } = getAuth(req);
+  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const user = await getOrCreateUser(clerkId);
+  const { name, address, phone: hotelPhone, email: hotelEmail } = req.body;
+  if (!name) return res.status(400).json({ error: "Hotel name is required" });
+  const [hotel] = await db
+    .insert(clinicsTable)
+    .values({ name, address, phone: hotelPhone, email: hotelEmail, ownerId: user.id, type: "hotel" })
+    .returning();
+  await db.update(usersTable)
+    .set({ isHotelOwner: true, hotelId: hotel.id })
+    .where(eq(usersTable.id, user.id));
+  res.status(201).json(hotel);
 });
 
 // POST /api/users/register-for-vet

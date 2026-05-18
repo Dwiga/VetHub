@@ -11,6 +11,7 @@ import productsRouter from "./products";
 import vetRouter from "./vet";
 import vaccinationsRouter from "./vaccinations";
 import adminRouter from "./admin";
+import hotelRouter from "./hotel";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use("/products", productsRouter);
 router.use("/vet", vetRouter);
 router.use("/vaccinations", vaccinationsRouter);
 router.use("/admin", adminRouter);
+router.use("/hotel", hotelRouter);
 
 export default router;

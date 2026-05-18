@@ -39,6 +39,10 @@ import ClinicReportsPage from "@/pages/clinic/reports";
 import SettingsPage from "@/pages/settings";
 import SharedVisitPage from "@/pages/shared-visit";
 import AdminPage from "@/pages/admin";
+import HotelDashboardPage from "@/pages/hotel/index";
+import HotelNewGuestPage from "@/pages/hotel/new";
+import HotelBookingPage from "@/pages/hotel/booking";
+import HotelHistoryPage from "@/pages/hotel/history";
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -323,6 +327,10 @@ function ClerkProviderWithRoutes() {
                   path="/admin"
                   component={() => <AuthedRoute component={AdminPage} />}
                 />
+                <Route path="/hotel/new" component={() => <AuthedRoute component={HotelNewGuestPage} />} />
+                <Route path="/hotel/history" component={() => <AuthedRoute component={HotelHistoryPage} />} />
+                <Route path="/hotel/:bookingId" component={() => <AuthedRoute component={HotelBookingPage} />} />
+                <Route path="/hotel" component={() => <AuthedRoute component={HotelDashboardPage} />} />
                 <Route component={NotFound} />
               </Switch>
             </TooltipProvider>

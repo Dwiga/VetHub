@@ -27,9 +27,11 @@ export const GetMeResponse = zod.object({
   isPetOwner: zod.boolean(),
   isVet: zod.boolean(),
   isVetOwner: zod.boolean(),
+  isHotelOwner: zod.boolean(),
   vetStatus: zod.string().nullish(),
   isAdmin: zod.boolean(),
   clinicId: zod.number().nullish(),
+  hotelId: zod.number().nullish(),
   createdAt: zod.string(),
 });
 
@@ -51,9 +53,11 @@ export const UpdateMeResponse = zod.object({
   isPetOwner: zod.boolean(),
   isVet: zod.boolean(),
   isVetOwner: zod.boolean(),
+  isHotelOwner: zod.boolean(),
   vetStatus: zod.string().nullish(),
   isAdmin: zod.boolean(),
   clinicId: zod.number().nullish(),
+  hotelId: zod.number().nullish(),
   createdAt: zod.string(),
 });
 
@@ -70,10 +74,23 @@ export const RegisterAsPetOwnerResponse = zod.object({
   isPetOwner: zod.boolean(),
   isVet: zod.boolean(),
   isVetOwner: zod.boolean(),
+  isHotelOwner: zod.boolean(),
   vetStatus: zod.string().nullish(),
   isAdmin: zod.boolean(),
   clinicId: zod.number().nullish(),
+  hotelId: zod.number().nullish(),
   createdAt: zod.string(),
+});
+
+/**
+ * @summary Register as hotel owner (creates a hotel entity)
+ */
+
+export const RegisterForHotelBody = zod.object({
+  name: zod.string().min(1),
+  address: zod.string().optional(),
+  phone: zod.string().optional(),
+  email: zod.string().optional(),
 });
 
 /**
@@ -408,9 +425,11 @@ export const SearchPetOwnerResponse = zod.object({
     isPetOwner: zod.boolean(),
     isVet: zod.boolean(),
     isVetOwner: zod.boolean(),
+    isHotelOwner: zod.boolean(),
     vetStatus: zod.string().nullish(),
     isAdmin: zod.boolean(),
     clinicId: zod.number().nullish(),
+    hotelId: zod.number().nullish(),
     createdAt: zod.string(),
   }),
   pets: zod.array(

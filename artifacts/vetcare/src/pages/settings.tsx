@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { useGetMe, useUpdateMe, useRegisterAsPetOwner, useRegisterForVet, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useGetMe, useUpdateMe, useRegisterAsPetOwner, useRegisterForVet, useRegisterForHotel, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,11 +28,18 @@ const vetSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
 });
 
+const hotelSchema = z.object({
+  name: z.string().min(1, "Hotel name is required"),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+});
+
 export default function SettingsPage() {
   const me = useGetMe();
   const updateMe = useUpdateMe();
   const registerAsPetOwner = useRegisterAsPetOwner();
   const registerForVet = useRegisterForVet();
+  const registerForHotel = useRegisterForHotel();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { signOut } = useClerk();
@@ -46,6 +53,11 @@ export default function SettingsPage() {
   const vetForm = useForm<z.infer<typeof vetSchema>>({
     resolver: zodResolver(vetSchema),
     defaultValues: { name: "", address: "", phone: "", email: "" },
+  });
+
+  const hotelForm = useForm<z.infer<typeof hotelSchema>>({
+    resolver: zodResolver(hotelSchema),
+    defaultValues: { name: "", address: "", phone: "" },
   });
 
   async function saveProfile(values: z.infer<typeof profileSchema>) {
@@ -69,6 +81,12 @@ export default function SettingsPage() {
     await registerForVet.mutateAsync({ data: values });
     queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
     toast({ title: t("clinicRegistered") });
+  }
+
+  async function registerHotel(values: z.infer<typeof hotelSchema>) {
+    await registerForHotel.mutateAsync({ data: values });
+    queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+    toast({ title: t("hotelRegistered") });
   }
 
   const user = me.data;
@@ -206,6 +224,55 @@ export default function SettingsPage() {
             )}
           </CardContent>
         </Card>
+
+        {!(user as any)?.isHotelOwner && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">{t("registerHotel")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground mb-3">{t("hotelOwnerDesc")}</p>
+              <Form {...hotelForm}>
+                <form onSubmit={hotelForm.handleSubmit(registerHotel)} className="space-y-3">
+                  <FormField control={hotelForm.control} name="name" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("hotelName")} *</FormLabel>
+                      <FormControl><Input {...field} placeholder="Mochi Pet Hotel" data-testid="input-hotel-name" /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={hotelForm.control} name="address" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("addressLabel")}</FormLabel>
+                      <FormControl><Input {...field} /></FormControl>
+                    </FormItem>
+                  )} />
+                  <FormField control={hotelForm.control} name="phone" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("phoneNumber")}</FormLabel>
+                      <FormControl><Input {...field} type="tel" /></FormControl>
+                    </FormItem>
+                  )} />
+                  <Button type="submit" size="sm" className="w-full" disabled={registerForHotel.isPending} data-testid="btn-register-hotel">
+                    {registerForHotel.isPending ? t("registeringHotel") : t("registerHotel")}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        )}
+
+        {(user as any)?.isHotelOwner && (
+          <Card>
+            <CardContent className="py-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-primary">{t("registerHotel")}</p>
+                <p className="text-xs text-muted-foreground">{t("hotelDashboard")}</p>
+              </div>
+              <span className="text-xs text-primary font-medium">{t("enabled")}</span>
+            </CardContent>
+          </Card>
+        )}
 
         <Button
           variant="outline"

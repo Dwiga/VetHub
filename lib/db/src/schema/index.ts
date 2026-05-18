@@ -5,3 +5,5 @@ export * from "./species";
 export * from "./pets";
 export * from "./visits";
 export * from "./products";
+export * from "./hotel";
+export * from "./healthEvents";

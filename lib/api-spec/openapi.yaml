@@ -93,6 +93,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/UserProfile"
 
+  /users/register-for-hotel:
+    post:
+      operationId: registerForHotel
+      tags: [users]
+      summary: Register as hotel owner (creates a hotel entity)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HotelRegistrationInput"
+      responses:
+        "201":
+          description: Hotel registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Clinic"
+
   /users/register-for-vet:
     post:
       operationId: registerForVet
@@ -1106,11 +1125,13 @@ components:
         isPetOwner: { type: boolean }
         isVet: { type: boolean }
         isVetOwner: { type: boolean }
+        isHotelOwner: { type: boolean }
         vetStatus: { type: ["string", "null"] }
         isAdmin: { type: boolean }
         clinicId: { type: ["integer", "null"] }
+        hotelId: { type: ["integer", "null"] }
         createdAt: { type: string }
-      required: [id, clerkId, role, isPetOwner, isVet, isVetOwner, isAdmin, createdAt]
+      required: [id, clerkId, role, isPetOwner, isVet, isVetOwner, isHotelOwner, isAdmin, createdAt]
 
     UserProfileUpdate:
       type: object
@@ -1695,3 +1716,116 @@ components:
           type: array
           items: { type: number }
       required: [period, labels, visitCounts, revenues]
+
+    HealthEvent:
+      type: object
+      properties:
+        id: { type: integer }
+        petId: { type: integer }
+        title: { type: string }
+        notes: { type: ["string", "null"] }
+        eventDate: { type: string }
+        createdAt: { type: string }
+      required: [id, petId, title, eventDate, createdAt]
+
+    HealthEventInput:
+      type: object
+      properties:
+        title: { type: string, minLength: 1 }
+        notes: { type: string }
+        eventDate: { type: string }
+      required: [title]
+
+    HotelBooking:
+      type: object
+      properties:
+        id: { type: integer }
+        petId: { type: ["integer", "null"] }
+        clinicId: { type: integer }
+        guestName: { type: ["string", "null"] }
+        guestPhone: { type: ["string", "null"] }
+        petNameRaw: { type: ["string", "null"] }
+        petTypeRaw: { type: ["string", "null"] }
+        checkIn: { type: string }
+        checkOut: { type: ["string", "null"] }
+        dailyFee: { type: ["number", "null"] }
+        status: { type: string }
+        notes: { type: ["string", "null"] }
+        createdAt: { type: string }
+      required: [id, clinicId, checkIn, status, createdAt]
+
+    HotelBookingDetail:
+      type: object
+      properties:
+        id: { type: integer }
+        petId: { type: ["integer", "null"] }
+        petName: { type: ["string", "null"] }
+        petSpecies: { type: ["string", "null"] }
+        ownerName: { type: ["string", "null"] }
+        ownerPhone: { type: ["string", "null"] }
+        guestName: { type: ["string", "null"] }
+        guestPhone: { type: ["string", "null"] }
+        petNameRaw: { type: ["string", "null"] }
+        petTypeRaw: { type: ["string", "null"] }
+        clinicId: { type: integer }
+        checkIn: { type: string }
+        checkOut: { type: ["string", "null"] }
+        dailyFee: { type: ["number", "null"] }
+        status: { type: string }
+        notes: { type: ["string", "null"] }
+        totalDays: { type: ["integer", "null"] }
+        totalCost: { type: number }
+        createdAt: { type: string }
+      required: [id, clinicId, checkIn, status, totalCost, createdAt]
+
+    HotelBookingInput:
+      type: object
+      properties:
+        checkIn: { type: string }
+        dailyFee: { type: number }
+        notes: { type: string }
+        guestName: { type: string }
+        guestPhone: { type: string }
+        petNameRaw: { type: string }
+        petTypeRaw: { type: string }
+      required: [checkIn]
+
+    HotelBookingUpdate:
+      type: object
+      properties:
+        checkOut: { type: string }
+        status: { type: string }
+        dailyFee: { type: number }
+        notes: { type: string }
+
+    HotelDailyLog:
+      type: object
+      properties:
+        id: { type: integer }
+        bookingId: { type: integer }
+        logDate: { type: string }
+        condition: { type: ["string", "null"] }
+        feeding: { type: ["string", "null"] }
+        notes: { type: ["string", "null"] }
+        cost: { type: number }
+        createdAt: { type: string }
+      required: [id, bookingId, logDate, cost, createdAt]
+
+    HotelDailyLogInput:
+      type: object
+      properties:
+        logDate: { type: string }
+        condition: { type: string }
+        feeding: { type: string }
+        notes: { type: string }
+        cost: { type: number }
+      required: [logDate]
+
+    HotelRegistrationInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        address: { type: string }
+        phone: { type: string }
+        email: { type: string }
+      required: [name]

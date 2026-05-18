@@ -4,8 +4,12 @@ import { z } from "zod/v4";
 
 export const hotelBookingsTable = pgTable("hotel_bookings", {
   id: serial("id").primaryKey(),
-  petId: integer("pet_id").notNull(),
+  petId: integer("pet_id"),
   clinicId: integer("clinic_id").notNull(),
+  guestName: text("guest_name"),
+  guestPhone: text("guest_phone"),
+  petNameRaw: text("pet_name_raw"),
+  petTypeRaw: text("pet_type_raw"),
   checkIn: text("check_in").notNull(),
   checkOut: text("check_out"),
   dailyFee: numeric("daily_fee", { precision: 15, scale: 2 }),
