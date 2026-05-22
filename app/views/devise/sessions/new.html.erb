@@ -1,0 +1,59 @@
+<div class="min-h-screen bg-emerald-50 flex flex-col items-center justify-center p-6 selection:bg-emerald-200 selection:text-emerald-900">
+  <div class="w-full max-w-md bg-white/80 backdrop-blur-sm p-8 rounded-[2rem] border border-emerald-100 shadow-2xl shadow-emerald-100/50">
+    
+    <div class="flex flex-col items-center mb-8">
+      <div class="bg-emerald-600 p-3 rounded-2xl shadow-lg shadow-emerald-200 mb-4 transform -rotate-6">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="text-white">
+          <path d="M19 14c1.49 0 2.87.47 4 1.26V8c0-1.11-.89-2-2-2h-8.3c-.41 0-.77-.25-.94-.63l-1.05-2.1c-.34-.68-1.03-1.12-1.8-1.12H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h9.4c-.88-1.21-1.4-2.69-1.4-4.3 0-3.7 3.13-6.7 7-6.7zM19 16c-2.6 0-4.7 2.1-4.7 4.7s2.1 4.7 4.7 4.7 4.7-2.1 4.7-4.7-2.1-4.7-4.7-4.7z"/>
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+        </svg>
+      </div>
+      <h2 class="text-3xl font-black text-emerald-950 tracking-tight">Selamat Datang</h2>
+      <p class="text-emerald-700/60 font-medium mt-1">Masuk ke akun PawsVet Anda</p>
+    </div>
+
+    <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "space-y-6" }) do |f| %>
+      <div class="space-y-2">
+        <%= f.label :phone_number, "Nomor HP", class: "text-sm font-bold text-emerald-900 ml-1" %>
+        <%= f.text_field :phone_number, 
+            autofocus: true, 
+            autocomplete: "phone_number", 
+            placeholder: "081234567890",
+            class: "w-full px-5 py-4 rounded-2xl bg-emerald-50/50 border border-emerald-100 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none text-emerald-950 placeholder:text-emerald-300" 
+        %>
+      </div>
+
+      <div class="space-y-2">
+        <%= f.label :password, "Kata Sandi", class: "text-sm font-bold text-emerald-900 ml-1" %>
+        <%= f.password_field :password, 
+            autocomplete: "current-password", 
+            placeholder: "••••••••",
+            class: "w-full px-5 py-4 rounded-2xl bg-emerald-50/50 border border-emerald-100 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none text-emerald-950 placeholder:text-emerald-300" 
+        %>
+      </div>
+
+      <% if devise_mapping.rememberable? %>
+        <div class="flex items-center space-x-3 ml-1">
+          <%= f.check_box :remember_me, class: "w-5 h-5 rounded-lg border-emerald-200 text-emerald-600 focus:ring-emerald-500/20 focus:ring-offset-0 transition-all cursor-pointer" %>
+          <%= f.label :remember_me, "Ingat saya", class: "text-sm font-medium text-emerald-700 cursor-pointer select-none" %>
+        </div>
+      <% end %>
+
+      <div class="pt-2">
+        <%= f.submit "Masuk Sekarang", 
+            class: "w-full py-4 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg rounded-2xl shadow-xl shadow-emerald-200 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer" 
+        %>
+      </div>
+    <% end %>
+
+    <div class="mt-8 pt-6 border-t border-emerald-50 flex flex-col items-center space-y-4">
+      <%= render "devise/shared/links" %>
+    </div>
+  </div>
+
+  <div class="mt-8 flex items-center space-x-2 text-emerald-900/30 font-bold uppercase tracking-widest text-[10px]">
+    <span>&copy; 2026 PawsVet</span>
+    <span>•</span>
+    <span>Caring for every paw</span>
+  </div>
+</div>

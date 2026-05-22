@@ -1,0 +1,86 @@
+<div class="min-h-screen bg-emerald-50 flex flex-col items-center justify-center p-6 selection:bg-emerald-200 selection:text-emerald-900">
+  <div class="w-full max-w-md bg-white/80 backdrop-blur-sm p-8 rounded-[2rem] border border-emerald-100 shadow-2xl shadow-emerald-100/50">
+    
+    <div class="flex flex-col items-center mb-8">
+      <div class="bg-emerald-600 p-3 rounded-2xl shadow-lg shadow-emerald-200 mb-4 transform rotate-6">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="text-white">
+          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+        </svg>
+      </div>
+      <h2 class="text-3xl font-black text-emerald-950 tracking-tight text-center">Profil Saya</h2>
+      <p class="text-emerald-700/60 font-medium mt-1 text-center">Perbarui informasi akun Anda</p>
+    </div>
+
+    <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put, class: "space-y-6" }) do |f| %>
+      <%= render "devise/shared/error_messages", resource: resource %>
+
+      <div class="space-y-2">
+        <%= f.label :phone_number, "Nomor HP", class: "text-sm font-bold text-emerald-900 ml-1" %>
+        <%= f.text_field :phone_number, 
+            autofocus: true, 
+            autocomplete: "phone_number", 
+            class: "w-full px-5 py-4 rounded-2xl bg-emerald-50/50 border border-emerald-100 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none text-emerald-950" 
+        %>
+      </div>
+
+      <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
+        <div class="bg-emerald-100/50 p-3 rounded-xl text-xs text-emerald-700 font-medium">
+          Menunggu konfirmasi untuk: <%= resource.unconfirmed_email %>
+        </div>
+      <% end %>
+
+      <div class="space-y-2 border-t border-emerald-50 pt-4">
+        <div class="flex justify-between items-center ml-1">
+          <%= f.label :password, "Kata Sandi Baru", class: "text-sm font-bold text-emerald-900" %>
+          <span class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider italic">Opsional</span>
+        </div>
+        <%= f.password_field :password, 
+            autocomplete: "new-password", 
+            placeholder: "Kosongkan jika tidak ingin diubah",
+            class: "w-full px-5 py-4 rounded-2xl bg-emerald-50/50 border border-emerald-100 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none text-emerald-950 placeholder:text-emerald-300 text-sm" 
+        %>
+      </div>
+
+      <div class="space-y-2">
+        <%= f.label :password_confirmation, "Konfirmasi Kata Sandi Baru", class: "text-sm font-bold text-emerald-900 ml-1" %>
+        <%= f.password_field :password_confirmation, 
+            autocomplete: "new-password", 
+            class: "w-full px-5 py-4 rounded-2xl bg-emerald-50/50 border border-emerald-100 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none text-emerald-950 placeholder:text-emerald-300" 
+        %>
+      </div>
+
+      <div class="space-y-2 border-t border-emerald-50 pt-4">
+        <%= f.label :current_password, "Kata Sandi Saat Ini", class: "text-sm font-bold text-emerald-900 ml-1" %>
+        <%= f.password_field :current_password, 
+            autocomplete: "current-password", 
+            placeholder: "Butuh konfirmasi untuk menyimpan",
+            class: "w-full px-5 py-4 rounded-2xl bg-emerald-50/50 border border-emerald-100 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none text-emerald-950 placeholder:text-emerald-300 text-sm" 
+        %>
+      </div>
+
+      <div class="pt-2">
+        <%= f.submit "Simpan Perubahan", 
+            class: "w-full py-4 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg rounded-2xl shadow-xl shadow-emerald-200 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer" 
+        %>
+      </div>
+    <% end %>
+
+    <div class="mt-12 pt-6 border-t border-emerald-50">
+      <h3 class="text-sm font-black text-red-900 uppercase tracking-widest mb-4 text-center">Zona Bahaya</h3>
+      <div class="flex flex-col items-center space-y-4">
+        <p class="text-xs text-emerald-600/60 font-medium">Ingin menghapus akun Anda?</p>
+        <%= button_to "Hapus Akun Saya", registration_path(resource_name), data: { confirm: "Anda yakin?", turbo_confirm: "Anda yakin?" }, method: :delete, class: "text-xs font-bold text-red-500 hover:text-red-700 underline decoration-red-100 underline-offset-4 transition-colors" %>
+      </div>
+    </div>
+
+    <div class="mt-8 pt-6 border-t border-emerald-50 flex justify-center">
+      <%= link_to "Kembali", :back, class: "text-sm font-bold text-emerald-600 hover:text-emerald-800 transition-colors" %>
+    </div>
+  </div>
+
+  <div class="mt-8 flex items-center space-x-2 text-emerald-900/30 font-bold uppercase tracking-widest text-[10px]">
+    <span>&copy; 2026 PawsVet</span>
+    <span>•</span>
+    <span>Caring for every paw</span>
+  </div>
+</div>

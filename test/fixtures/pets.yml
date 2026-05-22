@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: MyString
+  species: one
+  birth_date: 2026-03-26
+  gender: 1
+  color: MyString
+  rfid: MyString
+  sterilized: false
+
+two:
+  name: MyString
+  species: two
+  birth_date: 2026-03-26
+  gender: 1
+  color: MyString
+  rfid: MyString
+  sterilized: false

@@ -1,0 +1,45 @@
+<div class="min-h-screen bg-emerald-50 flex flex-col items-center justify-center p-6 selection:bg-emerald-200 selection:text-emerald-900">
+  <div class="w-full max-w-md bg-white/80 backdrop-blur-sm p-8 rounded-[2rem] border border-emerald-100 shadow-2xl shadow-emerald-100/50">
+    
+    <div class="flex flex-col items-center mb-8">
+      <div class="bg-emerald-600 p-3 rounded-2xl shadow-lg shadow-emerald-200 mb-4 transform -rotate-12">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
+          <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3y-3.5z" />
+          <circle cx="11" cy="11" r="8" />
+        </svg>
+      </div>
+      <h2 class="text-3xl font-black text-emerald-950 tracking-tight text-center">Lupa Kata Sandi?</h2>
+      <p class="text-emerald-700/60 font-medium mt-1 text-center">Masukkan email Anda untuk instruksi reset</p>
+    </div>
+
+    <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post, class: "space-y-6" }) do |f| %>
+      <%= render "devise/shared/error_messages", resource: resource %>
+
+      <div class="space-y-2">
+        <%= f.label :email, "Alamat Email", class: "text-sm font-bold text-emerald-900 ml-1" %>
+        <%= f.email_field :email, 
+            autofocus: true, 
+            autocomplete: "email", 
+            placeholder: "email@contoh.com",
+            class: "w-full px-5 py-4 rounded-2xl bg-emerald-50/50 border border-emerald-100 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none text-emerald-950 placeholder:text-emerald-300" 
+        %>
+      </div>
+
+      <div class="pt-2">
+        <%= f.submit "Kirim Instruksi Reset", 
+            class: "w-full py-4 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg rounded-2xl shadow-xl shadow-emerald-200 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer" 
+        %>
+      </div>
+    <% end %>
+
+    <div class="mt-8 pt-6 border-t border-emerald-50 flex flex-col items-center space-y-4">
+      <%= render "devise/shared/links" %>
+    </div>
+  </div>
+
+  <div class="mt-8 flex items-center space-x-2 text-emerald-900/30 font-bold uppercase tracking-widest text-[10px]">
+    <span>&copy; 2026 PawsVet</span>
+    <span>•</span>
+    <span>Caring for every paw</span>
+  </div>
+</div>

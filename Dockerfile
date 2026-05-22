@@ -1,111 +1,77 @@
-# ────────────────────────────────────────────────────────────────────────────
-# VetCare Pro — Multi-stage Dockerfile
-#
-# All runtime images are Alpine-based to keep the footprint small.
-#
-# Build stages:
-#   base       — node:24-slim (Debian/glibc) + pnpm  ← build tooling only
-#   deps       — install all workspace dependencies
-#   build-api  — bundle the Express API server with esbuild
-#   build-web  — build the React frontend with Vite
-#   api-runner — node:24-alpine  (production API server)
-#   web-runner — nginx:alpine    (static FE + /api reverse proxy)
-#
-# Notes:
-#   • Build stages use Debian slim because TailwindCSS v4, Rollup, and
-#     lightningcss ship glibc-only native binaries (the musl/Alpine variants
-#     are excluded in pnpm-workspace.yaml overrides).
-#   • Runtime stages are pure Alpine — the esbuild bundle needs no native
-#     deps, and nginx is statically linked, so both are safe on musl.
-#   • PostgreSQL is provided by docker-compose (postgres:16-alpine).
-#
-# Usage:
-#   docker compose up --build        (recommended — uses docker-compose.yml)
-#   docker build --target api-runner -t vetcare-api .
-#   docker build --target web-runner --build-arg VITE_CLERK_PUBLISHABLE_KEY=pk_... -t vetcare-web .
-# ────────────────────────────────────────────────────────────────────────────
+# syntax=docker/dockerfile:1
+# check=error=true
+
+# This Dockerfile is designed for production, not development. Use with Kamal or build'n'run by hand:
+# docker build -t pawsvet .
+# docker run -d -p 80:80 -e RAILS_MASTER_KEY=<value from config/master.key> --name pawsvet pawsvet
+
+# For a containerized dev environment, see Dev Containers: https://guides.rubyonrails.org/getting_started_with_devcontainer.html
+
+# Make sure RUBY_VERSION matches the Ruby version in .ruby-version
+ARG RUBY_VERSION=3.4.9
+FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
+
+# Rails app lives here
+WORKDIR /rails
+
+# Install base packages
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y curl libjemalloc2 libvips sqlite3 && \
+    ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/local/lib/libjemalloc.so && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Set production environment variables and enable jemalloc for reduced memory usage and latency.
+ENV RAILS_ENV="production" \
+    BUNDLE_DEPLOYMENT="1" \
+    BUNDLE_PATH="/usr/local/bundle" \
+    BUNDLE_WITHOUT="development" \
+    LD_PRELOAD="/usr/local/lib/libjemalloc.so"
+
+# Throw-away build stage to reduce size of final image
+FROM base AS build
+
+# Install packages needed to build gems
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y build-essential git libvips libyaml-dev pkg-config && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Install application gems
+COPY vendor/* ./vendor/
+COPY Gemfile Gemfile.lock ./
+
+RUN bundle install && \
+    rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
+    # -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
+    bundle exec bootsnap precompile -j 1 --gemfile
+
+# Copy application code
+COPY . .
+
+# Precompile bootsnap code for faster boot times.
+# -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
+RUN bundle exec bootsnap precompile -j 1 app/ lib/
+
+# Precompiling assets for production without requiring secret RAILS_MASTER_KEY
+RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
 
-# ── Stage 1: Build base — Node 24 slim (Debian/glibc, avoids musl issues) ────
-#    TailwindCSS v4, Rollup, and lightningcss ship glibc-only native binaries;
-#    the Alpine (musl) variants are excluded in pnpm-workspace.yaml overrides.
-FROM node:24-slim AS base
-RUN corepack enable && corepack prepare pnpm@latest --activate
-WORKDIR /app
 
 
-# ── Stage 2: Install all workspace dependencies ──────────────────────────────
-FROM base AS deps
+# Final stage for app image
+FROM base
 
-# Copy workspace manifests first — Docker layer cache busts only on changes
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+# Run and own only the runtime files as a non-root user for security
+RUN groupadd --system --gid 1000 rails && \
+    useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash
+USER 1000:1000
 
-# Copy every package manifest so pnpm can resolve the workspace graph
-COPY lib/api-client-react/package.json ./lib/api-client-react/
-COPY lib/api-spec/package.json         ./lib/api-spec/
-COPY lib/api-zod/package.json          ./lib/api-zod/
-COPY lib/db/package.json               ./lib/db/
-COPY artifacts/api-server/package.json ./artifacts/api-server/
-COPY artifacts/vetcare/package.json    ./artifacts/vetcare/
-COPY scripts/package.json             ./scripts/
+# Copy built artifacts: gems, application
+COPY --chown=rails:rails --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
+COPY --chown=rails:rails --from=build /rails /rails
 
-RUN pnpm install --frozen-lockfile --ignore-scripts
+# Entrypoint prepares the database.
+ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 
-
-# ── Stage 3: Build the API server ────────────────────────────────────────────
-FROM deps AS build-api
-
-COPY tsconfig.base.json ./
-COPY lib/              ./lib/
-COPY artifacts/api-server/ ./artifacts/api-server/
-
-RUN pnpm --filter @workspace/api-server run build
-
-
-# ── Stage 4: Build the React frontend ────────────────────────────────────────
-FROM deps AS build-web
-
-# Clerk publishable key is baked into the JS bundle at build time.
-# It is intentionally public — safe to include in the image.
-ARG VITE_CLERK_PUBLISHABLE_KEY
-ARG VITE_CLERK_PROXY_URL=""
-
-ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
-ENV VITE_CLERK_PROXY_URL=$VITE_CLERK_PROXY_URL
-
-# Required by vite.config.ts at config-evaluation time
-ENV PORT=3000
-ENV BASE_PATH=/
-ENV NODE_ENV=production
-
-COPY tsconfig.base.json ./
-COPY lib/           ./lib/
-COPY artifacts/vetcare/ ./artifacts/vetcare/
-
-RUN pnpm --filter @workspace/vetcare run build
-
-
-# ── Stage 5: API server runtime — node:24-alpine (minimal, pnpm-managed) ─────
-FROM node:24-alpine AS api-runner
-
-WORKDIR /app
-ENV NODE_ENV=production
-
-# Copy only the esbuild bundle — no node_modules needed (everything is bundled)
-COPY --from=build-api /app/artifacts/api-server/dist ./dist
-
-EXPOSE 8080
-
-CMD ["node", "--enable-source-maps", "./dist/index.mjs"]
-
-
-# ── Stage 6: Frontend web server (nginx Alpine + static files) ────────────────
-FROM nginx:alpine AS web-runner
-
-# Copy the built React SPA
-COPY --from=build-web /app/artifacts/vetcare/dist/public /var/www/html
-
-# Copy the nginx config (serves static files + proxies /api to the API container)
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
+# Start server via Thruster by default, this can be overwritten at runtime
 EXPOSE 80
+CMD ["./bin/thrust", "./bin/rails", "server"]
