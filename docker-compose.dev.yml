@@ -1,0 +1,38 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# VetCare Pro — local dev compose
+#
+# Spins up ONLY Postgres in Docker so you can run the TanStack Start app
+# directly on your host (with HMR, fast restarts, etc.):
+#
+#     docker compose -f docker-compose.dev.yml up -d
+#     cd frontend
+#     # Point Prisma at the dockerised DB:
+#     export DATABASE_URL="postgresql://vetcare:vetcare@localhost:5432/vetcare?schema=public"
+#     # Make sure prisma/schema.prisma has `provider = "postgresql"`.
+#     bun run prisma:push
+#     bun run prisma:seed
+#     bun run dev
+#
+# Skip this compose file entirely if you're happy with SQLite (the default).
+# ──────────────────────────────────────────────────────────────────────────────
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     vetcare
+      POSTGRES_PASSWORD: vetcare
+      POSTGRES_DB:       vetcare
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vetcare -d vetcare"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  db_dev_data:

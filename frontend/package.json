@@ -7,6 +7,7 @@
     "start": "bun run dev",
     "dev": "vite dev --port 3000 --host 0.0.0.0",
     "build": "vite build",
+    "start:prod": "bun run server.ts",
     "preview": "vite preview --port 3000 --host 0.0.0.0",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push --skip-generate",
