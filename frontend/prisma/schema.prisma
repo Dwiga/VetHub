@@ -1,17 +1,15 @@
-// Prisma schema migrated from Drizzle (PostgreSQL) to SQLite.
-// SQLite has no native decimal/timestamp-with-tz/serial; we use:
-//   - Int autoincrement for serial PKs
-//   - DateTime for timestamps
-//   - String for numeric/decimal money values (preserves arbitrary precision)
-//   - String for date-only values (matches the original schema's text date columns)
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
 }
 
 model User {

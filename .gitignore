@@ -54,3 +54,5 @@ credentials.json
 *.pem
 *.key
 .credentials
+
+*.db
