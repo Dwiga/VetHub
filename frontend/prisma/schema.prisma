@@ -1,0 +1,275 @@
+// Prisma schema migrated from Drizzle (PostgreSQL) to SQLite.
+// SQLite has no native decimal/timestamp-with-tz/serial; we use:
+//   - Int autoincrement for serial PKs
+//   - DateTime for timestamps
+//   - String for numeric/decimal money values (preserves arbitrary precision)
+//   - String for date-only values (matches the original schema's text date columns)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  clerkId      String    @unique @map("clerk_id")
+  name         String?
+  phone        String?   @unique
+  email        String?
+  isPetOwner   Boolean   @default(false) @map("is_pet_owner")
+  isVet        Boolean   @default(false) @map("is_vet")
+  isVetOwner   Boolean   @default(false) @map("is_vet_owner")
+  isHotelOwner Boolean   @default(false) @map("is_hotel_owner")
+  clinicId     Int?      @map("clinic_id")
+  hotelId      Int?      @map("hotel_id")
+  vetStatus    String?   @map("vet_status")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  ownedPets  Pet[]   @relation("PetOwner")
+  vetVisits  Visit[] @relation("VisitVet")
+
+  @@map("users")
+}
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("admins")
+}
+
+model Clinic {
+  id        Int      @id @default(autoincrement())
+  name      String
+  address   String?
+  phone     String?
+  email     String?
+  ownerId   Int      @map("owner_id")
+  type      String   @default("vet")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  staff    Staff[]
+  visits   Visit[]
+  products Product[]
+  bookings HotelBooking[]
+
+  @@map("clinics")
+}
+
+model Staff {
+  id        Int      @id @default(autoincrement())
+  clinicId  Int      @map("clinic_id")
+  userId    Int      @map("user_id")
+  role      String   @default("vet")
+  status    String   @default("active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  clinic Clinic @relation(fields: [clinicId], references: [id])
+
+  @@map("staff")
+}
+
+model Species {
+  id   Int     @id @default(autoincrement())
+  name String  @unique
+  icon String?
+
+  pets Pet[]
+
+  @@map("species")
+}
+
+model Pet {
+  id          Int      @id @default(autoincrement())
+  name        String
+  dateOfBirth String?  @map("date_of_birth")
+  gender      String   @default("unknown")
+  sterilized  Boolean  @default(false)
+  color       String?
+  speciesId   Int      @map("species_id")
+  ownerId     Int      @map("owner_id")
+  status      String   @default("healthy")
+  photoUrl    String?  @map("photo_url")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  species       Species        @relation(fields: [speciesId], references: [id])
+  owner         User           @relation("PetOwner", fields: [ownerId], references: [id])
+  monitoring    Monitoring[]
+  vaccinations  Vaccination[]
+  visits        Visit[]
+  healthEvents  HealthEvent[]
+  hotelBookings HotelBooking[]
+
+  @@map("pets")
+}
+
+model Monitoring {
+  id          Int      @id @default(autoincrement())
+  petId       Int      @map("pet_id")
+  weight      String?
+  height      String?
+  temperature String?
+  notes       String?
+  recordedBy  String?  @map("recorded_by")
+  recordedAt  DateTime @default(now()) @map("recorded_at")
+
+  pet Pet @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@map("monitoring")
+}
+
+model Vaccination {
+  id              Int      @id @default(autoincrement())
+  petId           Int      @map("pet_id")
+  vaccineName     String   @map("vaccine_name")
+  brand           String?
+  date            String
+  nextDueDate     String?  @map("next_due_date")
+  batchNumber     String?  @map("batch_number")
+  administeredBy  String?  @map("administered_by")
+  cost            String?
+  notes           String?
+  vetId           Int?     @map("vet_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  pet Pet @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@map("vaccinations")
+}
+
+model Visit {
+  id             Int      @id @default(autoincrement())
+  petId          Int      @map("pet_id")
+  clinicId       Int      @map("clinic_id")
+  vetId          Int?     @map("vet_id")
+  type           String   @default("outpatient")
+  status         String   @default("active")
+  anamnesis      String?
+  therapy        String?
+  visitDate      String   @map("visit_date")
+  dischargeDate  String?  @map("discharge_date")
+  deposit        String?
+  shareToken     String?  @unique @map("share_token")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  pet          Pet           @relation(fields: [petId], references: [id])
+  clinic       Clinic        @relation(fields: [clinicId], references: [id])
+  vet          User?         @relation("VisitVet", fields: [vetId], references: [id])
+  items        VisitItem[]
+  dailyReports DailyReport[]
+
+  @@map("visits")
+}
+
+model VisitItem {
+  id          Int      @id @default(autoincrement())
+  visitId     Int      @map("visit_id")
+  category    String   @default("service")
+  name        String
+  description String?
+  quantity    String   @default("1")
+  unitPrice   String   @default("0") @map("unit_price")
+  itemDate    String   @default("") @map("item_date")
+  isPaid      Boolean  @default(false) @map("is_paid")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  visit Visit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@map("visit_items")
+}
+
+model DailyReport {
+  id         Int      @id @default(autoincrement())
+  visitId    Int      @map("visit_id")
+  reportDate String   @map("report_date")
+  condition  String?
+  treatment  String?
+  notes      String?
+  cost       String   @default("0")
+  vetId      Int?     @map("vet_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  visit Visit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@map("daily_reports")
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  clinicId    Int      @map("clinic_id")
+  name        String
+  category    String?
+  description String?
+  price       String   @default("0")
+  stock       Int?
+  unit        String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  clinic Clinic @relation(fields: [clinicId], references: [id])
+
+  @@map("products")
+}
+
+model HotelBooking {
+  id          Int      @id @default(autoincrement())
+  petId       Int?     @map("pet_id")
+  clinicId    Int      @map("clinic_id")
+  guestName   String?  @map("guest_name")
+  guestPhone  String?  @map("guest_phone")
+  petNameRaw  String?  @map("pet_name_raw")
+  petTypeRaw  String?  @map("pet_type_raw")
+  checkIn     String   @map("check_in")
+  checkOut    String?  @map("check_out")
+  dailyFee    String?  @map("daily_fee")
+  status      String   @default("active")
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  clinic    Clinic           @relation(fields: [clinicId], references: [id])
+  pet       Pet?             @relation(fields: [petId], references: [id])
+  dailyLogs HotelDailyLog[]
+
+  @@map("hotel_bookings")
+}
+
+model HotelDailyLog {
+  id        Int      @id @default(autoincrement())
+  bookingId Int      @map("booking_id")
+  logDate   String   @map("log_date")
+  condition String?
+  feeding   String?
+  notes     String?
+  cost      String   @default("0")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  booking HotelBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("hotel_daily_logs")
+}
+
+model HealthEvent {
+  id        Int      @id @default(autoincrement())
+  petId     Int      @map("pet_id")
+  title     String
+  notes     String?
+  eventDate String   @map("event_date")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  pet Pet @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@map("health_events")
+}
