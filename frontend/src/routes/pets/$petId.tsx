@@ -150,7 +150,7 @@ function MonitoringAddDialog({
               name="notes"
               value={form.notes}
               onChange={handleChange}
-              placeholder={t('notesPlaceholder') || 'Any observations...'}
+              placeholder={'Any observations...'}
               rows={3}
               data-testid="input-notes"
             />

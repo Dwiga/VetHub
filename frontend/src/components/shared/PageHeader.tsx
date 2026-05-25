@@ -7,10 +7,11 @@ interface PageHeaderProps {
   subtitle?: string
   back?: boolean
   backHref?: string
+  backParams?: Record<string, string>
   action?: React.ReactNode
 }
 
-export function PageHeader({ title, subtitle, back, backHref, action }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, back, backHref, backParams, action }: PageHeaderProps) {
   const navigate = useNavigate()
   return (
     <div className="flex items-center gap-3 mb-6 pt-2">
@@ -22,7 +23,7 @@ export function PageHeader({ title, subtitle, back, backHref, action }: PageHead
           data-testid="btn-back"
           onClick={() => {
             if (backHref) {
-              navigate({ to: backHref as never })
+              navigate({ to: backHref as never, params: backParams as any })
             } else if (typeof history !== 'undefined') {
               history.back()
             }

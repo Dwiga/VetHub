@@ -116,7 +116,7 @@ function VetDashboardStub() {
       <div className="flex items-center justify-between">
         <h2 className="font-semibold text-foreground">{t('activePatients')}</h2>
         <Button asChild size="sm" variant="outline">
-          <Link to="/dashboard">
+          <Link to="/vet/search" search={{ q: '' }}>
             <Search className="h-4 w-4 mr-1" />
             {t('search')}
           </Link>

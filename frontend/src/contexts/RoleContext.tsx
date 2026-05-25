@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useGetMe } from '@/lib/api-client'
 
-type ActiveRole = 'pet-owner' | 'vet'
+type ActiveRole = 'pet-owner' | 'vet' | 'hotel'
 
 interface RoleContextValue {
   activeRole: ActiveRole
@@ -9,6 +9,7 @@ interface RoleContextValue {
   hasBothRoles: boolean
   canSwitchToVet: boolean
   canSwitchToPetOwner: boolean
+  canSwitchToHotel: boolean
 }
 
 const RoleContext = createContext<RoleContextValue>({
@@ -17,6 +18,7 @@ const RoleContext = createContext<RoleContextValue>({
   hasBothRoles: false,
   canSwitchToVet: false,
   canSwitchToPetOwner: false,
+  canSwitchToHotel: false,
 })
 
 const STORAGE_KEY = 'vetcare_active_role'
@@ -28,7 +30,8 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   const isVetApproved =
     !!(user?.isVet || user?.isVetOwner) && user?.vetStatus === 'approved'
   const isPetOwner = !!user?.isPetOwner
-  const hasBothRoles = isVetApproved && isPetOwner
+  const isHotelOwner = !!user?.isHotelOwner
+  const hasBothRoles = (isVetApproved || isHotelOwner) && isPetOwner
 
   // Default to "pet-owner" on the server; hydrate from localStorage after mount.
   const [activeRole, setActiveRoleState] = useState<ActiveRole>('pet-owner')
@@ -36,7 +39,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY) as ActiveRole | null
-      if (stored === 'pet-owner' || stored === 'vet') {
+      if (stored === 'pet-owner' || stored === 'vet' || stored === 'hotel') {
         setActiveRoleState(stored)
       }
     } catch {
@@ -53,14 +56,26 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
         // ignore
       }
       if (!stored) {
-        setActiveRoleState(isVetApproved && !isPetOwner ? 'vet' : 'pet-owner')
+        if (isVetApproved && !isPetOwner) {
+          setActiveRoleState('vet')
+        } else if (isHotelOwner && !isPetOwner && !isVetApproved) {
+          setActiveRoleState('hotel')
+        } else {
+          setActiveRoleState('pet-owner')
+        }
       } else if (stored === 'vet' && !isVetApproved) {
         setActiveRoleState('pet-owner')
-      } else if (stored === 'pet-owner' && !isPetOwner && isVetApproved) {
-        setActiveRoleState('vet')
+      } else if (stored === 'hotel' && !isHotelOwner) {
+        setActiveRoleState('pet-owner')
+      } else if (stored === 'pet-owner' && !isPetOwner) {
+        if (isVetApproved) {
+          setActiveRoleState('vet')
+        } else if (isHotelOwner) {
+          setActiveRoleState('hotel')
+        }
       }
     }
-  }, [me.isLoading, isVetApproved, isPetOwner, user])
+  }, [me.isLoading, isVetApproved, isPetOwner, isHotelOwner, user])
 
   const setActiveRole = useCallback((role: ActiveRole) => {
     setActiveRoleState(role)
@@ -79,6 +94,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
         hasBothRoles,
         canSwitchToVet: isVetApproved,
         canSwitchToPetOwner: isPetOwner,
+        canSwitchToHotel: isHotelOwner,
       }}
     >
       {children}

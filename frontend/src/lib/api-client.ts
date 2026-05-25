@@ -331,6 +331,39 @@ export interface Visit {
   dischargeDate: string | null
   totalCost?: number
   vetName?: string
+  petName?: string
+  ownerName?: string
+  ownerPhone?: string
+  latestReport?: string
+  billedCost?: number
+  deposit?: number
+  anamnesis?: string
+  therapy?: string
+  items?: VisitItem[]
+  dailyReports?: DailyReport[]
+}
+
+export interface VisitItem {
+  id: number
+  visitId: number
+  itemDate: string
+  category: string
+  name: string
+  description: string | null
+  quantity: number
+  unitPrice: number
+  totalPrice: number
+  isPaid: boolean
+}
+
+export interface DailyReport {
+  id: number
+  visitId: number
+  reportDate: string
+  condition: string | null
+  treatment: string | null
+  notes: string | null
+  cost: number
 }
 
 export function useListVisits(petId: number | string | undefined) {
@@ -349,5 +382,537 @@ export function useListActiveVisits() {
     queryKey: ['visits', 'active'],
     queryFn: () => fetcher('/api/visits?status=active'),
     enabled: !!isSignedIn,
+  })
+}
+
+export function useListVetVisits(options?: { clinicId?: number }) {
+  const fetcher = useAuthedFetch()
+  const { isSignedIn } = useAuth()
+  const params = options?.clinicId ? `?clinicId=${options.clinicId}` : ''
+  return useQuery<Visit[]>({
+    queryKey: ['visits', 'vet', options?.clinicId],
+    queryFn: () => fetcher(`/api/visits${params}`),
+    enabled: !!isSignedIn,
+  })
+}
+
+export function useGetVisit(visitId: number | undefined) {
+  const fetcher = useAuthedFetch()
+  return useQuery<Visit>({
+    queryKey: ['visits', visitId],
+    queryFn: () => fetcher(`/api/visits/${visitId}`),
+    enabled: visitId !== undefined,
+  })
+}
+
+export function useCreateVisit() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ petId, data }: { petId: number; data: Record<string, any> }) =>
+      fetcher(`/api/visits?petId=${petId}`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['visits'] }),
+  })
+}
+
+export function useUpdateVisit() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ visitId, data }: { visitId: number; data: Record<string, any> }) =>
+      fetcher(`/api/visits/${visitId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_, { visitId }) => {
+      qc.invalidateQueries({ queryKey: ['visits', visitId] })
+      qc.invalidateQueries({ queryKey: ['visits'] })
+    },
+  })
+}
+
+export function useAddVisitItem() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ visitId, data }: { visitId: number; data: Record<string, any> }) =>
+      fetcher(`/api/visits/${visitId}/items`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['visits'] }),
+  })
+}
+
+export function useUpdateVisitItem() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ itemId, data }: { itemId: number; data: Record<string, any> }) =>
+      fetcher(`/api/visits/items/${itemId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['visits'] }),
+  })
+}
+
+export function useDeleteVisitItem() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ itemId }: { itemId: number }) =>
+      fetcher(`/api/visits/items/${itemId}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['visits'] }),
+  })
+}
+
+export function useCreateDailyReport() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ visitId, data }: { visitId: number; data: Record<string, any> }) =>
+      fetcher(`/api/visits/${visitId}/daily-reports`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['visits'] }),
+  })
+}
+
+export function useGetDailyReport(reportId: number) {
+  const fetcher = useAuthedFetch()
+  return useQuery<DailyReport>({
+    queryKey: ['daily-reports', reportId],
+    queryFn: () => fetcher(`/api/daily-reports/${reportId}`),
+    enabled: !!reportId,
+  })
+}
+
+export function useUpdateDailyReport() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ reportId, data }: { reportId: number; data: Record<string, any> }) =>
+      fetcher(`/api/daily-reports/${reportId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_, { reportId }) => {
+      qc.invalidateQueries({ queryKey: ['daily-reports', reportId] })
+      qc.invalidateQueries({ queryKey: ['visits'] })
+    },
+  })
+}
+
+export function useShareVisit() {
+  const fetcher = useAuthedFetch()
+  return useMutation({
+    mutationFn: ({ visitId }: { visitId: number }) =>
+      fetcher(`/api/visits/${visitId}/share`, { method: 'POST' }),
+  })
+}
+
+export function useUpdatePetStatus() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ petId, data }: { petId: number; data: Record<string, any> }) =>
+      fetcher(`/api/pets/${petId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_, { petId }) => {
+      qc.invalidateQueries({ queryKey: ['pets', petId] })
+    },
+  })
+}
+
+// ─────────────────────────────  Search  ─────────────────────────────────────
+
+export interface OwnerSearchResult {
+  owner: { id: number; name: string | null; phone: string | null }
+  pets: Array<{ id: number; name: string; speciesName: string | null; status: string; ownerName: string | null; ownerPhone: string | null }>
+}
+
+export function useSearchPetOwner(params: { phone: string }) {
+  const fetcher = useAuthedFetch()
+  return useQuery<OwnerSearchResult>({
+    queryKey: ['search', 'owner', params.phone],
+    queryFn: () => fetcher(`/api/search/owner?phone=${encodeURIComponent(params.phone)}`),
+    enabled: !!params.phone,
+  })
+}
+
+export function useSearchPet(params: { name: string }) {
+  const fetcher = useAuthedFetch()
+  return useQuery<OwnerSearchResult['pets']>({
+    queryKey: ['search', 'pet', params.name],
+    queryFn: () => fetcher(`/api/search/pet?name=${encodeURIComponent(params.name)}`),
+    enabled: !!params.name,
+  })
+}
+
+export function useAddPetForOwner() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ data }: { data: Record<string, any> }) =>
+      fetcher('/api/pets', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['pets'] }),
+  })
+}
+
+// ─────────────────────────────  Hotel  ──────────────────────────────────────
+
+export interface HotelBooking {
+  id: number
+  petId: number
+  clinicId: number
+  checkIn: string
+  checkOut: string | null
+  status: string
+  dailyFee: number | null
+  totalCost: number
+  notes: string | null
+  petName: string | null
+  petSpecies: string | null
+  ownerName: string | null
+  ownerPhone: string | null
+}
+
+export interface HotelDailyLog {
+  id: number
+  bookingId: number
+  logDate: string
+  condition: string | null
+  feeding: string | null
+  notes: string | null
+  cost: number
+}
+
+export function useListActiveHotelBookings(clinicId: number | undefined) {
+  const fetcher = useAuthedFetch()
+  return useQuery<HotelBooking[]>({
+    queryKey: ['hotel-bookings', 'active', clinicId],
+    queryFn: () => fetcher(`/api/hotel-bookings?clinicId=${clinicId}&status=active`),
+    enabled: !!clinicId,
+  })
+}
+
+export function useGetHotelBooking(bookingId: number) {
+  const fetcher = useAuthedFetch()
+  return useQuery<HotelBooking>({
+    queryKey: ['hotel-bookings', bookingId],
+    queryFn: () => fetcher(`/api/hotel-bookings/${bookingId}`),
+    enabled: !!bookingId,
+  })
+}
+
+export function useUpdateHotelBooking() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ bookingId, data }: { bookingId: number; data: Record<string, any> }) =>
+      fetcher(`/api/hotel-bookings/${bookingId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_, { bookingId }) => {
+      qc.invalidateQueries({ queryKey: ['hotel-bookings', bookingId] })
+      qc.invalidateQueries({ queryKey: ['hotel-bookings'] })
+    },
+  })
+}
+
+export function useCreateHotelBooking() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ petId, data }: { petId: number; data: Record<string, any> }) =>
+      fetcher(`/api/hotel-bookings?petId=${petId}`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['hotel-bookings'] }),
+  })
+}
+
+export function useListHotelDailyLogs(bookingId: number) {
+  const fetcher = useAuthedFetch()
+  return useQuery<HotelDailyLog[]>({
+    queryKey: ['hotel-daily-logs', bookingId],
+    queryFn: () => fetcher(`/api/hotel-bookings/${bookingId}/daily-logs`),
+    enabled: !!bookingId,
+  })
+}
+
+export function useAddHotelDailyLog() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ bookingId, data }: { bookingId: number; data: Record<string, any> }) =>
+      fetcher(`/api/hotel-bookings/${bookingId}/daily-logs`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['hotel-daily-logs'] }),
+  })
+}
+
+export function useDeleteHotelDailyLog() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ bookingId, logId }: { bookingId: number; logId: number }) =>
+      fetcher(`/api/hotel-bookings/${bookingId}/daily-logs/${logId}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['hotel-daily-logs'] }),
+  })
+}
+
+// ─────────────────────────────  Clinic  ─────────────────────────────────────
+
+export interface Clinic {
+  id: number
+  name: string
+  address: string | null
+  phone: string | null
+  email: string | null
+  ownerId: number
+  type: string
+}
+
+export interface StaffMember {
+  id: number
+  clinicId: number
+  userId: number
+  role: string
+  status: string
+  name?: string | null
+  email?: string | null
+  phone?: string | null
+}
+
+export interface Product {
+  id: number
+  clinicId: number
+  name: string
+  category: string | null
+  description: string | null
+  price: string
+  stock: number | null
+  unit: string | null
+  isActive: boolean
+}
+
+export interface ReportSummary {
+  totalRevenue: number
+  totalVisits: number
+  inpatientVisits: number
+  outpatientVisits: number
+  survivedCount: number
+  diedCount: number
+  earlyDischargeCount: number
+  averageRevenuePerVisit: number
+  topServices: Array<{ name: string; count: number; revenue: number }>
+}
+
+export interface VisitStats {
+  labels: string[]
+  visitCounts: number[]
+  revenues: number[]
+}
+
+export function useGetMyClinic() {
+  const fetcher = useAuthedFetch()
+  const { isSignedIn } = useAuth()
+  return useQuery<Clinic>({
+    queryKey: ['clinic', 'me'],
+    queryFn: () => fetcher('/api/clinic/mine'),
+    enabled: !!isSignedIn,
+  })
+}
+
+export function useUpdateClinic() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ clinicId, data }: { clinicId: number; data: Record<string, any> }) =>
+      fetcher(`/api/clinic/${clinicId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['clinic'] }),
+  })
+}
+
+export function useListStaff(clinicId: number | undefined) {
+  const fetcher = useAuthedFetch()
+  return useQuery<StaffMember[]>({
+    queryKey: ['staff', clinicId],
+    queryFn: () => fetcher(`/api/clinic/${clinicId}/staff`),
+    enabled: !!clinicId,
+  })
+}
+
+export function useInviteStaff() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ clinicId, data }: { clinicId: number; data: Record<string, any> }) =>
+      fetcher(`/api/clinic/${clinicId}/staff`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['staff'] }),
+  })
+}
+
+export function useRemoveStaff() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ clinicId, staffId }: { clinicId: number; staffId: number }) =>
+      fetcher(`/api/clinic/${clinicId}/staff/${staffId}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['staff'] }),
+  })
+}
+
+export function useListProducts(clinicId: number | undefined) {
+  const fetcher = useAuthedFetch()
+  return useQuery<Product[]>({
+    queryKey: ['products', clinicId],
+    queryFn: () => fetcher(`/api/clinic/${clinicId}/products`),
+    enabled: !!clinicId,
+  })
+}
+
+export function useCreateProduct() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ clinicId, data }: { clinicId: number; data: Record<string, any> }) =>
+      fetcher(`/api/clinic/${clinicId}/products`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }),
+  })
+}
+
+export function useDeleteProduct() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ productId }: { productId: number }) =>
+      fetcher(`/api/products/${productId}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }),
+  })
+}
+
+export function useGetReportSummary(clinicId: number | undefined, params: { period: string; date: string }) {
+  const fetcher = useAuthedFetch()
+  return useQuery<ReportSummary>({
+    queryKey: ['reports', 'summary', clinicId, params],
+    queryFn: () => fetcher(`/api/clinic/${clinicId}/reports/summary?period=${params.period}&date=${params.date}`),
+    enabled: !!clinicId,
+  })
+}
+
+export function useGetVisitStats(clinicId: number | undefined, params: { period: string; date: string }) {
+  const fetcher = useAuthedFetch()
+  return useQuery<VisitStats>({
+    queryKey: ['reports', 'stats', clinicId, params],
+    queryFn: () => fetcher(`/api/clinic/${clinicId}/reports/stats?period=${params.period}&date=${params.date}`),
+    enabled: !!clinicId,
+  })
+}
+
+// ─────────────────────────────  Standalone Hotel  ───────────────────────────
+
+export function useListHotelBookings(hotelId: number | undefined, status?: string) {
+  const fetcher = useAuthedFetch()
+  return useQuery<HotelBooking[]>({
+    queryKey: ['hotel', 'bookings', hotelId, status],
+    queryFn: () => fetcher(`/api/hotel/clinic/${hotelId}/bookings${status ? `?status=${status}` : ''}`),
+    enabled: !!hotelId,
+  })
+}
+
+export function useGetHotelBookingStandalone(bookingId: number) {
+  const fetcher = useAuthedFetch()
+  return useQuery<HotelBooking>({
+    queryKey: ['hotel', 'booking', bookingId],
+    queryFn: () => fetcher(`/api/hotel/${bookingId}`),
+    enabled: !!bookingId,
+  })
+}
+
+export function useCreateStandaloneHotelBooking() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ data }: { data: Record<string, any> }) =>
+      fetcher('/api/hotel/standalone', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['hotel'] }),
+  })
+}
+
+export function useUpdateHotelBookingStandalone() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ bookingId, data }: { bookingId: number; data: Record<string, any> }) =>
+      fetcher(`/api/hotel/${bookingId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_, { bookingId }) => {
+      qc.invalidateQueries({ queryKey: ['hotel', 'booking', bookingId] })
+      qc.invalidateQueries({ queryKey: ['hotel'] })
+    },
+  })
+}
+
+export function useListHotelLogs(bookingId: number) {
+  const fetcher = useAuthedFetch()
+  return useQuery<HotelDailyLog[]>({
+    queryKey: ['hotel', 'logs', bookingId],
+    queryFn: () => fetcher(`/api/hotel/${bookingId}/logs`),
+    enabled: !!bookingId,
+  })
+}
+
+export function useAddHotelLog() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ bookingId, data }: { bookingId: number; data: Record<string, any> }) =>
+      fetcher(`/api/hotel/${bookingId}/logs`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['hotel'] }),
+  })
+}
+
+export function useDeleteHotelLog() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ bookingId, logId }: { bookingId: number; logId: number }) =>
+      fetcher(`/api/hotel/${bookingId}/logs/${logId}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['hotel'] }),
   })
 }

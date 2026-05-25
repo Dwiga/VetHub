@@ -44,6 +44,26 @@ export const Route = createFileRoute('/api/visits')({
         })
         return Response.json(visits)
       },
+      POST: async ({ request }) => {
+        const user = await getOrCreateLocalUser(request)
+        if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
+        const url = new URL(request.url)
+        const petId = Number(url.searchParams.get('petId'))
+        const body = await request.json()
+        const visit = await prisma.visit.create({
+          data: {
+            petId,
+            clinicId: body.clinicId ?? user.clinicId,
+            vetId: body.vetId,
+            type: body.type,
+            status: body.status ?? 'active',
+            visitDate: body.visitDate,
+            anamnesis: body.anamnesis,
+            therapy: body.therapy,
+          },
+        })
+        return Response.json(visit, { status: 201 })
+      },
     },
   },
 })
