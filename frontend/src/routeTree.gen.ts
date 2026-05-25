@@ -9,23 +9,44 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PetsIndexRouteImport } from './routes/pets/index'
 import { Route as SignUpSplatRouteImport } from './routes/sign-up.$'
 import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
+import { Route as PetsNewRouteImport } from './routes/pets/new'
 import { Route as PetsPetIdRouteImport } from './routes/pets/$petId'
 import { Route as ApiVisitsRouteImport } from './routes/api/visits'
 import { Route as ApiSpeciesRouteImport } from './routes/api/species'
 import { Route as ApiPetsRouteImport } from './routes/api/pets'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as PetsPetIdEditRouteImport } from './routes/pets/$petId.edit'
+import { Route as ApiUsersRegisterForVetRouteImport } from './routes/api/users.register-for-vet'
+import { Route as ApiUsersRegisterForHotelRouteImport } from './routes/api/users.register-for-hotel'
 import { Route as ApiUsersMeRouteImport } from './routes/api/users.me'
 import { Route as ApiPetsPetIdRouteImport } from './routes/api/pets.$petId'
 import { Route as ApiUsersMeRegisterPetOwnerRouteImport } from './routes/api/users.me.register-pet-owner'
+import { Route as ApiPetsPetIdVaccinationsRouteImport } from './routes/api/pets.$petId.vaccinations'
+import { Route as ApiPetsPetIdMonitoringRouteImport } from './routes/api/pets.$petId.monitoring'
+import { Route as ApiPetsPetIdHealthEventsRouteImport } from './routes/api/pets.$petId.health-events'
+import { Route as ApiPetsPetIdVaccinationsVaccinationIdRouteImport } from './routes/api/pets.$petId.vaccinations.$vaccinationId'
+import { Route as ApiPetsPetIdHealthEventsEventIdRouteImport } from './routes/api/pets.$petId.health-events.$eventId'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -46,6 +67,11 @@ const SignUpSplatRoute = SignUpSplatRouteImport.update({
 const SignInSplatRoute = SignInSplatRouteImport.update({
   id: '/sign-in/$',
   path: '/sign-in/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PetsNewRoute = PetsNewRouteImport.update({
+  id: '/pets/new',
+  path: '/pets/new',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PetsPetIdRoute = PetsPetIdRouteImport.update({
@@ -73,6 +99,22 @@ const ApiHealthRoute = ApiHealthRouteImport.update({
   path: '/api/health',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PetsPetIdEditRoute = PetsPetIdEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => PetsPetIdRoute,
+} as any)
+const ApiUsersRegisterForVetRoute = ApiUsersRegisterForVetRouteImport.update({
+  id: '/api/users/register-for-vet',
+  path: '/api/users/register-for-vet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiUsersRegisterForHotelRoute =
+  ApiUsersRegisterForHotelRouteImport.update({
+    id: '/api/users/register-for-hotel',
+    path: '/api/users/register-for-hotel',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiUsersMeRoute = ApiUsersMeRouteImport.update({
   id: '/api/users/me',
   path: '/api/users/me',
@@ -89,122 +131,236 @@ const ApiUsersMeRegisterPetOwnerRoute =
     path: '/register-pet-owner',
     getParentRoute: () => ApiUsersMeRoute,
   } as any)
+const ApiPetsPetIdVaccinationsRoute =
+  ApiPetsPetIdVaccinationsRouteImport.update({
+    id: '/vaccinations',
+    path: '/vaccinations',
+    getParentRoute: () => ApiPetsPetIdRoute,
+  } as any)
+const ApiPetsPetIdMonitoringRoute = ApiPetsPetIdMonitoringRouteImport.update({
+  id: '/monitoring',
+  path: '/monitoring',
+  getParentRoute: () => ApiPetsPetIdRoute,
+} as any)
+const ApiPetsPetIdHealthEventsRoute =
+  ApiPetsPetIdHealthEventsRouteImport.update({
+    id: '/health-events',
+    path: '/health-events',
+    getParentRoute: () => ApiPetsPetIdRoute,
+  } as any)
+const ApiPetsPetIdVaccinationsVaccinationIdRoute =
+  ApiPetsPetIdVaccinationsVaccinationIdRouteImport.update({
+    id: '/$vaccinationId',
+    path: '/$vaccinationId',
+    getParentRoute: () => ApiPetsPetIdVaccinationsRoute,
+  } as any)
+const ApiPetsPetIdHealthEventsEventIdRoute =
+  ApiPetsPetIdHealthEventsEventIdRouteImport.update({
+    id: '/$eventId',
+    path: '/$eventId',
+    getParentRoute: () => ApiPetsPetIdHealthEventsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/dashboard': typeof DashboardRoute
+  '/settings': typeof SettingsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/pets': typeof ApiPetsRouteWithChildren
   '/api/species': typeof ApiSpeciesRoute
   '/api/visits': typeof ApiVisitsRoute
-  '/pets/$petId': typeof PetsPetIdRoute
+  '/pets/$petId': typeof PetsPetIdRouteWithChildren
+  '/pets/new': typeof PetsNewRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
   '/pets/': typeof PetsIndexRoute
-  '/api/pets/$petId': typeof ApiPetsPetIdRoute
+  '/api/pets/$petId': typeof ApiPetsPetIdRouteWithChildren
   '/api/users/me': typeof ApiUsersMeRouteWithChildren
+  '/api/users/register-for-hotel': typeof ApiUsersRegisterForHotelRoute
+  '/api/users/register-for-vet': typeof ApiUsersRegisterForVetRoute
+  '/pets/$petId/edit': typeof PetsPetIdEditRoute
+  '/api/pets/$petId/health-events': typeof ApiPetsPetIdHealthEventsRouteWithChildren
+  '/api/pets/$petId/monitoring': typeof ApiPetsPetIdMonitoringRoute
+  '/api/pets/$petId/vaccinations': typeof ApiPetsPetIdVaccinationsRouteWithChildren
   '/api/users/me/register-pet-owner': typeof ApiUsersMeRegisterPetOwnerRoute
+  '/api/pets/$petId/health-events/$eventId': typeof ApiPetsPetIdHealthEventsEventIdRoute
+  '/api/pets/$petId/vaccinations/$vaccinationId': typeof ApiPetsPetIdVaccinationsVaccinationIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/dashboard': typeof DashboardRoute
+  '/settings': typeof SettingsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/pets': typeof ApiPetsRouteWithChildren
   '/api/species': typeof ApiSpeciesRoute
   '/api/visits': typeof ApiVisitsRoute
-  '/pets/$petId': typeof PetsPetIdRoute
+  '/pets/$petId': typeof PetsPetIdRouteWithChildren
+  '/pets/new': typeof PetsNewRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
   '/pets': typeof PetsIndexRoute
-  '/api/pets/$petId': typeof ApiPetsPetIdRoute
+  '/api/pets/$petId': typeof ApiPetsPetIdRouteWithChildren
   '/api/users/me': typeof ApiUsersMeRouteWithChildren
+  '/api/users/register-for-hotel': typeof ApiUsersRegisterForHotelRoute
+  '/api/users/register-for-vet': typeof ApiUsersRegisterForVetRoute
+  '/pets/$petId/edit': typeof PetsPetIdEditRoute
+  '/api/pets/$petId/health-events': typeof ApiPetsPetIdHealthEventsRouteWithChildren
+  '/api/pets/$petId/monitoring': typeof ApiPetsPetIdMonitoringRoute
+  '/api/pets/$petId/vaccinations': typeof ApiPetsPetIdVaccinationsRouteWithChildren
   '/api/users/me/register-pet-owner': typeof ApiUsersMeRegisterPetOwnerRoute
+  '/api/pets/$petId/health-events/$eventId': typeof ApiPetsPetIdHealthEventsEventIdRoute
+  '/api/pets/$petId/vaccinations/$vaccinationId': typeof ApiPetsPetIdVaccinationsVaccinationIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/dashboard': typeof DashboardRoute
+  '/settings': typeof SettingsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/pets': typeof ApiPetsRouteWithChildren
   '/api/species': typeof ApiSpeciesRoute
   '/api/visits': typeof ApiVisitsRoute
-  '/pets/$petId': typeof PetsPetIdRoute
+  '/pets/$petId': typeof PetsPetIdRouteWithChildren
+  '/pets/new': typeof PetsNewRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
   '/pets/': typeof PetsIndexRoute
-  '/api/pets/$petId': typeof ApiPetsPetIdRoute
+  '/api/pets/$petId': typeof ApiPetsPetIdRouteWithChildren
   '/api/users/me': typeof ApiUsersMeRouteWithChildren
+  '/api/users/register-for-hotel': typeof ApiUsersRegisterForHotelRoute
+  '/api/users/register-for-vet': typeof ApiUsersRegisterForVetRoute
+  '/pets/$petId/edit': typeof PetsPetIdEditRoute
+  '/api/pets/$petId/health-events': typeof ApiPetsPetIdHealthEventsRouteWithChildren
+  '/api/pets/$petId/monitoring': typeof ApiPetsPetIdMonitoringRoute
+  '/api/pets/$petId/vaccinations': typeof ApiPetsPetIdVaccinationsRouteWithChildren
   '/api/users/me/register-pet-owner': typeof ApiUsersMeRegisterPetOwnerRoute
+  '/api/pets/$petId/health-events/$eventId': typeof ApiPetsPetIdHealthEventsEventIdRoute
+  '/api/pets/$petId/vaccinations/$vaccinationId': typeof ApiPetsPetIdVaccinationsVaccinationIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/dashboard'
+    | '/settings'
     | '/api/health'
     | '/api/pets'
     | '/api/species'
     | '/api/visits'
     | '/pets/$petId'
+    | '/pets/new'
     | '/sign-in/$'
     | '/sign-up/$'
     | '/pets/'
     | '/api/pets/$petId'
     | '/api/users/me'
+    | '/api/users/register-for-hotel'
+    | '/api/users/register-for-vet'
+    | '/pets/$petId/edit'
+    | '/api/pets/$petId/health-events'
+    | '/api/pets/$petId/monitoring'
+    | '/api/pets/$petId/vaccinations'
     | '/api/users/me/register-pet-owner'
+    | '/api/pets/$petId/health-events/$eventId'
+    | '/api/pets/$petId/vaccinations/$vaccinationId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/dashboard'
+    | '/settings'
     | '/api/health'
     | '/api/pets'
     | '/api/species'
     | '/api/visits'
     | '/pets/$petId'
+    | '/pets/new'
     | '/sign-in/$'
     | '/sign-up/$'
     | '/pets'
     | '/api/pets/$petId'
     | '/api/users/me'
+    | '/api/users/register-for-hotel'
+    | '/api/users/register-for-vet'
+    | '/pets/$petId/edit'
+    | '/api/pets/$petId/health-events'
+    | '/api/pets/$petId/monitoring'
+    | '/api/pets/$petId/vaccinations'
     | '/api/users/me/register-pet-owner'
+    | '/api/pets/$petId/health-events/$eventId'
+    | '/api/pets/$petId/vaccinations/$vaccinationId'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/dashboard'
+    | '/settings'
     | '/api/health'
     | '/api/pets'
     | '/api/species'
     | '/api/visits'
     | '/pets/$petId'
+    | '/pets/new'
     | '/sign-in/$'
     | '/sign-up/$'
     | '/pets/'
     | '/api/pets/$petId'
     | '/api/users/me'
+    | '/api/users/register-for-hotel'
+    | '/api/users/register-for-vet'
+    | '/pets/$petId/edit'
+    | '/api/pets/$petId/health-events'
+    | '/api/pets/$petId/monitoring'
+    | '/api/pets/$petId/vaccinations'
     | '/api/users/me/register-pet-owner'
+    | '/api/pets/$petId/health-events/$eventId'
+    | '/api/pets/$petId/vaccinations/$vaccinationId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   DashboardRoute: typeof DashboardRoute
+  SettingsRoute: typeof SettingsRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiPetsRoute: typeof ApiPetsRouteWithChildren
   ApiSpeciesRoute: typeof ApiSpeciesRoute
   ApiVisitsRoute: typeof ApiVisitsRoute
-  PetsPetIdRoute: typeof PetsPetIdRoute
+  PetsPetIdRoute: typeof PetsPetIdRouteWithChildren
+  PetsNewRoute: typeof PetsNewRoute
   SignInSplatRoute: typeof SignInSplatRoute
   SignUpSplatRoute: typeof SignUpSplatRoute
   PetsIndexRoute: typeof PetsIndexRoute
   ApiUsersMeRoute: typeof ApiUsersMeRouteWithChildren
+  ApiUsersRegisterForHotelRoute: typeof ApiUsersRegisterForHotelRoute
+  ApiUsersRegisterForVetRoute: typeof ApiUsersRegisterForVetRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -233,6 +389,13 @@ declare module '@tanstack/react-router' {
       path: '/sign-in/$'
       fullPath: '/sign-in/$'
       preLoaderRoute: typeof SignInSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pets/new': {
+      id: '/pets/new'
+      path: '/pets/new'
+      fullPath: '/pets/new'
+      preLoaderRoute: typeof PetsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pets/$petId': {
@@ -270,6 +433,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pets/$petId/edit': {
+      id: '/pets/$petId/edit'
+      path: '/edit'
+      fullPath: '/pets/$petId/edit'
+      preLoaderRoute: typeof PetsPetIdEditRouteImport
+      parentRoute: typeof PetsPetIdRoute
+    }
+    '/api/users/register-for-vet': {
+      id: '/api/users/register-for-vet'
+      path: '/api/users/register-for-vet'
+      fullPath: '/api/users/register-for-vet'
+      preLoaderRoute: typeof ApiUsersRegisterForVetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/users/register-for-hotel': {
+      id: '/api/users/register-for-hotel'
+      path: '/api/users/register-for-hotel'
+      fullPath: '/api/users/register-for-hotel'
+      preLoaderRoute: typeof ApiUsersRegisterForHotelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/users/me': {
       id: '/api/users/me'
       path: '/api/users/me'
@@ -291,19 +475,111 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUsersMeRegisterPetOwnerRouteImport
       parentRoute: typeof ApiUsersMeRoute
     }
+    '/api/pets/$petId/vaccinations': {
+      id: '/api/pets/$petId/vaccinations'
+      path: '/vaccinations'
+      fullPath: '/api/pets/$petId/vaccinations'
+      preLoaderRoute: typeof ApiPetsPetIdVaccinationsRouteImport
+      parentRoute: typeof ApiPetsPetIdRoute
+    }
+    '/api/pets/$petId/monitoring': {
+      id: '/api/pets/$petId/monitoring'
+      path: '/monitoring'
+      fullPath: '/api/pets/$petId/monitoring'
+      preLoaderRoute: typeof ApiPetsPetIdMonitoringRouteImport
+      parentRoute: typeof ApiPetsPetIdRoute
+    }
+    '/api/pets/$petId/health-events': {
+      id: '/api/pets/$petId/health-events'
+      path: '/health-events'
+      fullPath: '/api/pets/$petId/health-events'
+      preLoaderRoute: typeof ApiPetsPetIdHealthEventsRouteImport
+      parentRoute: typeof ApiPetsPetIdRoute
+    }
+    '/api/pets/$petId/vaccinations/$vaccinationId': {
+      id: '/api/pets/$petId/vaccinations/$vaccinationId'
+      path: '/$vaccinationId'
+      fullPath: '/api/pets/$petId/vaccinations/$vaccinationId'
+      preLoaderRoute: typeof ApiPetsPetIdVaccinationsVaccinationIdRouteImport
+      parentRoute: typeof ApiPetsPetIdVaccinationsRoute
+    }
+    '/api/pets/$petId/health-events/$eventId': {
+      id: '/api/pets/$petId/health-events/$eventId'
+      path: '/$eventId'
+      fullPath: '/api/pets/$petId/health-events/$eventId'
+      preLoaderRoute: typeof ApiPetsPetIdHealthEventsEventIdRouteImport
+      parentRoute: typeof ApiPetsPetIdHealthEventsRoute
+    }
   }
 }
 
+interface ApiPetsPetIdHealthEventsRouteChildren {
+  ApiPetsPetIdHealthEventsEventIdRoute: typeof ApiPetsPetIdHealthEventsEventIdRoute
+}
+
+const ApiPetsPetIdHealthEventsRouteChildren: ApiPetsPetIdHealthEventsRouteChildren =
+  {
+    ApiPetsPetIdHealthEventsEventIdRoute: ApiPetsPetIdHealthEventsEventIdRoute,
+  }
+
+const ApiPetsPetIdHealthEventsRouteWithChildren =
+  ApiPetsPetIdHealthEventsRoute._addFileChildren(
+    ApiPetsPetIdHealthEventsRouteChildren,
+  )
+
+interface ApiPetsPetIdVaccinationsRouteChildren {
+  ApiPetsPetIdVaccinationsVaccinationIdRoute: typeof ApiPetsPetIdVaccinationsVaccinationIdRoute
+}
+
+const ApiPetsPetIdVaccinationsRouteChildren: ApiPetsPetIdVaccinationsRouteChildren =
+  {
+    ApiPetsPetIdVaccinationsVaccinationIdRoute:
+      ApiPetsPetIdVaccinationsVaccinationIdRoute,
+  }
+
+const ApiPetsPetIdVaccinationsRouteWithChildren =
+  ApiPetsPetIdVaccinationsRoute._addFileChildren(
+    ApiPetsPetIdVaccinationsRouteChildren,
+  )
+
+interface ApiPetsPetIdRouteChildren {
+  ApiPetsPetIdHealthEventsRoute: typeof ApiPetsPetIdHealthEventsRouteWithChildren
+  ApiPetsPetIdMonitoringRoute: typeof ApiPetsPetIdMonitoringRoute
+  ApiPetsPetIdVaccinationsRoute: typeof ApiPetsPetIdVaccinationsRouteWithChildren
+}
+
+const ApiPetsPetIdRouteChildren: ApiPetsPetIdRouteChildren = {
+  ApiPetsPetIdHealthEventsRoute: ApiPetsPetIdHealthEventsRouteWithChildren,
+  ApiPetsPetIdMonitoringRoute: ApiPetsPetIdMonitoringRoute,
+  ApiPetsPetIdVaccinationsRoute: ApiPetsPetIdVaccinationsRouteWithChildren,
+}
+
+const ApiPetsPetIdRouteWithChildren = ApiPetsPetIdRoute._addFileChildren(
+  ApiPetsPetIdRouteChildren,
+)
+
 interface ApiPetsRouteChildren {
-  ApiPetsPetIdRoute: typeof ApiPetsPetIdRoute
+  ApiPetsPetIdRoute: typeof ApiPetsPetIdRouteWithChildren
 }
 
 const ApiPetsRouteChildren: ApiPetsRouteChildren = {
-  ApiPetsPetIdRoute: ApiPetsPetIdRoute,
+  ApiPetsPetIdRoute: ApiPetsPetIdRouteWithChildren,
 }
 
 const ApiPetsRouteWithChildren =
   ApiPetsRoute._addFileChildren(ApiPetsRouteChildren)
+
+interface PetsPetIdRouteChildren {
+  PetsPetIdEditRoute: typeof PetsPetIdEditRoute
+}
+
+const PetsPetIdRouteChildren: PetsPetIdRouteChildren = {
+  PetsPetIdEditRoute: PetsPetIdEditRoute,
+}
+
+const PetsPetIdRouteWithChildren = PetsPetIdRoute._addFileChildren(
+  PetsPetIdRouteChildren,
+)
 
 interface ApiUsersMeRouteChildren {
   ApiUsersMeRegisterPetOwnerRoute: typeof ApiUsersMeRegisterPetOwnerRoute
@@ -319,16 +595,21 @@ const ApiUsersMeRouteWithChildren = ApiUsersMeRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   DashboardRoute: DashboardRoute,
+  SettingsRoute: SettingsRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiPetsRoute: ApiPetsRouteWithChildren,
   ApiSpeciesRoute: ApiSpeciesRoute,
   ApiVisitsRoute: ApiVisitsRoute,
-  PetsPetIdRoute: PetsPetIdRoute,
+  PetsPetIdRoute: PetsPetIdRouteWithChildren,
+  PetsNewRoute: PetsNewRoute,
   SignInSplatRoute: SignInSplatRoute,
   SignUpSplatRoute: SignUpSplatRoute,
   PetsIndexRoute: PetsIndexRoute,
   ApiUsersMeRoute: ApiUsersMeRouteWithChildren,
+  ApiUsersRegisterForHotelRoute: ApiUsersRegisterForHotelRoute,
+  ApiUsersRegisterForVetRoute: ApiUsersRegisterForVetRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -12,10 +12,12 @@ export const Route = createFileRoute('/api/visits')({
         }
         const url = new URL(request.url)
         const status = url.searchParams.get('status') ?? undefined
+        const petId = url.searchParams.get('petId') ?? undefined
 
         // Pet owners see visits of their own pets; vets see visits of their clinic.
-        const where: Record<string, unknown> = {}
+        const where: Record<string, any> = {}
         if (status) where.status = status
+        if (petId) where.petId = Number(petId)
 
         if (user.clinicId) {
           where.clinicId = user.clinicId
@@ -25,7 +27,15 @@ export const Route = createFileRoute('/api/visits')({
             where: { ownerId: user.id },
             select: { id: true },
           })
-          where.petId = { in: ownedPets.map((p) => p.id) }
+          const ownedPetIds = ownedPets.map((p) => p.id)
+          
+          if (petId) {
+            if (!ownedPetIds.includes(Number(petId))) {
+               return Response.json({ error: 'forbidden' }, { status: 403 })
+            }
+          } else {
+            where.petId = { in: ownedPetIds }
+          }
         }
 
         const visits = await prisma.visit.findMany({

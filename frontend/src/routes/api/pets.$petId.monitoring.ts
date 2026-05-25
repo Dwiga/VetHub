@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { prisma } from '@/lib/db'
 import { getOrCreateLocalUser } from '@/lib/clerk-server'
 
-export const Route = createFileRoute('/api/pets/$petId')({
+export const Route = createFileRoute('/api/pets/$petId/monitoring')({
   server: {
     handlers: {
       GET: async ({ request, params }) => {
@@ -10,38 +10,42 @@ export const Route = createFileRoute('/api/pets/$petId')({
         if (!user) {
           return Response.json({ error: 'unauthorized' }, { status: 401 })
         }
-        const id = Number(params.petId)
-        if (!Number.isFinite(id)) {
-          return Response.json({ error: 'invalid id' }, { status: 400 })
-        }
+        const petId = Number(params.petId)
+        // Verify ownership
         const pet = await prisma.pet.findFirst({
-          where: { id, ownerId: user.id },
-          include: { species: true },
+          where: { id: petId, ownerId: user.id },
         })
         if (!pet) {
           return Response.json({ error: 'not found' }, { status: 404 })
         }
-        return Response.json(pet)
+
+        const monitoring = await prisma.monitoring.findMany({
+          where: { petId },
+          orderBy: { recordedAt: 'desc' },
+        })
+        return Response.json(monitoring)
       },
-      PATCH: async ({ request, params }) => {
+      POST: async ({ request, params }) => {
         const user = await getOrCreateLocalUser(request)
         if (!user) {
           return Response.json({ error: 'unauthorized' }, { status: 401 })
         }
-        const id = Number(params.petId)
+        const petId = Number(params.petId)
         const pet = await prisma.pet.findFirst({
-          where: { id, ownerId: user.id },
+          where: { id: petId, ownerId: user.id },
         })
         if (!pet) {
           return Response.json({ error: 'not found' }, { status: 404 })
         }
 
         const body = await request.json()
-        const updated = await prisma.pet.update({
-          where: { id },
-          data: body,
+        const record = await prisma.monitoring.create({
+          data: {
+            ...body,
+            petId,
+          },
         })
-        return Response.json(updated)
+        return Response.json(record)
       },
     },
   },

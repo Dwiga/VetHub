@@ -56,3 +56,4 @@ credentials.json
 .credentials
 
 *.db
+.worktrees
