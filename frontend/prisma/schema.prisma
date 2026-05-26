@@ -233,6 +233,9 @@ model HotelBooking {
   dailyFee    String?  @map("daily_fee")
   status      String   @default("active")
   notes       String?
+  deposit     String?
+  roomType    String?  @map("room_type")
+  shareToken  String?  @unique @map("share_token")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

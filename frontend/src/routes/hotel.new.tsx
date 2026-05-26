@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useEffect } from 'react'
 import { AppShell } from '@/components/layout/AppShell'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { useGetMe, useCreateStandaloneHotelBooking } from '@/lib/api-client'
@@ -23,6 +24,8 @@ const schema = z.object({
   petNameRaw: z.string().min(1),
   petTypeRaw: z.string().optional(),
   checkIn: z.string().min(1),
+  deposit: z.string().optional(),
+  roomType: z.string().optional(),
   dailyFee: z.string().optional(),
   notes: z.string().optional(),
 })
@@ -41,11 +44,19 @@ function HotelNewGuestPage() {
       guestPhone: '',
       petNameRaw: '',
       petTypeRaw: '',
-      checkIn: new Date().toISOString().split('T')[0],
+      checkIn: '',
+      deposit: '',
+      roomType: '',
       dailyFee: '',
       notes: '',
     },
   })
+
+  useEffect(() => {
+    if (!form.getValues('checkIn')) {
+      form.setValue('checkIn', new Date().toISOString().split('T')[0])
+    }
+  }, [])
 
   async function onSubmit(values: z.infer<typeof schema>) {
     const hotelId = me.data?.hotelId
@@ -59,6 +70,8 @@ function HotelNewGuestPage() {
           petNameRaw: values.petNameRaw,
           petTypeRaw: values.petTypeRaw || undefined,
           checkIn: values.checkIn,
+          deposit: values.deposit ? String(values.deposit) : undefined,
+          roomType: values.roomType || undefined,
           dailyFee: values.dailyFee ? parseFloat(values.dailyFee) : undefined,
           notes: values.notes || undefined,
         },
@@ -125,6 +138,20 @@ function HotelNewGuestPage() {
               <FormItem>
                 <FormLabel>{t('checkIn')} *</FormLabel>
                 <FormControl><Input type="date" {...field} data-testid="input-check-in" /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="deposit" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('depositLabel')}</FormLabel>
+                <FormControl><Input type="number" min="0" placeholder="0" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="roomType" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('roomTypeLabel')}</FormLabel>
+                <FormControl><Input placeholder="e.g. Small cage, VIP room" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />

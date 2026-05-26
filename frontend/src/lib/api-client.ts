@@ -132,6 +132,7 @@ export interface Pet {
   status: string
   photoUrl: string | null
   species?: Species | null
+  owner?: { id: number; name: string | null; phone: string | null } | null
 }
 
 export function useListMyPets() {
@@ -914,5 +915,26 @@ export function useDeleteHotelLog() {
     mutationFn: ({ bookingId, logId }: { bookingId: number; logId: number }) =>
       fetcher(`/api/hotel/${bookingId}/logs/${logId}`, { method: 'DELETE' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['hotel'] }),
+  })
+}
+
+// ─────────────────────────────  Hotel Share  ──────────────────────────────────
+
+export function useShareHotelBooking() {
+  const fetcher = useAuthedFetch()
+  return useMutation({
+    mutationFn: ({ bookingId }: { bookingId: number }) =>
+      fetcher(`/api/hotel/${bookingId}/share`, { method: 'POST' }),
+  })
+}
+
+// ─────────────────────────────  Public Share  ─────────────────────────────────
+
+export function useGetSharedHotelBooking(token: string) {
+  return useQuery({
+    queryKey: ['share', 'hotel', token],
+    queryFn: () => fetch(`/api/share/hotel/${token}`).then(r => { if (!r.ok) throw new Error('not found'); return r.json() }),
+    enabled: !!token,
+    refetchInterval: 30_000,
   })
 }

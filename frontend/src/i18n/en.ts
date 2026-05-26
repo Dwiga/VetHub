@@ -308,6 +308,15 @@ export const en = {
   activeGuests: "Active guests",
   guestHistory: "Guest history",
   noGuestHistory: "No guest history yet",
+  depositLabel: "Deposit (Rp)",
+  roomTypeLabel: "Room / Cage / Service Type",
+  shareStay: "Share stay",
+  shareStaySuccess: "Stay link copied to clipboard",
+  shareStayWhatsApp: "Share stay via WhatsApp",
+  ownerNotes: "Owner notes",
+  sharedStay: "Boarding status",
+  sharedStayActive: "Your pet is currently boarded",
+  sharedStayCompleted: "Boarding completed",
 };
 
 export type LangKeys = keyof typeof en;

@@ -312,4 +312,13 @@ export const id: Record<LangKeys, string> = {
   activeGuests: "Tamu aktif",
   guestHistory: "Riwayat tamu",
   noGuestHistory: "Belum ada riwayat tamu",
+  depositLabel: "Deposit (Rp)",
+  roomTypeLabel: "Jenis Kandang / Kamar / Layanan",
+  ownerNotes: "Catatan pemilik",
+  shareStay: "Bagikan",
+  shareStaySuccess: "Link berhasil disalin",
+  shareStayWhatsApp: "Bagikan lewat WhatsApp",
+  sharedStay: "Status Penitipan",
+  sharedStayActive: "Hewan Anda sedang dititipkan",
+  sharedStayCompleted: "Penitipan selesai",
 };

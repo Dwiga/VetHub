@@ -17,6 +17,8 @@ export const Route = createFileRoute('/api/hotel/standalone')({
             petNameRaw: body.petNameRaw,
             petTypeRaw: body.petTypeRaw,
             checkIn: body.checkIn,
+            deposit: body.deposit ? String(body.deposit) : undefined,
+            roomType: body.roomType,
             dailyFee: body.dailyFee ? String(body.dailyFee) : undefined,
             notes: body.notes,
             status: 'active',

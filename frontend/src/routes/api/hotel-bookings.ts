@@ -31,6 +31,8 @@ export const Route = createFileRoute('/api/hotel-bookings')({
             petId,
             clinicId: user.clinicId ?? body.clinicId,
             checkIn: body.checkIn,
+            deposit: body.deposit ? String(body.deposit) : undefined,
+            roomType: body.roomType,
             dailyFee: body.dailyFee,
             notes: body.notes,
             status: 'active',

@@ -15,8 +15,8 @@ export const Route = createFileRoute('/api/pets/$petId')({
           return Response.json({ error: 'invalid id' }, { status: 400 })
         }
         const pet = await prisma.pet.findFirst({
-          where: { id, ownerId: user.id },
-          include: { species: true },
+          where: { id },
+          include: { species: true, owner: { select: { id: true, name: true, phone: true } } },
         })
         if (!pet) {
           return Response.json({ error: 'not found' }, { status: 404 })

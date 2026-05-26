@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { AppShell } from '@/components/layout/AppShell'
 import { PageHeader } from '@/components/shared/PageHeader'
-import { useGetHotelBookingStandalone, useUpdateHotelBookingStandalone, useListHotelLogs, useAddHotelLog, useDeleteHotelLog } from '@/lib/api-client'
+import { useGetHotelBookingStandalone, useUpdateHotelBookingStandalone, useListHotelLogs, useAddHotelLog, useDeleteHotelLog, useShareHotelBooking } from '@/lib/api-client'
 import { useQueryClient } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Share2 } from 'lucide-react'
 import { useState } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { useLang } from '@/contexts/LangContext'
@@ -38,10 +38,12 @@ function HotelBookingPage() {
   const updateBooking = useUpdateHotelBookingStandalone()
   const addLog = useAddHotelLog()
   const deleteLog = useDeleteHotelLog()
+  const shareBooking = useShareHotelBooking()
 
   const [logOpen, setLogOpen] = useState(false)
   const [logForm, setLogForm] = useState(EMPTY_LOG)
   const [checkOutDate, setCheckOutDate] = useState('')
+  const [isSharing, setIsSharing] = useState(false)
 
   const b = bookingQuery.data
   const logs: any[] = logsQuery.data ?? []
@@ -78,6 +80,35 @@ function HotelBookingPage() {
     toast({ title: 'Check out completed' })
   }
 
+  async function handleShare() {
+    setIsSharing(true)
+    try {
+      const result = await shareBooking.mutateAsync({ bookingId })
+      const url = (result as any).shareUrl
+      await navigator.clipboard.writeText(url)
+      toast({
+        title: t('shareStaySuccess'),
+        description: (
+          <div className="flex flex-col gap-2 mt-1">
+            <span className="text-xs break-all text-muted-foreground">{url}</span>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(`${t('sharedStay')}: ${url}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-green-600 font-medium hover:underline"
+            >
+              {t('shareStayWhatsApp')}
+            </a>
+          </div>
+        ),
+      })
+    } catch {
+      toast({ title: 'Error', variant: 'destructive' })
+    } finally {
+      setIsSharing(false)
+    }
+  }
+
   if (bookingQuery.isLoading) return (
     <AppShell>
       <div className="space-y-4 pt-4">
@@ -94,9 +125,11 @@ function HotelBookingPage() {
   const petDisplayType = (b as any).petSpecies ?? (b as any).petTypeRaw ?? ''
   const ownerDisplayName = (b as any).ownerName ?? (b as any).guestName ?? ''
   const ownerDisplayPhone = (b as any).ownerPhone ?? (b as any).guestPhone ?? ''
-  const daysIn = b.checkOut
-    ? Math.max(1, Math.ceil((new Date(b.checkOut).getTime() - new Date(b.checkIn).getTime()) / (1000 * 60 * 60 * 24)))
-    : Math.max(1, Math.ceil((Date.now() - new Date(b.checkIn).getTime()) / (1000 * 60 * 60 * 24)))
+  const daysIn = (b as any).daysIn ?? (
+    b.checkOut
+      ? Math.max(1, Math.ceil((new Date(b.checkOut).getTime() - new Date(b.checkIn).getTime()) / (1000 * 60 * 60 * 24)))
+      : Math.max(1, Math.ceil((Date.now() - new Date(b.checkIn).getTime()) / (1000 * 60 * 60 * 24)))
+  )
 
   return (
     <AppShell>
@@ -105,6 +138,11 @@ function HotelBookingPage() {
         subtitle={petDisplayType || undefined}
         back
         backHref="/hotel"
+        action={
+          <Button size="icon" variant="ghost" onClick={handleShare} disabled={isSharing}>
+            <Share2 className="h-4 w-4" />
+          </Button>
+        }
       />
 
       <div className="space-y-5">
@@ -126,6 +164,12 @@ function HotelBookingPage() {
                 <span className="font-medium">{b.checkOut}</span>
               </div>
             )}
+            {(b as any).roomType && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">{t('roomTypeLabel')}</span>
+                <span className="font-medium">{(b as any).roomType}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">{t('daysLabel')}</span>
               <span className="font-medium">{daysIn}</span>
@@ -134,6 +178,12 @@ function HotelBookingPage() {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">{t('dailyFee')}</span>
                 <span className="font-medium">Rp {Number((b as any).dailyFee).toLocaleString('id-ID')}</span>
+              </div>
+            )}
+            {(b as any).deposit != null && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">{t('depositLabel')}</span>
+                <span className="font-medium">Rp {Number((b as any).deposit).toLocaleString('id-ID')}</span>
               </div>
             )}
             <div className="flex items-center justify-between text-sm font-semibold pt-1 border-t">
