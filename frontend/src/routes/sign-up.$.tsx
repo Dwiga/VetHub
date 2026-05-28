@@ -14,7 +14,7 @@ function SignUpPage() {
           routing="path"
           path="/sign-up"
           signInUrl="/sign-in"
-          fallbackRedirectUrl="/dashboard"
+          fallbackRedirectUrl="/onboarding"
         />
       ) : (
         <div className="max-w-md w-full rounded-2xl border border-amber-300 bg-amber-50 p-6 text-amber-900" data-testid="clerk-missing-notice">

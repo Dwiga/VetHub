@@ -18,7 +18,13 @@ export const Route = createFileRoute('/api/daily-reports/$reportId')({
         if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
         const id = Number(params.reportId)
         const body = await request.json()
-        const updated = await prisma.dailyReport.update({ where: { id }, data: body })
+        // Convert amount to string if provided
+        const data: Record<string, any> = {}
+        if (body.type !== undefined) data.type = body.type
+        if (body.description !== undefined) data.description = body.description
+        if (body.amount !== undefined) data.amount = String(body.amount)
+        if (body.reportDate !== undefined) data.reportDate = body.reportDate
+        const updated = await prisma.dailyReport.update({ where: { id }, data })
         return Response.json(updated)
       },
     },

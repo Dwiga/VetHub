@@ -99,7 +99,7 @@ function HotelSearchPage() {
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold">{t('petsCount')} ({ownerPets.length})</h3>
                 <Button asChild size="sm" variant="outline" data-testid="btn-add-pet">
-                  <Link to="/hotel/add-pet" search={{ phone: owner.phone }}><Plus className="h-4 w-4 mr-1" />{t('addPet')}</Link>
+                  <Link to="/hotel/add-pet" search={{ phone: owner.phone ?? '' }}><Plus className="h-4 w-4 mr-1" />{t('addPet')}</Link>
                 </Button>
               </div>
 
@@ -118,7 +118,7 @@ function HotelSearchPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={e => { e.preventDefault(); navigate({ to: '/hotel/new/$petId', params: { petId: String(pet.id) }, search: { ownerName: owner.name ?? '', ownerPhone: owner.phone ?? '', petName: pet.name, petType: pet.speciesName ?? '' } }) }}
+                            onClick={e => { e.preventDefault(); navigate({ to: '/hotel/new/$petId', params: { petId: String(pet.id) } }) }}
                             data-testid={`btn-check-in-${pet.id}`}
                           >
                             {t('checkIn')}
@@ -165,7 +165,7 @@ function HotelSearchPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={e => { e.preventDefault(); navigate({ to: '/hotel/new/$petId', params: { petId: String(pet.id) }, search: { ownerName: pet.ownerName ?? '', ownerPhone: pet.ownerPhone ?? '', petName: pet.name, petType: pet.speciesName ?? '' } }) }}
+                        onClick={e => { e.preventDefault(); navigate({ to: '/hotel/new/$petId', params: { petId: String(pet.id) } }) }}
                         data-testid={`btn-check-in-${pet.id}`}
                       >
                         {t('checkIn')}

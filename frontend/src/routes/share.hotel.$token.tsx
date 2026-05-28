@@ -1,9 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useGetSharedHotelBooking } from '@/lib/api-client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PawPrint, Building2 } from 'lucide-react'
+import { PawPrint, Building2, ArrowDownLeft, ArrowUpRight } from 'lucide-react'
 import { useLang } from '@/contexts/LangContext'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { SignupPrompt } from '@/components/shared/SignupPrompt'
+import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/share/hotel/$token')({
   component: SharedHotelPage,
@@ -91,15 +93,29 @@ function SharedHotelPage() {
                 <span className="font-medium">Rp {Number(b.dailyFee).toLocaleString('id-ID')}</span>
               </div>
             )}
-            {b.deposit != null && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">{t('depositLabel')}</span>
-                <span className="font-medium">Rp {Number(b.deposit).toLocaleString('id-ID')}</span>
-              </div>
-            )}
             <div className="flex items-center justify-between text-sm font-semibold pt-1 border-t">
               <span>{t('totalCostLabel')}</span>
               <span className="text-primary">Rp {Number(b.totalCost ?? 0).toLocaleString('id-ID')}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Financial Summary */}
+        <Card>
+          <CardContent className="py-4 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">{t('totalDeposits') || 'Total deposits'}</span>
+              <span className="font-medium text-green-600">Rp {Number(b.totalDeposits ?? 0).toLocaleString('id-ID')}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">{t('totalCredits') || 'Total credits'}</span>
+              <span className="font-medium text-red-500">Rp {Number(b.totalCredits ?? 0).toLocaleString('id-ID')}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm font-semibold pt-1 border-t">
+              <span>{t('balance') || 'Balance'}</span>
+              <span className={cn((b.balance ?? 0) >= 0 ? 'text-green-600' : 'text-red-500')}>
+                Rp {Number(b.balance ?? 0).toLocaleString('id-ID')}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -123,20 +139,44 @@ function SharedHotelPage() {
             ) : (
               <div className="space-y-2">
                 {logs.map((l: any) => (
-                  <div key={l.id} className="flex items-start gap-3 py-2 border-b last:border-0">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold">{l.logDate}</p>
-                      {l.condition && <p className="text-xs text-muted-foreground">{t('condition')}: {l.condition}</p>}
-                      {l.feeding && <p className="text-xs text-muted-foreground">{t('feeding')}: {l.feeding}</p>}
-                      {l.notes && <p className="text-xs text-muted-foreground italic">{l.notes}</p>}
-                      {l.cost > 0 && <p className="text-xs text-muted-foreground">Rp {Number(l.cost).toLocaleString('id-ID')}</p>}
+                  <div key={l.id} className="flex items-center gap-3 py-2 border-b last:border-0">
+                    <div className={cn(
+                      "h-8 w-8 rounded-full flex items-center justify-center shrink-0",
+                      l.type === 'deposit' ? "bg-green-100" : "bg-red-100"
+                    )}>
+                      {l.type === 'deposit' ? (
+                        <ArrowDownLeft className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <ArrowUpRight className="h-4 w-4 text-red-500" />
+                      )}
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs font-semibold">{l.logDate}</p>
+                        <span className={cn(
+                          "text-[10px] px-1.5 py-0.5 rounded-full font-medium uppercase",
+                          l.type === 'deposit' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                        )}>
+                          {l.type === 'deposit' ? (t('depositType') || 'Deposit') : (t('creditType') || 'Credit')}
+                        </span>
+                      </div>
+                      {l.description && <p className="text-xs text-muted-foreground">{l.description}</p>}
+                    </div>
+                    <p className={cn(
+                      "text-sm font-medium shrink-0",
+                      l.type === 'deposit' ? "text-green-600" : "text-red-500"
+                    )}>
+                      {l.type === 'deposit' ? '+' : '-'}Rp {Number(l.amount).toLocaleString('id-ID')}
+                    </p>
                   </div>
                 ))}
               </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Signup Prompt */}
+        <SignupPrompt />
 
         <p className="text-xs text-center text-muted-foreground pb-8">PetHub</p>
       </div>

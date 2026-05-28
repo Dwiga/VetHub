@@ -23,8 +23,14 @@ export const Route = createFileRoute('/api/hotel/$bookingId')({
           : new Date()
         const daysIn = Math.max(1, Math.ceil((endDate.getTime() - new Date(booking.checkIn).getTime()) / (1000 * 60 * 60 * 24)))
         const dailyFeeNum = booking.dailyFee ? parseFloat(booking.dailyFee) : 0
-        const logsCost = booking.dailyLogs.reduce((sum, l) => sum + (parseFloat(l.cost) || 0), 0)
-        const totalCost = (dailyFeeNum * daysIn) + logsCost
+        const roomFeeTotal = dailyFeeNum * daysIn
+        const totalCredits = booking.dailyLogs
+          .filter(l => l.type === 'credit')
+          .reduce((sum, l) => sum + (parseFloat(l.amount) || 0), 0) + roomFeeTotal
+        const totalDeposits = booking.dailyLogs
+          .filter(l => l.type === 'deposit')
+          .reduce((sum, l) => sum + (parseFloat(l.amount) || 0), 0)
+        const balance = totalDeposits - totalCredits
 
         return Response.json({
           ...booking,
@@ -32,8 +38,11 @@ export const Route = createFileRoute('/api/hotel/$bookingId')({
           petSpecies: booking.pet?.species?.name ?? null,
           ownerName: booking.pet?.owner?.name ?? null,
           ownerPhone: booking.pet?.owner?.phone ?? null,
-          totalCost,
           daysIn,
+          roomFeeTotal,
+          totalDeposits,
+          totalCredits,
+          balance,
         })
       },
       PATCH: async ({ request, params }) => {
@@ -41,6 +50,34 @@ export const Route = createFileRoute('/api/hotel/$bookingId')({
         if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
         const id = Number(params.bookingId)
         const body = await request.json()
+
+        // If checking out, auto-create a room fee credit entry
+        if (body.status === 'completed' || body.checkOut) {
+          const current = await prisma.hotelBooking.findUnique({
+            where: { id },
+            include: { dailyLogs: true },
+          })
+          if (current) {
+            const endDate = body.checkOut
+              ? new Date(body.checkOut)
+              : new Date()
+            const daysIn = Math.max(1, Math.ceil((endDate.getTime() - new Date(current.checkIn).getTime()) / (1000 * 60 * 60 * 24)))
+            const dailyFeeNum = current.dailyFee ? parseFloat(current.dailyFee) : 0
+            if (dailyFeeNum > 0) {
+              const totalRoomFee = dailyFeeNum * daysIn
+              await prisma.hotelDailyLog.create({
+                data: {
+                  bookingId: id,
+                  type: 'credit',
+                  description: `Room fee (${daysIn} days × Rp ${dailyFeeNum.toLocaleString('id-ID')})`,
+                  amount: String(totalRoomFee),
+                  logDate: body.checkOut || current.checkIn,
+                },
+              })
+            }
+          }
+        }
+
         const updated = await prisma.hotelBooking.update({ where: { id }, data: body })
         return Response.json(updated)
       },

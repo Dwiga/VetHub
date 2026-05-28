@@ -15,6 +15,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VetIndexRouteImport } from './routes/vet.index'
 import { Route as PetsIndexRouteImport } from './routes/pets/index'
+import { Route as OnboardingIndexRouteImport } from './routes/onboarding/index'
 import { Route as HotelIndexRouteImport } from './routes/hotel.index'
 import { Route as ClinicIndexRouteImport } from './routes/clinic.index'
 import { Route as VetSearchRouteImport } from './routes/vet.search'
@@ -25,8 +26,8 @@ import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
 import { Route as PetsNewRouteImport } from './routes/pets/new'
 import { Route as PetsPetIdRouteImport } from './routes/pets/$petId'
 import { Route as HotelSearchRouteImport } from './routes/hotel.search'
-import { Route as HotelNewRouteImport } from './routes/hotel.new'
 import { Route as HotelHistoryRouteImport } from './routes/hotel.history'
+import { Route as HotelGuestsRouteImport } from './routes/hotel/guests'
 import { Route as HotelAddPetRouteImport } from './routes/hotel.add-pet'
 import { Route as HotelBookingIdRouteImport } from './routes/hotel.$bookingId'
 import { Route as ClinicReportsRouteImport } from './routes/clinic.reports'
@@ -35,15 +36,18 @@ import { Route as ApiSpeciesRouteImport } from './routes/api/species'
 import { Route as ApiPetsRouteImport } from './routes/api/pets'
 import { Route as ApiHotelBookingsRouteImport } from './routes/api/hotel-bookings'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as HotelNewIndexRouteImport } from './routes/hotel/new/index'
 import { Route as VetVisitsVisitIdRouteImport } from './routes/vet.visits.$visitId'
 import { Route as VetHotelBookingIdRouteImport } from './routes/vet.hotel.$bookingId'
 import { Route as VetDailyReportsReportIdRouteImport } from './routes/vet.daily-reports.$reportId'
+import { Route as ShareVetTokenRouteImport } from './routes/share.vet.$token'
 import { Route as ShareHotelTokenRouteImport } from './routes/share.hotel.$token'
 import { Route as PetsPetIdEditRouteImport } from './routes/pets/$petId.edit'
-import { Route as HotelNewPetIdRouteImport } from './routes/hotel.new.$petId'
+import { Route as HotelNewPetIdRouteImport } from './routes/hotel/new/$petId'
 import { Route as ApiVisitsVisitIdRouteImport } from './routes/api/visits.$visitId'
 import { Route as ApiUsersRegisterForVetRouteImport } from './routes/api/users.register-for-vet'
 import { Route as ApiUsersRegisterForHotelRouteImport } from './routes/api/users.register-for-hotel'
+import { Route as ApiUsersPhoneCheckRouteImport } from './routes/api/users.phone-check'
 import { Route as ApiUsersMeRouteImport } from './routes/api/users.me'
 import { Route as ApiSearchPetRouteImport } from './routes/api/search.pet'
 import { Route as ApiSearchOwnerRouteImport } from './routes/api/search.owner'
@@ -57,14 +61,12 @@ import { Route as ApiClinicMineRouteImport } from './routes/api/clinic.mine'
 import { Route as ApiClinicClinicIdRouteImport } from './routes/api/clinic.$clinicId'
 import { Route as VetVisitsNewPetIdRouteImport } from './routes/vet.visits.new.$petId'
 import { Route as VetHotelNewPetIdRouteImport } from './routes/vet.hotel.new.$petId'
-import { Route as ApiVisitsItemsItemIdRouteImport } from './routes/api/visits.items.$itemId'
 import { Route as ApiVisitsVisitIdShareRouteImport } from './routes/api/visits.$visitId.share'
-import { Route as ApiVisitsVisitIdItemsRouteImport } from './routes/api/visits.$visitId.items'
 import { Route as ApiVisitsVisitIdDailyReportsRouteImport } from './routes/api/visits.$visitId.daily-reports'
 import { Route as ApiUsersMeRegisterPetOwnerRouteImport } from './routes/api/users.me.register-pet-owner'
+import { Route as ApiShareVetTokenRouteImport } from './routes/api/share.vet.$token'
 import { Route as ApiShareHotelTokenRouteImport } from './routes/api/share.hotel.$token'
 import { Route as ApiPetsPetIdVaccinationsRouteImport } from './routes/api/pets.$petId.vaccinations'
-import { Route as ApiPetsPetIdMonitoringRouteImport } from './routes/api/pets.$petId.monitoring'
 import { Route as ApiPetsPetIdHealthEventsRouteImport } from './routes/api/pets.$petId.health-events'
 import { Route as ApiHotelBookingIdShareRouteImport } from './routes/api/hotel.$bookingId.share'
 import { Route as ApiHotelBookingIdLogsRouteImport } from './routes/api/hotel.$bookingId.logs'
@@ -108,6 +110,11 @@ const VetIndexRoute = VetIndexRouteImport.update({
 const PetsIndexRoute = PetsIndexRouteImport.update({
   id: '/pets/',
   path: '/pets/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingIndexRoute = OnboardingIndexRouteImport.update({
+  id: '/onboarding/',
+  path: '/onboarding/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HotelIndexRoute = HotelIndexRouteImport.update({
@@ -160,14 +167,14 @@ const HotelSearchRoute = HotelSearchRouteImport.update({
   path: '/hotel/search',
   getParentRoute: () => rootRouteImport,
 } as any)
-const HotelNewRoute = HotelNewRouteImport.update({
-  id: '/hotel/new',
-  path: '/hotel/new',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const HotelHistoryRoute = HotelHistoryRouteImport.update({
   id: '/hotel/history',
   path: '/hotel/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HotelGuestsRoute = HotelGuestsRouteImport.update({
+  id: '/hotel/guests',
+  path: '/hotel/guests',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HotelAddPetRoute = HotelAddPetRouteImport.update({
@@ -210,6 +217,11 @@ const ApiHealthRoute = ApiHealthRouteImport.update({
   path: '/api/health',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HotelNewIndexRoute = HotelNewIndexRouteImport.update({
+  id: '/hotel/new/',
+  path: '/hotel/new/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VetVisitsVisitIdRoute = VetVisitsVisitIdRouteImport.update({
   id: '/vet/visits/$visitId',
   path: '/vet/visits/$visitId',
@@ -225,6 +237,11 @@ const VetDailyReportsReportIdRoute = VetDailyReportsReportIdRouteImport.update({
   path: '/vet/daily-reports/$reportId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShareVetTokenRoute = ShareVetTokenRouteImport.update({
+  id: '/share/vet/$token',
+  path: '/share/vet/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShareHotelTokenRoute = ShareHotelTokenRouteImport.update({
   id: '/share/hotel/$token',
   path: '/share/hotel/$token',
@@ -236,9 +253,9 @@ const PetsPetIdEditRoute = PetsPetIdEditRouteImport.update({
   getParentRoute: () => PetsPetIdRoute,
 } as any)
 const HotelNewPetIdRoute = HotelNewPetIdRouteImport.update({
-  id: '/$petId',
-  path: '/$petId',
-  getParentRoute: () => HotelNewRoute,
+  id: '/hotel/new/$petId',
+  path: '/hotel/new/$petId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiVisitsVisitIdRoute = ApiVisitsVisitIdRouteImport.update({
   id: '/$visitId',
@@ -256,6 +273,11 @@ const ApiUsersRegisterForHotelRoute =
     path: '/api/users/register-for-hotel',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiUsersPhoneCheckRoute = ApiUsersPhoneCheckRouteImport.update({
+  id: '/api/users/phone-check',
+  path: '/api/users/phone-check',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiUsersMeRoute = ApiUsersMeRouteImport.update({
   id: '/api/users/me',
   path: '/api/users/me',
@@ -322,19 +344,9 @@ const VetHotelNewPetIdRoute = VetHotelNewPetIdRouteImport.update({
   path: '/new/$petId',
   getParentRoute: () => VetHotelRoute,
 } as any)
-const ApiVisitsItemsItemIdRoute = ApiVisitsItemsItemIdRouteImport.update({
-  id: '/items/$itemId',
-  path: '/items/$itemId',
-  getParentRoute: () => ApiVisitsRoute,
-} as any)
 const ApiVisitsVisitIdShareRoute = ApiVisitsVisitIdShareRouteImport.update({
   id: '/share',
   path: '/share',
-  getParentRoute: () => ApiVisitsVisitIdRoute,
-} as any)
-const ApiVisitsVisitIdItemsRoute = ApiVisitsVisitIdItemsRouteImport.update({
-  id: '/items',
-  path: '/items',
   getParentRoute: () => ApiVisitsVisitIdRoute,
 } as any)
 const ApiVisitsVisitIdDailyReportsRoute =
@@ -349,6 +361,11 @@ const ApiUsersMeRegisterPetOwnerRoute =
     path: '/register-pet-owner',
     getParentRoute: () => ApiUsersMeRoute,
   } as any)
+const ApiShareVetTokenRoute = ApiShareVetTokenRouteImport.update({
+  id: '/api/share/vet/$token',
+  path: '/api/share/vet/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiShareHotelTokenRoute = ApiShareHotelTokenRouteImport.update({
   id: '/api/share/hotel/$token',
   path: '/api/share/hotel/$token',
@@ -360,11 +377,6 @@ const ApiPetsPetIdVaccinationsRoute =
     path: '/vaccinations',
     getParentRoute: () => ApiPetsPetIdRoute,
   } as any)
-const ApiPetsPetIdMonitoringRoute = ApiPetsPetIdMonitoringRouteImport.update({
-  id: '/monitoring',
-  path: '/monitoring',
-  getParentRoute: () => ApiPetsPetIdRoute,
-} as any)
 const ApiPetsPetIdHealthEventsRoute =
   ApiPetsPetIdHealthEventsRouteImport.update({
     id: '/health-events',
@@ -460,8 +472,8 @@ export interface FileRoutesByFullPath {
   '/clinic/reports': typeof ClinicReportsRoute
   '/hotel/$bookingId': typeof HotelBookingIdRoute
   '/hotel/add-pet': typeof HotelAddPetRoute
+  '/hotel/guests': typeof HotelGuestsRoute
   '/hotel/history': typeof HotelHistoryRoute
-  '/hotel/new': typeof HotelNewRouteWithChildren
   '/hotel/search': typeof HotelSearchRoute
   '/pets/$petId': typeof PetsPetIdRouteWithChildren
   '/pets/new': typeof PetsNewRoute
@@ -472,6 +484,7 @@ export interface FileRoutesByFullPath {
   '/vet/search': typeof VetSearchRoute
   '/clinic/': typeof ClinicIndexRoute
   '/hotel/': typeof HotelIndexRoute
+  '/onboarding/': typeof OnboardingIndexRoute
   '/pets/': typeof PetsIndexRoute
   '/vet/': typeof VetIndexRoute
   '/api/clinic/$clinicId': typeof ApiClinicClinicIdRouteWithChildren
@@ -485,29 +498,30 @@ export interface FileRoutesByFullPath {
   '/api/search/owner': typeof ApiSearchOwnerRoute
   '/api/search/pet': typeof ApiSearchPetRoute
   '/api/users/me': typeof ApiUsersMeRouteWithChildren
+  '/api/users/phone-check': typeof ApiUsersPhoneCheckRoute
   '/api/users/register-for-hotel': typeof ApiUsersRegisterForHotelRoute
   '/api/users/register-for-vet': typeof ApiUsersRegisterForVetRoute
   '/api/visits/$visitId': typeof ApiVisitsVisitIdRouteWithChildren
   '/hotel/new/$petId': typeof HotelNewPetIdRoute
   '/pets/$petId/edit': typeof PetsPetIdEditRoute
   '/share/hotel/$token': typeof ShareHotelTokenRoute
+  '/share/vet/$token': typeof ShareVetTokenRoute
   '/vet/daily-reports/$reportId': typeof VetDailyReportsReportIdRoute
   '/vet/hotel/$bookingId': typeof VetHotelBookingIdRoute
   '/vet/visits/$visitId': typeof VetVisitsVisitIdRoute
+  '/hotel/new/': typeof HotelNewIndexRoute
   '/api/clinic/$clinicId/products': typeof ApiClinicClinicIdProductsRoute
   '/api/clinic/$clinicId/staff': typeof ApiClinicClinicIdStaffRouteWithChildren
   '/api/hotel-bookings/$bookingId/daily-logs': typeof ApiHotelBookingsBookingIdDailyLogsRouteWithChildren
   '/api/hotel/$bookingId/logs': typeof ApiHotelBookingIdLogsRouteWithChildren
   '/api/hotel/$bookingId/share': typeof ApiHotelBookingIdShareRoute
   '/api/pets/$petId/health-events': typeof ApiPetsPetIdHealthEventsRouteWithChildren
-  '/api/pets/$petId/monitoring': typeof ApiPetsPetIdMonitoringRoute
   '/api/pets/$petId/vaccinations': typeof ApiPetsPetIdVaccinationsRouteWithChildren
   '/api/share/hotel/$token': typeof ApiShareHotelTokenRoute
+  '/api/share/vet/$token': typeof ApiShareVetTokenRoute
   '/api/users/me/register-pet-owner': typeof ApiUsersMeRegisterPetOwnerRoute
   '/api/visits/$visitId/daily-reports': typeof ApiVisitsVisitIdDailyReportsRoute
-  '/api/visits/$visitId/items': typeof ApiVisitsVisitIdItemsRoute
   '/api/visits/$visitId/share': typeof ApiVisitsVisitIdShareRoute
-  '/api/visits/items/$itemId': typeof ApiVisitsItemsItemIdRoute
   '/vet/hotel/new/$petId': typeof VetHotelNewPetIdRoute
   '/vet/visits/new/$petId': typeof VetVisitsNewPetIdRoute
   '/api/clinic/$clinicId/reports/stats': typeof ApiClinicClinicIdReportsStatsRoute
@@ -532,8 +546,8 @@ export interface FileRoutesByTo {
   '/clinic/reports': typeof ClinicReportsRoute
   '/hotel/$bookingId': typeof HotelBookingIdRoute
   '/hotel/add-pet': typeof HotelAddPetRoute
+  '/hotel/guests': typeof HotelGuestsRoute
   '/hotel/history': typeof HotelHistoryRoute
-  '/hotel/new': typeof HotelNewRouteWithChildren
   '/hotel/search': typeof HotelSearchRoute
   '/pets/$petId': typeof PetsPetIdRouteWithChildren
   '/pets/new': typeof PetsNewRoute
@@ -544,6 +558,7 @@ export interface FileRoutesByTo {
   '/vet/search': typeof VetSearchRoute
   '/clinic': typeof ClinicIndexRoute
   '/hotel': typeof HotelIndexRoute
+  '/onboarding': typeof OnboardingIndexRoute
   '/pets': typeof PetsIndexRoute
   '/vet': typeof VetIndexRoute
   '/api/clinic/$clinicId': typeof ApiClinicClinicIdRouteWithChildren
@@ -557,29 +572,30 @@ export interface FileRoutesByTo {
   '/api/search/owner': typeof ApiSearchOwnerRoute
   '/api/search/pet': typeof ApiSearchPetRoute
   '/api/users/me': typeof ApiUsersMeRouteWithChildren
+  '/api/users/phone-check': typeof ApiUsersPhoneCheckRoute
   '/api/users/register-for-hotel': typeof ApiUsersRegisterForHotelRoute
   '/api/users/register-for-vet': typeof ApiUsersRegisterForVetRoute
   '/api/visits/$visitId': typeof ApiVisitsVisitIdRouteWithChildren
   '/hotel/new/$petId': typeof HotelNewPetIdRoute
   '/pets/$petId/edit': typeof PetsPetIdEditRoute
   '/share/hotel/$token': typeof ShareHotelTokenRoute
+  '/share/vet/$token': typeof ShareVetTokenRoute
   '/vet/daily-reports/$reportId': typeof VetDailyReportsReportIdRoute
   '/vet/hotel/$bookingId': typeof VetHotelBookingIdRoute
   '/vet/visits/$visitId': typeof VetVisitsVisitIdRoute
+  '/hotel/new': typeof HotelNewIndexRoute
   '/api/clinic/$clinicId/products': typeof ApiClinicClinicIdProductsRoute
   '/api/clinic/$clinicId/staff': typeof ApiClinicClinicIdStaffRouteWithChildren
   '/api/hotel-bookings/$bookingId/daily-logs': typeof ApiHotelBookingsBookingIdDailyLogsRouteWithChildren
   '/api/hotel/$bookingId/logs': typeof ApiHotelBookingIdLogsRouteWithChildren
   '/api/hotel/$bookingId/share': typeof ApiHotelBookingIdShareRoute
   '/api/pets/$petId/health-events': typeof ApiPetsPetIdHealthEventsRouteWithChildren
-  '/api/pets/$petId/monitoring': typeof ApiPetsPetIdMonitoringRoute
   '/api/pets/$petId/vaccinations': typeof ApiPetsPetIdVaccinationsRouteWithChildren
   '/api/share/hotel/$token': typeof ApiShareHotelTokenRoute
+  '/api/share/vet/$token': typeof ApiShareVetTokenRoute
   '/api/users/me/register-pet-owner': typeof ApiUsersMeRegisterPetOwnerRoute
   '/api/visits/$visitId/daily-reports': typeof ApiVisitsVisitIdDailyReportsRoute
-  '/api/visits/$visitId/items': typeof ApiVisitsVisitIdItemsRoute
   '/api/visits/$visitId/share': typeof ApiVisitsVisitIdShareRoute
-  '/api/visits/items/$itemId': typeof ApiVisitsItemsItemIdRoute
   '/vet/hotel/new/$petId': typeof VetHotelNewPetIdRoute
   '/vet/visits/new/$petId': typeof VetVisitsNewPetIdRoute
   '/api/clinic/$clinicId/reports/stats': typeof ApiClinicClinicIdReportsStatsRoute
@@ -605,8 +621,8 @@ export interface FileRoutesById {
   '/clinic/reports': typeof ClinicReportsRoute
   '/hotel/$bookingId': typeof HotelBookingIdRoute
   '/hotel/add-pet': typeof HotelAddPetRoute
+  '/hotel/guests': typeof HotelGuestsRoute
   '/hotel/history': typeof HotelHistoryRoute
-  '/hotel/new': typeof HotelNewRouteWithChildren
   '/hotel/search': typeof HotelSearchRoute
   '/pets/$petId': typeof PetsPetIdRouteWithChildren
   '/pets/new': typeof PetsNewRoute
@@ -617,6 +633,7 @@ export interface FileRoutesById {
   '/vet/search': typeof VetSearchRoute
   '/clinic/': typeof ClinicIndexRoute
   '/hotel/': typeof HotelIndexRoute
+  '/onboarding/': typeof OnboardingIndexRoute
   '/pets/': typeof PetsIndexRoute
   '/vet/': typeof VetIndexRoute
   '/api/clinic/$clinicId': typeof ApiClinicClinicIdRouteWithChildren
@@ -630,29 +647,30 @@ export interface FileRoutesById {
   '/api/search/owner': typeof ApiSearchOwnerRoute
   '/api/search/pet': typeof ApiSearchPetRoute
   '/api/users/me': typeof ApiUsersMeRouteWithChildren
+  '/api/users/phone-check': typeof ApiUsersPhoneCheckRoute
   '/api/users/register-for-hotel': typeof ApiUsersRegisterForHotelRoute
   '/api/users/register-for-vet': typeof ApiUsersRegisterForVetRoute
   '/api/visits/$visitId': typeof ApiVisitsVisitIdRouteWithChildren
   '/hotel/new/$petId': typeof HotelNewPetIdRoute
   '/pets/$petId/edit': typeof PetsPetIdEditRoute
   '/share/hotel/$token': typeof ShareHotelTokenRoute
+  '/share/vet/$token': typeof ShareVetTokenRoute
   '/vet/daily-reports/$reportId': typeof VetDailyReportsReportIdRoute
   '/vet/hotel/$bookingId': typeof VetHotelBookingIdRoute
   '/vet/visits/$visitId': typeof VetVisitsVisitIdRoute
+  '/hotel/new/': typeof HotelNewIndexRoute
   '/api/clinic/$clinicId/products': typeof ApiClinicClinicIdProductsRoute
   '/api/clinic/$clinicId/staff': typeof ApiClinicClinicIdStaffRouteWithChildren
   '/api/hotel-bookings/$bookingId/daily-logs': typeof ApiHotelBookingsBookingIdDailyLogsRouteWithChildren
   '/api/hotel/$bookingId/logs': typeof ApiHotelBookingIdLogsRouteWithChildren
   '/api/hotel/$bookingId/share': typeof ApiHotelBookingIdShareRoute
   '/api/pets/$petId/health-events': typeof ApiPetsPetIdHealthEventsRouteWithChildren
-  '/api/pets/$petId/monitoring': typeof ApiPetsPetIdMonitoringRoute
   '/api/pets/$petId/vaccinations': typeof ApiPetsPetIdVaccinationsRouteWithChildren
   '/api/share/hotel/$token': typeof ApiShareHotelTokenRoute
+  '/api/share/vet/$token': typeof ApiShareVetTokenRoute
   '/api/users/me/register-pet-owner': typeof ApiUsersMeRegisterPetOwnerRoute
   '/api/visits/$visitId/daily-reports': typeof ApiVisitsVisitIdDailyReportsRoute
-  '/api/visits/$visitId/items': typeof ApiVisitsVisitIdItemsRoute
   '/api/visits/$visitId/share': typeof ApiVisitsVisitIdShareRoute
-  '/api/visits/items/$itemId': typeof ApiVisitsItemsItemIdRoute
   '/vet/hotel/new/$petId': typeof VetHotelNewPetIdRoute
   '/vet/visits/new/$petId': typeof VetVisitsNewPetIdRoute
   '/api/clinic/$clinicId/reports/stats': typeof ApiClinicClinicIdReportsStatsRoute
@@ -679,8 +697,8 @@ export interface FileRouteTypes {
     | '/clinic/reports'
     | '/hotel/$bookingId'
     | '/hotel/add-pet'
+    | '/hotel/guests'
     | '/hotel/history'
-    | '/hotel/new'
     | '/hotel/search'
     | '/pets/$petId'
     | '/pets/new'
@@ -691,6 +709,7 @@ export interface FileRouteTypes {
     | '/vet/search'
     | '/clinic/'
     | '/hotel/'
+    | '/onboarding/'
     | '/pets/'
     | '/vet/'
     | '/api/clinic/$clinicId'
@@ -704,29 +723,30 @@ export interface FileRouteTypes {
     | '/api/search/owner'
     | '/api/search/pet'
     | '/api/users/me'
+    | '/api/users/phone-check'
     | '/api/users/register-for-hotel'
     | '/api/users/register-for-vet'
     | '/api/visits/$visitId'
     | '/hotel/new/$petId'
     | '/pets/$petId/edit'
     | '/share/hotel/$token'
+    | '/share/vet/$token'
     | '/vet/daily-reports/$reportId'
     | '/vet/hotel/$bookingId'
     | '/vet/visits/$visitId'
+    | '/hotel/new/'
     | '/api/clinic/$clinicId/products'
     | '/api/clinic/$clinicId/staff'
     | '/api/hotel-bookings/$bookingId/daily-logs'
     | '/api/hotel/$bookingId/logs'
     | '/api/hotel/$bookingId/share'
     | '/api/pets/$petId/health-events'
-    | '/api/pets/$petId/monitoring'
     | '/api/pets/$petId/vaccinations'
     | '/api/share/hotel/$token'
+    | '/api/share/vet/$token'
     | '/api/users/me/register-pet-owner'
     | '/api/visits/$visitId/daily-reports'
-    | '/api/visits/$visitId/items'
     | '/api/visits/$visitId/share'
-    | '/api/visits/items/$itemId'
     | '/vet/hotel/new/$petId'
     | '/vet/visits/new/$petId'
     | '/api/clinic/$clinicId/reports/stats'
@@ -751,8 +771,8 @@ export interface FileRouteTypes {
     | '/clinic/reports'
     | '/hotel/$bookingId'
     | '/hotel/add-pet'
+    | '/hotel/guests'
     | '/hotel/history'
-    | '/hotel/new'
     | '/hotel/search'
     | '/pets/$petId'
     | '/pets/new'
@@ -763,6 +783,7 @@ export interface FileRouteTypes {
     | '/vet/search'
     | '/clinic'
     | '/hotel'
+    | '/onboarding'
     | '/pets'
     | '/vet'
     | '/api/clinic/$clinicId'
@@ -776,29 +797,30 @@ export interface FileRouteTypes {
     | '/api/search/owner'
     | '/api/search/pet'
     | '/api/users/me'
+    | '/api/users/phone-check'
     | '/api/users/register-for-hotel'
     | '/api/users/register-for-vet'
     | '/api/visits/$visitId'
     | '/hotel/new/$petId'
     | '/pets/$petId/edit'
     | '/share/hotel/$token'
+    | '/share/vet/$token'
     | '/vet/daily-reports/$reportId'
     | '/vet/hotel/$bookingId'
     | '/vet/visits/$visitId'
+    | '/hotel/new'
     | '/api/clinic/$clinicId/products'
     | '/api/clinic/$clinicId/staff'
     | '/api/hotel-bookings/$bookingId/daily-logs'
     | '/api/hotel/$bookingId/logs'
     | '/api/hotel/$bookingId/share'
     | '/api/pets/$petId/health-events'
-    | '/api/pets/$petId/monitoring'
     | '/api/pets/$petId/vaccinations'
     | '/api/share/hotel/$token'
+    | '/api/share/vet/$token'
     | '/api/users/me/register-pet-owner'
     | '/api/visits/$visitId/daily-reports'
-    | '/api/visits/$visitId/items'
     | '/api/visits/$visitId/share'
-    | '/api/visits/items/$itemId'
     | '/vet/hotel/new/$petId'
     | '/vet/visits/new/$petId'
     | '/api/clinic/$clinicId/reports/stats'
@@ -823,8 +845,8 @@ export interface FileRouteTypes {
     | '/clinic/reports'
     | '/hotel/$bookingId'
     | '/hotel/add-pet'
+    | '/hotel/guests'
     | '/hotel/history'
-    | '/hotel/new'
     | '/hotel/search'
     | '/pets/$petId'
     | '/pets/new'
@@ -835,6 +857,7 @@ export interface FileRouteTypes {
     | '/vet/search'
     | '/clinic/'
     | '/hotel/'
+    | '/onboarding/'
     | '/pets/'
     | '/vet/'
     | '/api/clinic/$clinicId'
@@ -848,29 +871,30 @@ export interface FileRouteTypes {
     | '/api/search/owner'
     | '/api/search/pet'
     | '/api/users/me'
+    | '/api/users/phone-check'
     | '/api/users/register-for-hotel'
     | '/api/users/register-for-vet'
     | '/api/visits/$visitId'
     | '/hotel/new/$petId'
     | '/pets/$petId/edit'
     | '/share/hotel/$token'
+    | '/share/vet/$token'
     | '/vet/daily-reports/$reportId'
     | '/vet/hotel/$bookingId'
     | '/vet/visits/$visitId'
+    | '/hotel/new/'
     | '/api/clinic/$clinicId/products'
     | '/api/clinic/$clinicId/staff'
     | '/api/hotel-bookings/$bookingId/daily-logs'
     | '/api/hotel/$bookingId/logs'
     | '/api/hotel/$bookingId/share'
     | '/api/pets/$petId/health-events'
-    | '/api/pets/$petId/monitoring'
     | '/api/pets/$petId/vaccinations'
     | '/api/share/hotel/$token'
+    | '/api/share/vet/$token'
     | '/api/users/me/register-pet-owner'
     | '/api/visits/$visitId/daily-reports'
-    | '/api/visits/$visitId/items'
     | '/api/visits/$visitId/share'
-    | '/api/visits/items/$itemId'
     | '/vet/hotel/new/$petId'
     | '/vet/visits/new/$petId'
     | '/api/clinic/$clinicId/reports/stats'
@@ -896,8 +920,8 @@ export interface RootRouteChildren {
   ClinicReportsRoute: typeof ClinicReportsRoute
   HotelBookingIdRoute: typeof HotelBookingIdRoute
   HotelAddPetRoute: typeof HotelAddPetRoute
+  HotelGuestsRoute: typeof HotelGuestsRoute
   HotelHistoryRoute: typeof HotelHistoryRoute
-  HotelNewRoute: typeof HotelNewRouteWithChildren
   HotelSearchRoute: typeof HotelSearchRoute
   PetsPetIdRoute: typeof PetsPetIdRouteWithChildren
   PetsNewRoute: typeof PetsNewRoute
@@ -908,6 +932,7 @@ export interface RootRouteChildren {
   VetSearchRoute: typeof VetSearchRoute
   ClinicIndexRoute: typeof ClinicIndexRoute
   HotelIndexRoute: typeof HotelIndexRoute
+  OnboardingIndexRoute: typeof OnboardingIndexRoute
   PetsIndexRoute: typeof PetsIndexRoute
   VetIndexRoute: typeof VetIndexRoute
   ApiClinicClinicIdRoute: typeof ApiClinicClinicIdRouteWithChildren
@@ -919,12 +944,17 @@ export interface RootRouteChildren {
   ApiSearchOwnerRoute: typeof ApiSearchOwnerRoute
   ApiSearchPetRoute: typeof ApiSearchPetRoute
   ApiUsersMeRoute: typeof ApiUsersMeRouteWithChildren
+  ApiUsersPhoneCheckRoute: typeof ApiUsersPhoneCheckRoute
   ApiUsersRegisterForHotelRoute: typeof ApiUsersRegisterForHotelRoute
   ApiUsersRegisterForVetRoute: typeof ApiUsersRegisterForVetRoute
+  HotelNewPetIdRoute: typeof HotelNewPetIdRoute
   ShareHotelTokenRoute: typeof ShareHotelTokenRoute
+  ShareVetTokenRoute: typeof ShareVetTokenRoute
   VetDailyReportsReportIdRoute: typeof VetDailyReportsReportIdRoute
   VetVisitsVisitIdRoute: typeof VetVisitsVisitIdRoute
+  HotelNewIndexRoute: typeof HotelNewIndexRoute
   ApiShareHotelTokenRoute: typeof ApiShareHotelTokenRoute
+  ApiShareVetTokenRoute: typeof ApiShareVetTokenRoute
   VetVisitsNewPetIdRoute: typeof VetVisitsNewPetIdRoute
   ApiHotelClinicClinicIdBookingsRoute: typeof ApiHotelClinicClinicIdBookingsRoute
 }
@@ -971,6 +1001,13 @@ declare module '@tanstack/react-router' {
       path: '/pets'
       fullPath: '/pets/'
       preLoaderRoute: typeof PetsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/': {
+      id: '/onboarding/'
+      path: '/onboarding'
+      fullPath: '/onboarding/'
+      preLoaderRoute: typeof OnboardingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hotel/': {
@@ -1043,18 +1080,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HotelSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/hotel/new': {
-      id: '/hotel/new'
-      path: '/hotel/new'
-      fullPath: '/hotel/new'
-      preLoaderRoute: typeof HotelNewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/hotel/history': {
       id: '/hotel/history'
       path: '/hotel/history'
       fullPath: '/hotel/history'
       preLoaderRoute: typeof HotelHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hotel/guests': {
+      id: '/hotel/guests'
+      path: '/hotel/guests'
+      fullPath: '/hotel/guests'
+      preLoaderRoute: typeof HotelGuestsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hotel/add-pet': {
@@ -1113,6 +1150,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/hotel/new/': {
+      id: '/hotel/new/'
+      path: '/hotel/new'
+      fullPath: '/hotel/new/'
+      preLoaderRoute: typeof HotelNewIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/vet/visits/$visitId': {
       id: '/vet/visits/$visitId'
       path: '/vet/visits/$visitId'
@@ -1134,6 +1178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VetDailyReportsReportIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/share/vet/$token': {
+      id: '/share/vet/$token'
+      path: '/share/vet/$token'
+      fullPath: '/share/vet/$token'
+      preLoaderRoute: typeof ShareVetTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/share/hotel/$token': {
       id: '/share/hotel/$token'
       path: '/share/hotel/$token'
@@ -1150,10 +1201,10 @@ declare module '@tanstack/react-router' {
     }
     '/hotel/new/$petId': {
       id: '/hotel/new/$petId'
-      path: '/$petId'
+      path: '/hotel/new/$petId'
       fullPath: '/hotel/new/$petId'
       preLoaderRoute: typeof HotelNewPetIdRouteImport
-      parentRoute: typeof HotelNewRoute
+      parentRoute: typeof rootRouteImport
     }
     '/api/visits/$visitId': {
       id: '/api/visits/$visitId'
@@ -1174,6 +1225,13 @@ declare module '@tanstack/react-router' {
       path: '/api/users/register-for-hotel'
       fullPath: '/api/users/register-for-hotel'
       preLoaderRoute: typeof ApiUsersRegisterForHotelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/users/phone-check': {
+      id: '/api/users/phone-check'
+      path: '/api/users/phone-check'
+      fullPath: '/api/users/phone-check'
+      preLoaderRoute: typeof ApiUsersPhoneCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/users/me': {
@@ -1267,25 +1325,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VetHotelNewPetIdRouteImport
       parentRoute: typeof VetHotelRoute
     }
-    '/api/visits/items/$itemId': {
-      id: '/api/visits/items/$itemId'
-      path: '/items/$itemId'
-      fullPath: '/api/visits/items/$itemId'
-      preLoaderRoute: typeof ApiVisitsItemsItemIdRouteImport
-      parentRoute: typeof ApiVisitsRoute
-    }
     '/api/visits/$visitId/share': {
       id: '/api/visits/$visitId/share'
       path: '/share'
       fullPath: '/api/visits/$visitId/share'
       preLoaderRoute: typeof ApiVisitsVisitIdShareRouteImport
-      parentRoute: typeof ApiVisitsVisitIdRoute
-    }
-    '/api/visits/$visitId/items': {
-      id: '/api/visits/$visitId/items'
-      path: '/items'
-      fullPath: '/api/visits/$visitId/items'
-      preLoaderRoute: typeof ApiVisitsVisitIdItemsRouteImport
       parentRoute: typeof ApiVisitsVisitIdRoute
     }
     '/api/visits/$visitId/daily-reports': {
@@ -1302,6 +1346,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUsersMeRegisterPetOwnerRouteImport
       parentRoute: typeof ApiUsersMeRoute
     }
+    '/api/share/vet/$token': {
+      id: '/api/share/vet/$token'
+      path: '/api/share/vet/$token'
+      fullPath: '/api/share/vet/$token'
+      preLoaderRoute: typeof ApiShareVetTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/share/hotel/$token': {
       id: '/api/share/hotel/$token'
       path: '/api/share/hotel/$token'
@@ -1314,13 +1365,6 @@ declare module '@tanstack/react-router' {
       path: '/vaccinations'
       fullPath: '/api/pets/$petId/vaccinations'
       preLoaderRoute: typeof ApiPetsPetIdVaccinationsRouteImport
-      parentRoute: typeof ApiPetsPetIdRoute
-    }
-    '/api/pets/$petId/monitoring': {
-      id: '/api/pets/$petId/monitoring'
-      path: '/monitoring'
-      fullPath: '/api/pets/$petId/monitoring'
-      preLoaderRoute: typeof ApiPetsPetIdMonitoringRouteImport
       parentRoute: typeof ApiPetsPetIdRoute
     }
     '/api/pets/$petId/health-events': {
@@ -1496,13 +1540,11 @@ const ApiPetsPetIdVaccinationsRouteWithChildren =
 
 interface ApiPetsPetIdRouteChildren {
   ApiPetsPetIdHealthEventsRoute: typeof ApiPetsPetIdHealthEventsRouteWithChildren
-  ApiPetsPetIdMonitoringRoute: typeof ApiPetsPetIdMonitoringRoute
   ApiPetsPetIdVaccinationsRoute: typeof ApiPetsPetIdVaccinationsRouteWithChildren
 }
 
 const ApiPetsPetIdRouteChildren: ApiPetsPetIdRouteChildren = {
   ApiPetsPetIdHealthEventsRoute: ApiPetsPetIdHealthEventsRouteWithChildren,
-  ApiPetsPetIdMonitoringRoute: ApiPetsPetIdMonitoringRoute,
   ApiPetsPetIdVaccinationsRoute: ApiPetsPetIdVaccinationsRouteWithChildren,
 }
 
@@ -1523,13 +1565,11 @@ const ApiPetsRouteWithChildren =
 
 interface ApiVisitsVisitIdRouteChildren {
   ApiVisitsVisitIdDailyReportsRoute: typeof ApiVisitsVisitIdDailyReportsRoute
-  ApiVisitsVisitIdItemsRoute: typeof ApiVisitsVisitIdItemsRoute
   ApiVisitsVisitIdShareRoute: typeof ApiVisitsVisitIdShareRoute
 }
 
 const ApiVisitsVisitIdRouteChildren: ApiVisitsVisitIdRouteChildren = {
   ApiVisitsVisitIdDailyReportsRoute: ApiVisitsVisitIdDailyReportsRoute,
-  ApiVisitsVisitIdItemsRoute: ApiVisitsVisitIdItemsRoute,
   ApiVisitsVisitIdShareRoute: ApiVisitsVisitIdShareRoute,
 }
 
@@ -1538,28 +1578,14 @@ const ApiVisitsVisitIdRouteWithChildren =
 
 interface ApiVisitsRouteChildren {
   ApiVisitsVisitIdRoute: typeof ApiVisitsVisitIdRouteWithChildren
-  ApiVisitsItemsItemIdRoute: typeof ApiVisitsItemsItemIdRoute
 }
 
 const ApiVisitsRouteChildren: ApiVisitsRouteChildren = {
   ApiVisitsVisitIdRoute: ApiVisitsVisitIdRouteWithChildren,
-  ApiVisitsItemsItemIdRoute: ApiVisitsItemsItemIdRoute,
 }
 
 const ApiVisitsRouteWithChildren = ApiVisitsRoute._addFileChildren(
   ApiVisitsRouteChildren,
-)
-
-interface HotelNewRouteChildren {
-  HotelNewPetIdRoute: typeof HotelNewPetIdRoute
-}
-
-const HotelNewRouteChildren: HotelNewRouteChildren = {
-  HotelNewPetIdRoute: HotelNewPetIdRoute,
-}
-
-const HotelNewRouteWithChildren = HotelNewRoute._addFileChildren(
-  HotelNewRouteChildren,
 )
 
 interface PetsPetIdRouteChildren {
@@ -1670,8 +1696,8 @@ const rootRouteChildren: RootRouteChildren = {
   ClinicReportsRoute: ClinicReportsRoute,
   HotelBookingIdRoute: HotelBookingIdRoute,
   HotelAddPetRoute: HotelAddPetRoute,
+  HotelGuestsRoute: HotelGuestsRoute,
   HotelHistoryRoute: HotelHistoryRoute,
-  HotelNewRoute: HotelNewRouteWithChildren,
   HotelSearchRoute: HotelSearchRoute,
   PetsPetIdRoute: PetsPetIdRouteWithChildren,
   PetsNewRoute: PetsNewRoute,
@@ -1682,6 +1708,7 @@ const rootRouteChildren: RootRouteChildren = {
   VetSearchRoute: VetSearchRoute,
   ClinicIndexRoute: ClinicIndexRoute,
   HotelIndexRoute: HotelIndexRoute,
+  OnboardingIndexRoute: OnboardingIndexRoute,
   PetsIndexRoute: PetsIndexRoute,
   VetIndexRoute: VetIndexRoute,
   ApiClinicClinicIdRoute: ApiClinicClinicIdRouteWithChildren,
@@ -1693,12 +1720,17 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSearchOwnerRoute: ApiSearchOwnerRoute,
   ApiSearchPetRoute: ApiSearchPetRoute,
   ApiUsersMeRoute: ApiUsersMeRouteWithChildren,
+  ApiUsersPhoneCheckRoute: ApiUsersPhoneCheckRoute,
   ApiUsersRegisterForHotelRoute: ApiUsersRegisterForHotelRoute,
   ApiUsersRegisterForVetRoute: ApiUsersRegisterForVetRoute,
+  HotelNewPetIdRoute: HotelNewPetIdRoute,
   ShareHotelTokenRoute: ShareHotelTokenRoute,
+  ShareVetTokenRoute: ShareVetTokenRoute,
   VetDailyReportsReportIdRoute: VetDailyReportsReportIdRoute,
   VetVisitsVisitIdRoute: VetVisitsVisitIdRoute,
+  HotelNewIndexRoute: HotelNewIndexRoute,
   ApiShareHotelTokenRoute: ApiShareHotelTokenRoute,
+  ApiShareVetTokenRoute: ApiShareVetTokenRoute,
   VetVisitsNewPetIdRoute: VetVisitsNewPetIdRoute,
   ApiHotelClinicClinicIdBookingsRoute: ApiHotelClinicClinicIdBookingsRoute,
 }

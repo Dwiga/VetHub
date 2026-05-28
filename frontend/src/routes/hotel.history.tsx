@@ -40,8 +40,8 @@ function HotelHistoryPage() {
 
       <div className="space-y-3">
         {all.map((b: any) => {
-          const petDisplayName = (b as any).petName ?? (b as any).petNameRaw ?? '—'
-          const ownerDisplayName = (b as any).ownerName ?? (b as any).guestName ?? ''
+          const petDisplayName = b.pet?.name ?? '—'
+          const ownerDisplayName = b.pet?.owner?.name ?? ''
           const totalDays = b.checkOut
             ? Math.ceil((new Date(b.checkOut).getTime() - new Date(b.checkIn).getTime()) / (1000 * 60 * 60 * 24))
             : null

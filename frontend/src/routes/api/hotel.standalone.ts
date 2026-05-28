@@ -11,13 +11,8 @@ export const Route = createFileRoute('/api/hotel/standalone')({
         const body = await request.json()
         const booking = await prisma.hotelBooking.create({
           data: {
-            clinicId: body.clinicId,
-            guestName: body.guestName,
-            guestPhone: body.guestPhone,
-            petNameRaw: body.petNameRaw,
-            petTypeRaw: body.petTypeRaw,
+            hotelId: body.clinicId ?? body.hotelId,
             checkIn: body.checkIn,
-            deposit: body.deposit ? String(body.deposit) : undefined,
             roomType: body.roomType,
             dailyFee: body.dailyFee ? String(body.dailyFee) : undefined,
             notes: body.notes,

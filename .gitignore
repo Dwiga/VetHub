@@ -56,4 +56,5 @@ credentials.json
 .credentials
 
 *.db
+*.sqlite3
 .worktrees

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils'
 import {
   Dialog,
   DialogContent,
@@ -36,8 +37,6 @@ import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   useGetPet,
-  useListMonitoring,
-  useAddMonitoring,
   useListVisits,
   useListVaccinations,
   useAddVaccination,
@@ -45,6 +44,7 @@ import {
   useListHealthEvents,
   useAddHealthEvent,
   useDeleteHealthEvent,
+  useListHotelBookingsByPet,
 } from '@/lib/api-client'
 import { useRole } from '@/contexts/RoleContext'
 import { useLang } from '@/contexts/LangContext'
@@ -53,224 +53,144 @@ export const Route = createFileRoute('/pets/$petId')({
   component: PetDetailPage,
 })
 
-function MonitoringAddDialog({
-  petId,
-  trigger,
-}: {
-  petId: string
-  trigger: React.ReactNode
-}) {
+function PetDetailPage() {
+  const { petId } = Route.useParams()
   const id = Number(petId)
-  const [open, setOpen] = useState(false)
-  const [form, setForm] = useState({
-    weight: '',
-    height: '',
-    temperature: '',
-    notes: '',
-  })
+  const pet = useGetPet(id)
   const { t } = useLang()
-  const addMutation = useAddMonitoring()
+  const p = pet.data
+  const hotelBookings = useListHotelBookingsByPet(p?.id)
+  const activeHotel = (hotelBookings.data ?? []).find((b: any) => b.status === 'active')
 
-  function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) {
-    setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    await addMutation.mutateAsync({
-      petId: id,
-      data: {
-        weight: form.weight || undefined,
-        height: form.height || undefined,
-        temperature: form.temperature || undefined,
-        notes: form.notes || undefined,
-      },
-    })
-    setForm({ weight: '', height: '', temperature: '', notes: '' })
-    setOpen(false)
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-w-sm mx-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {t('addMonitoringRecord') || 'Add monitoring record'}
-          </DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-3 pt-1">
-          <div className="space-y-1">
-            <Label htmlFor="m-weight">{t('weightKg') || 'Weight (kg)'}</Label>
-            <Input
-              id="m-weight"
-              name="weight"
-              type="number"
-              step="0.01"
-              value={form.weight}
-              onChange={handleChange}
-              placeholder="e.g. 4.5"
-              data-testid="input-weight"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="m-height">{t('heightCm') || 'Height (cm)'}</Label>
-            <Input
-              id="m-height"
-              name="height"
-              type="number"
-              step="0.1"
-              value={form.height}
-              onChange={handleChange}
-              placeholder="e.g. 25"
-              data-testid="input-height"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="m-temp">
-              {t('temperatureC') || 'Temperature (°C)'}
-            </Label>
-            <Input
-              id="m-temp"
-              name="temperature"
-              type="number"
-              step="0.1"
-              value={form.temperature}
-              onChange={handleChange}
-              placeholder="e.g. 38.5"
-              data-testid="input-temperature"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="m-notes">{t('notes')}</Label>
-            <Textarea
-              id="m-notes"
-              name="notes"
-              value={form.notes}
-              onChange={handleChange}
-              placeholder={'Any observations...'}
-              rows={3}
-              data-testid="input-notes"
-            />
-          </div>
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={addMutation.isPending}
-            data-testid="btn-submit-monitoring"
-          >
-            {addMutation.isPending
-              ? t('saving')
-              : t('saveRecord') || 'Save record'}
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-function MonitoringCharts({ petId }: { petId: string }) {
-  const id = Number(petId)
-  const monitoring = useListMonitoring(id)
-  const records = [...(monitoring.data ?? [])].reverse()
-  const { t } = useLang()
-
-  if (monitoring.isLoading)
-    return <div className="h-40 bg-muted animate-pulse rounded-xl" />
-  if (records.length === 0)
+  if (pet.isLoading) {
     return (
-      <Card>
-        <CardContent className="py-8 flex flex-col items-center gap-2">
-          <Activity className="h-8 w-8 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">
-            {t('noMonitoringRecords')}
-          </p>
-          <MonitoringAddDialog
-            petId={petId}
-            trigger={
-              <Button
-                size="sm"
-                variant="outline"
-                data-testid="btn-add-monitoring-empty"
-              >
-                {t('addRecord')}
-              </Button>
-            }
-          />
-        </CardContent>
-      </Card>
+      <AppShell>
+        <div className="space-y-4 pt-4">
+          <div className="h-8 w-48 bg-muted animate-pulse rounded" />
+          <div className="h-32 bg-muted animate-pulse rounded-xl" />
+        </div>
+      </AppShell>
     )
+  }
 
-  const chartData = records.map((r) => ({
-    date: format(new Date(r.recordedAt), 'MM/dd'),
-    weight: r.weight ? parseFloat(r.weight) : undefined,
-    height: r.height ? parseFloat(r.height) : undefined,
-    temperature: r.temperature ? parseFloat(r.temperature) : undefined,
-  }))
+  if (!p) {
+    return (
+      <AppShell>
+        <p
+          className="text-center text-muted-foreground pt-8"
+          data-testid="pet-not-found"
+        >
+          {t('petNotFound')}
+        </p>
+      </AppShell>
+    )
+  }
+
+  const age = p.dateOfBirth
+    ? `${Math.floor(
+        (Date.now() - new Date(p.dateOfBirth).getTime()) /
+          (365.25 * 24 * 60 * 60 * 1000),
+      )} ${t('ageUnit')}`
+    : null
+
+  const infoRows = [
+    [t('gender'), p.gender],
+    [t('dateOfBirth'), age],
+    [t('colorMarkings'), p.color],
+  ].filter(([, v]) => v) as [string, string][]
 
   return (
-    <div className="space-y-4">
-      {records.some((r) => r.weight != null) && (
+    <AppShell>
+      <PageHeader
+        title={p.name}
+        subtitle={p.species?.name ?? undefined}
+        back
+        backHref="/pets"
+        action={
+          <Button asChild size="sm" variant="ghost" data-testid="btn-edit-pet">
+            <Link to="/pets/$petId/edit" params={{ petId }}>
+              <Edit className="h-4 w-4" />
+            </Link>
+          </Button>
+        }
+      />
+
+      <div className="space-y-5">
         <Card>
-          <CardHeader className="pb-2 pt-4">
-            <CardTitle className="text-sm">
-              {t('weightKg') || 'Weight (kg)'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pb-4">
-            <ResponsiveContainer width="100%" height={140}>
-              <LineChart data={chartData}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="hsl(var(--border))"
-                />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} width={32} />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="weight"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <CardContent className="py-4">
+            <div className="flex items-start gap-4">
+              <div className="h-16 w-16 rounded-2xl bg-secondary flex items-center justify-center shrink-0 overflow-hidden">
+                {p.photoUrl ? (
+                  <img
+                    src={p.photoUrl}
+                    alt={p.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-3xl" aria-hidden>
+                    🐾
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <StatusBadge status={p.status ?? 'healthy'} />
+                  {p.sterilized && (
+                    <span className="text-xs bg-muted text-muted-foreground rounded-full px-2 py-0.5">
+                      {t('sterilized')}
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-y-1 text-sm">
+                  {infoRows.map(([label, value]) => (
+                    <div key={label}>
+                      <span className="text-muted-foreground text-xs">{label}</span>
+                      <p className="font-medium text-xs truncate">{value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
-      )}
-      {records.some((r) => r.temperature != null) && (
-        <Card>
-          <CardHeader className="pb-2 pt-4">
-            <CardTitle className="text-sm">
-              {t('temperatureC') || 'Temperature (°C)'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pb-4">
-            <ResponsiveContainer width="100%" height={140}>
-              <LineChart data={chartData}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="hsl(var(--border))"
-                />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} width={32} />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="temperature"
-                  stroke="hsl(var(--chart-2))"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+
+        <VaccinationSection petId={petId} />
+
+        <HealthEventsSection petId={petId} />
+
+        {activeHotel && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="py-4 space-y-2">
+              <p className="text-sm font-semibold">
+                🏨 {t('petInHotel') || 'Your pet is currently at'} {activeHotel.clinicName ?? 'the hotel'}
+              </p>
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p>{t('checkInLabel')}: {activeHotel.checkIn} · {t('roomTypeLabel')}: {activeHotel.roomType ?? '—'}</p>
+                <p>{t('daysLabel')}: {activeHotel.daysIn ?? 0}</p>
+                {(activeHotel.totalCredits ?? 0) > 0 && (
+                  <p>{t('totalCredits') || 'Total credits'}: Rp {Number(activeHotel.totalCredits ?? 0).toLocaleString('id-ID')}</p>
+                )}
+                <p className={cn((activeHotel.balance ?? 0) >= 0 ? 'text-green-600' : 'text-red-500', 'font-medium')}>
+                  {t('balance') || 'Balance'}: Rp {Number(activeHotel.balance ?? 0).toLocaleString('id-ID')}
+                </p>
+              </div>
+              {activeHotel.shareToken && (
+                <Button asChild size="sm" className="w-full mt-1">
+                  <a href={`/share/hotel/${activeHotel.shareToken}`}>{t('viewFeeDetails') || 'View fee details'} →</a>
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-foreground text-sm">
+            {t('visitHistory')}
+          </h2>
+        </div>
+        <VisitHistory petId={petId} />
+      </div>
+    </AppShell>
   )
 }
 
@@ -291,40 +211,65 @@ function VisitHistory({ petId }: { petId: string }) {
 
   return (
     <div className="space-y-3">
-      {visitList.map((v) => (
-        <Link key={v.id} to="/pets/$petId" params={{ petId }}>
-          <Card
-            className="hover:border-primary/50 transition-colors cursor-pointer"
-            data-testid={`card-visit-${v.id}`}
-          >
-            <CardContent className="py-3">
-              <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">
-                    {v.visitDate}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {v.vetName ?? t('noVetAssigned')}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <StatusBadge status={v.type ?? 'outpatient'} />
-                  <StatusBadge status={v.status ?? 'active'} />
-                </div>
-              </div>
-              {(v.totalCost ?? 0) > 0 && (
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  Total:{' '}
-                  <span className="font-semibold text-foreground">
-                    Rp {(v.totalCost ?? 0).toLocaleString('id-ID')}
-                  </span>
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </Link>
-      ))}
+      {visitList.map((v: any) => {
+        const shareLink = v.shareToken ? `/share/vet/${v.shareToken}` : null
+        return (
+          <div key={v.id}>
+            {shareLink ? (
+              <a href={shareLink}>
+                <VisitCard v={v} t={t} />
+              </a>
+            ) : (
+              <VisitCard v={v} t={t} />
+            )}
+          </div>
+        )
+      })}
     </div>
+  )
+}
+
+function VisitCard({ v, t }: { v: any; t: any }) {
+  return (
+    <Card
+      className={v.shareToken ? 'hover:border-primary/50 transition-colors cursor-pointer' : ''}
+      data-testid={`card-visit-${v.id}`}
+    >
+      <CardContent className="py-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-foreground">
+              {v.visitDate}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {v.vetName ? `Vet: ${v.vetName}` : (t as any)('noVetAssigned')}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <StatusBadge status={v.type ?? 'outpatient'} />
+            <StatusBadge status={v.status ?? 'active'} />
+          </div>
+        </div>
+        {(v.totalCredits ?? 0) > 0 && (
+          <div className="flex items-center justify-between mt-1.5 gap-2">
+            <p className="text-xs text-muted-foreground">
+              {(t as any)('totalCredits') || 'Bill'}:{' '}
+              <span className="font-semibold text-foreground">
+                Rp {(v.totalCredits ?? 0).toLocaleString('id-ID')}
+              </span>
+            </p>
+            {v.balance != null && (
+              <p className={cn(
+                'text-xs font-medium',
+                (v.balance ?? 0) >= 0 ? 'text-green-600' : 'text-red-500'
+              )}>
+                {(t as any)('balance') || 'Balance'}: Rp {Number(v.balance ?? 0).toLocaleString('id-ID')}
+              </p>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
@@ -734,139 +679,5 @@ function HealthEventsSection({ petId }: { petId: string }) {
         </div>
       )}
     </div>
-  )
-}
-
-function PetDetailPage() {
-  const { petId } = Route.useParams()
-  const id = Number(petId)
-  const pet = useGetPet(id)
-  const { t } = useLang()
-  const p = pet.data
-
-  if (pet.isLoading) {
-    return (
-      <AppShell>
-        <div className="space-y-4 pt-4">
-          <div className="h-8 w-48 bg-muted animate-pulse rounded" />
-          <div className="h-32 bg-muted animate-pulse rounded-xl" />
-        </div>
-      </AppShell>
-    )
-  }
-
-  if (!p) {
-    return (
-      <AppShell>
-        <p
-          className="text-center text-muted-foreground pt-8"
-          data-testid="pet-not-found"
-        >
-          {t('petNotFound')}
-        </p>
-      </AppShell>
-    )
-  }
-
-  const age = p.dateOfBirth
-    ? `${Math.floor(
-        (Date.now() - new Date(p.dateOfBirth).getTime()) /
-          (365.25 * 24 * 60 * 60 * 1000),
-      )} ${t('ageUnit')}`
-    : null
-
-  const infoRows = [
-    [t('gender'), p.gender],
-    [t('dateOfBirth'), age],
-    [t('colorMarkings'), p.color],
-  ].filter(([, v]) => v) as [string, string][]
-
-  return (
-    <AppShell>
-      <PageHeader
-        title={p.name}
-        subtitle={p.species?.name ?? undefined}
-        back
-        backHref="/pets"
-        action={
-          <Button asChild size="sm" variant="ghost" data-testid="btn-edit-pet">
-            <Link to="/pets/$petId/edit" params={{ petId }}>
-              <Edit className="h-4 w-4" />
-            </Link>
-          </Button>
-        }
-      />
-
-      <div className="space-y-5">
-        <Card>
-          <CardContent className="py-4">
-            <div className="flex items-start gap-4">
-              <div className="h-16 w-16 rounded-2xl bg-secondary flex items-center justify-center shrink-0 overflow-hidden">
-                {p.photoUrl ? (
-                  <img
-                    src={p.photoUrl}
-                    alt={p.name}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="text-3xl" aria-hidden>
-                    🐾
-                  </span>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <StatusBadge status={p.status ?? 'healthy'} />
-                  {p.sterilized && (
-                    <span className="text-xs bg-muted text-muted-foreground rounded-full px-2 py-0.5">
-                      {t('sterilized')}
-                    </span>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-y-1 text-sm">
-                  {infoRows.map(([label, value]) => (
-                    <div key={label}>
-                      <span className="text-muted-foreground text-xs">{label}</span>
-                      <p className="font-medium text-xs truncate">{value}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-foreground text-sm">
-            {t('healthMonitoring')}
-          </h2>
-          <MonitoringAddDialog
-            petId={petId}
-            trigger={
-              <Button
-                size="sm"
-                variant="outline"
-                data-testid="btn-add-monitoring"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                {t('record')}
-              </Button>
-            }
-          />
-        </div>
-        <MonitoringCharts petId={petId} />
-
-        <VaccinationSection petId={petId} />
-
-        <HealthEventsSection petId={petId} />
-
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-foreground text-sm">
-            {t('visitHistory')}
-          </h2>
-        </div>
-        <VisitHistory petId={petId} />
-      </div>
-    </AppShell>
   )
 }

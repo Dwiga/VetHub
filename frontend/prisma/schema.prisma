@@ -9,7 +9,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
+//  provider = "sqlite"
 }
 
 model User {
@@ -100,28 +101,12 @@ model Pet {
 
   species       Species        @relation(fields: [speciesId], references: [id])
   owner         User           @relation("PetOwner", fields: [ownerId], references: [id])
-  monitoring    Monitoring[]
   vaccinations  Vaccination[]
   visits        Visit[]
   healthEvents  HealthEvent[]
   hotelBookings HotelBooking[]
 
   @@map("pets")
-}
-
-model Monitoring {
-  id          Int      @id @default(autoincrement())
-  petId       Int      @map("pet_id")
-  weight      String?
-  height      String?
-  temperature String?
-  notes       String?
-  recordedBy  String?  @map("recorded_by")
-  recordedAt  DateTime @default(now()) @map("recorded_at")
-
-  pet Pet @relation(fields: [petId], references: [id], onDelete: Cascade)
-
-  @@map("monitoring")
 }
 
 model Vaccination {
@@ -154,7 +139,7 @@ model Visit {
   therapy        String?
   visitDate      String   @map("visit_date")
   dischargeDate  String?  @map("discharge_date")
-  deposit        String?
+  dailyFee       String?  @map("daily_fee")
   shareToken     String?  @unique @map("share_token")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
@@ -162,40 +147,20 @@ model Visit {
   pet          Pet           @relation(fields: [petId], references: [id])
   clinic       Clinic        @relation(fields: [clinicId], references: [id])
   vet          User?         @relation("VisitVet", fields: [vetId], references: [id])
-  items        VisitItem[]
   dailyReports DailyReport[]
 
   @@map("visits")
 }
 
-model VisitItem {
+model DailyReport {
   id          Int      @id @default(autoincrement())
   visitId     Int      @map("visit_id")
-  category    String   @default("service")
-  name        String
-  description String?
-  quantity    String   @default("1")
-  unitPrice   String   @default("0") @map("unit_price")
-  itemDate    String   @default("") @map("item_date")
-  isPaid      Boolean  @default(false) @map("is_paid")
+  type        String   // "deposit" (payment received) or "credit" (expense)
+  description String?  // what the transaction is for
+  amount      String   @default("0")
+  reportDate  String   @map("report_date")
   createdAt   DateTime @default(now()) @map("created_at")
-
-  visit Visit @relation(fields: [visitId], references: [id], onDelete: Cascade)
-
-  @@map("visit_items")
-}
-
-model DailyReport {
-  id         Int      @id @default(autoincrement())
-  visitId    Int      @map("visit_id")
-  reportDate String   @map("report_date")
-  condition  String?
-  treatment  String?
-  notes      String?
-  cost       String   @default("0")
-  vetId      Int?     @map("vet_id")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   visit Visit @relation(fields: [visitId], references: [id], onDelete: Cascade)
 
@@ -223,23 +188,18 @@ model Product {
 model HotelBooking {
   id          Int      @id @default(autoincrement())
   petId       Int?     @map("pet_id")
-  clinicId    Int      @map("clinic_id")
-  guestName   String?  @map("guest_name")
-  guestPhone  String?  @map("guest_phone")
-  petNameRaw  String?  @map("pet_name_raw")
-  petTypeRaw  String?  @map("pet_type_raw")
+  hotelId     Int      @map("clinic_id")
   checkIn     String   @map("check_in")
   checkOut    String?  @map("check_out")
   dailyFee    String?  @map("daily_fee")
   status      String   @default("active")
   notes       String?
-  deposit     String?
   roomType    String?  @map("room_type")
   shareToken  String?  @unique @map("share_token")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  clinic    Clinic           @relation(fields: [clinicId], references: [id])
+  clinic    Clinic           @relation(fields: [hotelId], references: [id])
   pet       Pet?             @relation(fields: [petId], references: [id])
   dailyLogs HotelDailyLog[]
 
@@ -247,15 +207,14 @@ model HotelBooking {
 }
 
 model HotelDailyLog {
-  id        Int      @id @default(autoincrement())
-  bookingId Int      @map("booking_id")
-  logDate   String   @map("log_date")
-  condition String?
-  feeding   String?
-  notes     String?
-  cost      String   @default("0")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id          Int      @id @default(autoincrement())
+  bookingId   Int      @map("booking_id")
+  type        String   // "deposit" (payment received) or "credit" (expense)
+  description String?  // what the transaction is for
+  amount      String   @default("0")
+  logDate     String   @map("log_date")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   booking HotelBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 

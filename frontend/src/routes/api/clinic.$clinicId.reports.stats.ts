@@ -12,13 +12,20 @@ export const Route = createFileRoute('/api/clinic/$clinicId/reports/stats')({
         const url = new URL(request.url)
         const period = url.searchParams.get('period') ?? 'monthly'
         const date = url.searchParams.get('date') ?? new Date().toISOString().split('T')[0]
+        const startDate = url.searchParams.get('startDate') ?? null
+        const endDate = url.searchParams.get('endDate') ?? null
+
+        let where: Record<string, unknown> = { clinicId }
+        if (startDate || endDate) {
+          const from = startDate || '1970-01-01'
+          const to = endDate || '2099-12-31'
+          where.visitDate = { gte: from, lte: to }
+        }
 
         const visits = await prisma.visit.findMany({
-          where: { clinicId },
+          where,
           orderBy: { visitDate: 'asc' },
-        })
-        const items = await prisma.visitItem.findMany({
-          where: { visit: { clinicId } },
+          include: { dailyReports: true },
         })
 
         const dateMap = new Map<string, { visits: number; revenue: number }>()
@@ -27,10 +34,16 @@ export const Route = createFileRoute('/api/clinic/$clinicId/reports/stats')({
           if (!dateMap.has(key)) dateMap.set(key, { visits: 0, revenue: 0 })
           dateMap.get(key)!.visits++
         }
-        for (const item of items) {
-          const key = item.itemDate ? item.itemDate.substring(0, 7) : 'unknown'
-          if (!dateMap.has(key)) dateMap.set(key, { visits: 0, revenue: 0 })
-          dateMap.get(key)!.revenue += parseFloat(item.quantity || '1') * parseFloat(item.unitPrice || '0')
+        // Revenue from deposit entries in daily reports
+        for (const v of visits) {
+          if (!v.dailyReports) continue
+          for (const r of v.dailyReports) {
+            if (r.type === 'deposit') {
+              const key = r.reportDate ? r.reportDate.substring(0, 7) : 'unknown'
+              if (!dateMap.has(key)) dateMap.set(key, { visits: 0, revenue: 0 })
+              dateMap.get(key)!.revenue += parseFloat(r.amount || '0')
+            }
+          }
         }
 
         const sortedLabels = [...dateMap.keys()].sort()

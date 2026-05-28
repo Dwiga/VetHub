@@ -13,11 +13,10 @@ export const Route = createFileRoute('/api/visits/$visitId/daily-reports')({
         const report = await prisma.dailyReport.create({
           data: {
             visitId,
+            type: body.type ?? 'credit',
+            description: body.description ?? null,
+            amount: body.amount != null ? String(body.amount) : '0',
             reportDate: body.reportDate,
-            condition: body.condition,
-            treatment: body.treatment,
-            notes: body.notes,
-            cost: body.cost ?? 0,
           },
         })
         return Response.json(report, { status: 201 })

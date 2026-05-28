@@ -3,9 +3,9 @@ import { AppShell } from '@/components/layout/AppShell'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import {
-  useGetVisit, useUpdateVisit, useAddVisitItem, useDeleteVisitItem, useUpdateVisitItem,
+  useGetVisit, useUpdateVisit,
   useCreateDailyReport, useGetMe,
-  useAddMonitoring, useAddVaccination, useUpdatePetStatus, useShareVisit,
+  useAddVaccination, useListVaccinations, useUpdatePetStatus, useShareVisit,
 } from '@/lib/api-client'
 import { useRole } from '@/contexts/RoleContext'
 import { useLang } from '@/contexts/LangContext'
@@ -23,7 +23,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { useToast } from '@/hooks/use-toast'
-import { Printer, Plus, Trash2, CheckCircle2, Circle, Banknote, Share2, AlertTriangle } from 'lucide-react'
+import { Printer, Plus, Trash2, CheckCircle2, Circle, Banknote, Share2, AlertTriangle, ArrowDownLeft, ArrowUpRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/vet/visits/$visitId')({
@@ -41,10 +41,9 @@ const itemSchema = z.object({
 
 const reportSchema = z.object({
   reportDate: z.string().min(1),
-  condition: z.string().optional(),
-  treatment: z.string().optional(),
-  notes: z.string().optional(),
-  cost: z.string().optional(),
+  type: z.enum(['deposit', 'credit']),
+  description: z.string().optional(),
+  amount: z.string().optional(),
 })
 
 const visitSchema = z.object({
@@ -52,14 +51,7 @@ const visitSchema = z.object({
   therapy: z.string().optional(),
   status: z.enum(['active', 'completed', 'cancelled']).optional(),
   dischargeDate: z.string().optional(),
-  deposit: z.string().optional(),
-})
-
-const monitoringSchema = z.object({
-  weight: z.string().optional(),
-  height: z.string().optional(),
-  temperature: z.string().optional(),
-  notes: z.string().optional(),
+  dailyFee: z.string().optional(),
 })
 
 const vaccinationSchema = z.object({
@@ -77,28 +69,15 @@ function formatDate(dateStr: string) {
   return d.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 }
 
-function groupItemsByDate(items: any[]): { date: string; items: any[]; subtotal: number; billedSubtotal: number }[] {
-  const map = new Map<string, any[]>()
-  for (const item of items) {
-    const d = item.itemDate || ''
-    if (!map.has(d)) map.set(d, [])
-    map.get(d)!.push(item)
-  }
-  const groups: { date: string; items: any[]; subtotal: number; billedSubtotal: number }[] = []
-  for (const [date, grpItems] of map.entries()) {
-    const subtotal = grpItems.reduce((s: number, i: any) => s + (i.totalPrice ?? 0), 0)
-    const billedSubtotal = grpItems.filter((i: any) => !i.isPaid).reduce((s: number, i: any) => s + (i.totalPrice ?? 0), 0)
-    groups.push({ date, items: grpItems, subtotal, billedSubtotal })
-  }
-  return groups.sort((a, b) => (b.date > a.date ? 1 : -1))
-}
-
 function BillingSummary({ v }: { v: any }) {
   const { t } = useLang()
-  const deposit = v.deposit ?? 0
+  const totalCost = v.totalCost ?? 0
   const billedCost = v.billedCost ?? 0
-  const paidDirectly = (v.totalCost ?? 0) - billedCost
-  const netDue = billedCost - deposit
+  const paidDirectly = totalCost - billedCost
+  const roomFeeTotal = v.roomFeeTotal ?? 0
+  const totalDeposits = v.totalDeposits ?? 0
+  const totalCredits = v.totalCredits ?? 0
+  const balance = v.balance ?? 0
 
   return (
     <Card className="border-primary/20">
@@ -111,7 +90,7 @@ function BillingSummary({ v }: { v: any }) {
       <CardContent className="pb-4 space-y-1.5">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t('totalCare')}</span>
-          <span>Rp {(v.totalCost ?? 0).toLocaleString('id-ID')}</span>
+          <span>Rp {totalCost.toLocaleString('id-ID')}</span>
         </div>
         {paidDirectly > 0 && (
           <div className="flex justify-between text-sm">
@@ -123,18 +102,28 @@ function BillingSummary({ v }: { v: any }) {
           <span>{t('billedTotal')}</span>
           <span>Rp {billedCost.toLocaleString('id-ID')}</span>
         </div>
-        {deposit > 0 && (
+        {roomFeeTotal > 0 && (
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">{t('depositLine')}</span>
-            <span className="text-blue-600">− Rp {deposit.toLocaleString('id-ID')}</span>
+            <span className="text-muted-foreground">{t('autoRoomFee') || 'Room fee'}</span>
+            <span className="text-red-500">Rp {roomFeeTotal.toLocaleString('id-ID')}</span>
           </div>
         )}
+        {totalCredits > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">{t('totalCredits') || 'Care credits'}</span>
+            <span className="text-red-500">Rp {totalCredits.toLocaleString('id-ID')}</span>
+          </div>
+        )}
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">{t('totalDeposits') || 'Deposits'}</span>
+          <span className="text-green-600">Rp {totalDeposits.toLocaleString('id-ID')}</span>
+        </div>
         <div className={cn(
           'flex justify-between text-base font-bold border-t border-border pt-2 mt-1',
-          netDue < 0 ? 'text-blue-600' : netDue === 0 ? 'text-green-600' : 'text-foreground',
+          balance < 0 ? 'text-red-500' : balance === 0 ? 'text-green-600' : 'text-blue-600',
         )}>
-          <span>{netDue < 0 ? t('refundToOwner') : netDue === 0 ? t('settled') : t('amountDue')}</span>
-          <span>Rp {Math.abs(netDue).toLocaleString('id-ID')}</span>
+          <span>{balance < 0 ? t('paymentDue') || 'Owner pays' : balance > 0 ? t('refundToOwner') : t('settled')}</span>
+          <span>Rp {Math.abs(balance).toLocaleString('id-ID')}</span>
         </div>
       </CardContent>
     </Card>
@@ -147,23 +136,17 @@ function VisitDetailPage() {
   const visit = useGetVisit(id)
   const me = useGetMe()
   const updateVisit = useUpdateVisit()
-  const addItem = useAddVisitItem()
-  const deleteItem = useDeleteVisitItem()
-  const updateItem = useUpdateVisitItem()
   const createReport = useCreateDailyReport()
   const queryClient = useQueryClient()
   const { toast } = useToast()
   const { t } = useLang()
-  const [itemDialogOpen, setItemDialogOpen] = useState(false)
   const [reportDialogOpen, setReportDialogOpen] = useState(false)
-  const [togglingId, setTogglingId] = useState<number | null>(null)
   const [isSharing, setIsSharing] = useState(false)
   const shareVisit = useShareVisit()
-  const addMonitoring = useAddMonitoring()
   const addVaccination = useAddVaccination()
   const updatePetStatus = useUpdatePetStatus()
-  const [monitoringDialogOpen, setMonitoringDialogOpen] = useState(false)
   const [vaccinationDialogOpen, setVaccinationDialogOpen] = useState(false)
+  const vaccinations = useListVaccinations(visit.data?.petId)
 
   async function handleShare() {
     setIsSharing(true)
@@ -206,23 +189,13 @@ function VisitDetailPage() {
       therapy: v?.therapy ?? '',
       status: (v?.status as 'active' | 'completed' | 'cancelled' | undefined) ?? 'active',
       dischargeDate: v?.dischargeDate ?? '',
-      deposit: v?.deposit != null ? String(v.deposit) : '',
+      dailyFee: v?.dailyFee != null ? String(v.dailyFee) : '',
     },
-  })
-
-  const itemForm = useForm<z.infer<typeof itemSchema>>({
-    resolver: zodResolver(itemSchema),
-    defaultValues: { itemDate: today, category: 'service', name: '', description: '', quantity: '1', unitPrice: '0' },
   })
 
   const reportForm = useForm<z.infer<typeof reportSchema>>({
     resolver: zodResolver(reportSchema),
-    defaultValues: { reportDate: today, condition: '', treatment: '', notes: '', cost: '0' },
-  })
-
-  const monitoringForm = useForm<z.infer<typeof monitoringSchema>>({
-    resolver: zodResolver(monitoringSchema),
-    defaultValues: { weight: '', height: '', temperature: '', notes: '' },
+    defaultValues: { reportDate: today, type: 'credit', description: '', amount: '' },
   })
 
   const vaccinationForm = useForm<z.infer<typeof vaccinationSchema>>({
@@ -231,7 +204,7 @@ function VisitDetailPage() {
   })
 
   async function saveVisit(values: z.infer<typeof visitSchema>) {
-    const depositVal = values.deposit && values.deposit.trim() !== '' ? parseFloat(values.deposit) : null
+    const dailyFeeVal = values.dailyFee && values.dailyFee.trim() !== '' ? String(values.dailyFee) : null
     await updateVisit.mutateAsync({
       visitId: id,
       data: {
@@ -239,45 +212,11 @@ function VisitDetailPage() {
         therapy: values.therapy,
         status: values.status,
         dischargeDate: values.dischargeDate,
-        deposit: depositVal as number | undefined,
+        dailyFee: dailyFeeVal,
       },
     })
     queryClient.invalidateQueries({ queryKey: ['visits', id] })
     toast({ title: t('visitSaved') })
-  }
-
-  async function addVisitItem(values: z.infer<typeof itemSchema>) {
-    await addItem.mutateAsync({
-      visitId: id,
-      data: {
-        itemDate: values.itemDate,
-        category: values.category,
-        name: values.name,
-        description: values.description,
-        quantity: parseFloat(values.quantity),
-        unitPrice: parseFloat(values.unitPrice),
-      },
-    })
-    queryClient.invalidateQueries({ queryKey: ['visits', id] })
-    setItemDialogOpen(false)
-    itemForm.reset({ itemDate: today, category: 'service', name: '', description: '', quantity: '1', unitPrice: '0' })
-    toast({ title: t('itemAdded') })
-  }
-
-  async function removeItem(itemId: number) {
-    await deleteItem.mutateAsync({ itemId })
-    queryClient.invalidateQueries({ queryKey: ['visits', id] })
-    toast({ title: t('itemRemoved') })
-  }
-
-  async function togglePaid(item: any) {
-    setTogglingId(item.id)
-    try {
-      await updateItem.mutateAsync({ itemId: item.id, data: { isPaid: !item.isPaid } })
-      queryClient.invalidateQueries({ queryKey: ['visits', id] })
-    } finally {
-      setTogglingId(null)
-    }
   }
 
   async function addDailyReport(values: z.infer<typeof reportSchema>) {
@@ -285,32 +224,15 @@ function VisitDetailPage() {
       visitId: id,
       data: {
         reportDate: values.reportDate,
-        condition: values.condition,
-        treatment: values.treatment,
-        notes: values.notes,
-        cost: values.cost ? parseFloat(values.cost) : 0,
+        type: values.type,
+        description: values.description || undefined,
+        amount: values.amount ? parseFloat(values.amount) : 0,
       },
     })
     queryClient.invalidateQueries({ queryKey: ['visits', id] })
     setReportDialogOpen(false)
-    reportForm.reset({ reportDate: today, condition: '', treatment: '', notes: '', cost: '0' })
+    reportForm.reset({ reportDate: today, type: 'credit', description: '', amount: '' })
     toast({ title: t('reportAdded') })
-  }
-
-  async function addMonitoringRecord(values: z.infer<typeof monitoringSchema>) {
-    if (!v?.petId) return
-    await addMonitoring.mutateAsync({
-      petId: v.petId,
-      data: {
-        weight: values.weight || undefined,
-        height: values.height || undefined,
-        temperature: values.temperature || undefined,
-        notes: values.notes || undefined,
-      },
-    })
-    monitoringForm.reset()
-    setMonitoringDialogOpen(false)
-    toast({ title: t('monitoringAdded') })
   }
 
   async function addVaccinationRecord(values: z.infer<typeof vaccinationSchema>) {
@@ -347,9 +269,7 @@ function VisitDetailPage() {
 
   if (!v) return <AppShell><p className="text-center text-muted-foreground pt-8">{t('visitNotFound')}</p></AppShell>
 
-  const items = v.items ?? []
   const reports = v.dailyReports ?? []
-  const dateGroups = groupItemsByDate(items)
 
   const categoryLabels: Record<string, string> = {
     service: t('catService'),
@@ -381,8 +301,8 @@ function VisitDetailPage() {
           <StatusBadge status={v.type ?? 'outpatient'} />
           <StatusBadge status={v.status ?? 'active'} />
           <span className="text-sm text-muted-foreground flex-1 text-right">
-            {t('amountDue')}: <span className="font-semibold text-foreground">
-              Rp {Math.max(0, ((v as any).billedCost ?? 0) - (v.deposit ?? 0)).toLocaleString('id-ID')}
+            {t('balance') || 'Balance'}: <span className={cn('font-semibold', (v as any).balance < 0 ? 'text-red-500' : (v as any).balance > 0 ? 'text-blue-600' : 'text-foreground')}>
+              Rp {((v as any).balance ?? 0).toLocaleString('id-ID')}
             </span>
           </span>
         </div>
@@ -426,11 +346,11 @@ function VisitDetailPage() {
                       </FormItem>
                     )} />
                   </div>
-                  <FormField control={visitForm.control} name="deposit" render={({ field }) => (
+                  <FormField control={visitForm.control} name="dailyFee" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('depositReceived')}</FormLabel>
+                      <FormLabel>{t('dailyFee')}</FormLabel>
                       <FormControl>
-                        <Input type="number" min="0" placeholder="0" {...field} data-testid="input-deposit" />
+                        <Input type="number" min="0" placeholder="0" {...field} data-testid="input-daily-fee" />
                       </FormControl>
                     </FormItem>
                   )} />
@@ -443,92 +363,52 @@ function VisitDetailPage() {
           </Card>
         )}
 
-        {!isVet && (v.anamnesis || v.therapy) && (
-          <Card>
-            <CardHeader className="pb-3"><CardTitle className="text-sm">{t('clinicalNotes')}</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              {v.anamnesis && (
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">{t('anamnesis')}</p>
-                  <p className="text-sm">{v.anamnesis}</p>
-                </div>
-              )}
-              {v.therapy && (
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">{t('therapy')}</p>
-                  <p className="text-sm">{v.therapy}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
+        {/* Daily Reports - for all visit types */}
         <Card>
           <CardHeader className="pb-3 flex-row items-center justify-between">
-            <CardTitle className="text-sm">{t('visitItems')}</CardTitle>
+            <CardTitle className="text-sm">{t('dailyReports')}</CardTitle>
             {isVet && (
-              <Dialog open={itemDialogOpen} onOpenChange={setItemDialogOpen}>
+              <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="outline" data-testid="btn-add-item">
-                    <Plus className="h-4 w-4 mr-1" />{t('add')}
-                  </Button>
+                  <Button size="sm" variant="outline" data-testid="btn-add-report"><Plus className="h-4 w-4 mr-1" />{t('add')}</Button>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogHeader><DialogTitle>{t('addItem')}</DialogTitle></DialogHeader>
-                  <Form {...itemForm}>
-                    <form onSubmit={itemForm.handleSubmit(addVisitItem)} className="space-y-4 pt-2">
-                      <FormField control={itemForm.control} name="itemDate" render={({ field }) => (
+                  <DialogHeader><DialogTitle>{t('addDailyReport')}</DialogTitle></DialogHeader>
+                  <Form {...reportForm}>
+                    <form onSubmit={reportForm.handleSubmit(addDailyReport)} className="space-y-4 pt-2">
+                      <FormField control={reportForm.control} name="type" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('date')}</FormLabel>
-                          <FormControl><Input type="date" {...field} data-testid="input-item-date" /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={itemForm.control} name="category" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t('category')}</FormLabel>
+                          <FormLabel>{t('type') || 'Type'}</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
                             <SelectContent>
-                              <SelectItem value="service">{t('catService')}</SelectItem>
-                              <SelectItem value="medicine">{t('catMedicine')}</SelectItem>
-                              <SelectItem value="supporting">{t('catSupporting')}</SelectItem>
-                              <SelectItem value="other">{t('catOther')}</SelectItem>
+                              <SelectItem value="deposit">{t('depositType') || 'Deposit (payment)'}</SelectItem>
+                              <SelectItem value="credit">{t('creditType') || 'Credit (expense)'}</SelectItem>
                             </SelectContent>
                           </Select>
                         </FormItem>
                       )} />
-                      <FormField control={itemForm.control} name="name" render={({ field }) => (
+                      <FormField control={reportForm.control} name="reportDate" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('name')}</FormLabel>
-                          <FormControl><Input {...field} data-testid="input-item-name" /></FormControl>
+                          <FormLabel>{t('date')}</FormLabel>
+                          <FormControl><Input type="date" {...field} data-testid="input-report-date" /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )} />
-                      <FormField control={itemForm.control} name="description" render={({ field }) => (
+                      <FormField control={reportForm.control} name="description" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('description')}</FormLabel>
-                          <FormControl><Input {...field} data-testid="input-item-desc" /></FormControl>
+                          <FormLabel>{t('description') || 'Description'}</FormLabel>
+                          <FormControl><Input {...field} placeholder="e.g. Food, Grooming, Medicine" data-testid="input-description" /></FormControl>
                         </FormItem>
                       )} />
-                      <div className="flex gap-3">
-                        <FormField control={itemForm.control} name="quantity" render={({ field }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel>{t('quantity')}</FormLabel>
-                            <FormControl><Input type="number" step="0.01" min="0" {...field} data-testid="input-item-qty" /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={itemForm.control} name="unitPrice" render={({ field }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel>{t('unitPrice')}</FormLabel>
-                            <FormControl><Input type="number" min="0" {...field} data-testid="input-item-price" /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                      </div>
-                      <Button type="submit" className="w-full" disabled={addItem.isPending} data-testid="btn-submit-item">
-                        {addItem.isPending ? t('addingItem') : t('addItem')}
+                      <FormField control={reportForm.control} name="amount" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t('amount') || 'Amount (Rp)'}</FormLabel>
+                          <FormControl><Input type="number" min="0" {...field} data-testid="input-amount" /></FormControl>
+                        </FormItem>
+                      )} />
+                      <Button type="submit" className="w-full" disabled={createReport.isPending} data-testid="btn-submit-report">
+                        {createReport.isPending ? t('addingReport') : t('addReport')}
                       </Button>
                     </form>
                   </Form>
@@ -537,216 +417,46 @@ function VisitDetailPage() {
             )}
           </CardHeader>
           <CardContent className="pb-4">
-            {dateGroups.length === 0 && <p className="text-sm text-muted-foreground text-center py-3">{t('noItemsYet')}</p>}
-            <div className="space-y-5">
-              {dateGroups.map(group => (
-                <div key={group.date}>
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-semibold text-primary">{formatDate(group.date)}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Rp {group.billedSubtotal.toLocaleString('id-ID')}
-                      {group.billedSubtotal < group.subtotal && (
-                        <span className="ml-1 text-muted-foreground/60">(of Rp {group.subtotal.toLocaleString('id-ID')})</span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    {group.items.map((item: any) => (
-                      <div
-                        key={item.id}
-                        className={cn(
-                          'flex items-center gap-2 py-2 border-b border-border last:border-0',
-                          item.isPaid && 'opacity-60',
-                        )}
-                        data-testid={`row-item-${item.id}`}
-                      >
-                        {isVet && (
-                          <button
-                            onClick={() => togglePaid(item)}
-                            disabled={togglingId === item.id}
-                            className="shrink-0 text-muted-foreground hover:text-primary transition-colors"
-                            data-testid={`btn-toggle-paid-${item.id}`}
-                            title={item.isPaid ? t('markAsBilled') : t('markAsPaid')}
-                          >
-                            {item.isPaid
-                              ? <CheckCircle2 className="h-4 w-4 text-green-500" />
-                              : <Circle className="h-4 w-4" />
-                            }
-                          </button>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Badge variant="outline" className="text-xs">{categoryLabels[item.category] ?? item.category}</Badge>
-                            <span className={cn('text-sm font-medium truncate', item.isPaid && 'line-through')}>{item.name}</span>
-                            {item.isPaid && (
-                              <Badge variant="secondary" className="text-xs text-green-700 bg-green-100">{t('paidBadge')}</Badge>
-                            )}
-                          </div>
-                          {item.description && <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>}
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {item.quantity} × Rp {(item.unitPrice ?? 0).toLocaleString('id-ID')} = Rp {(item.totalPrice ?? 0).toLocaleString('id-ID')}
-                          </p>
+            {reports.length === 0 && <p className="text-sm text-muted-foreground text-center py-3">{t('noReportsYet')}</p>}
+            <div className="space-y-3">
+              {reports.map((r: any) => (
+                isVet ? (
+                  <Link key={r.id} to="/vet/daily-reports/$reportId" params={{ reportId: String(r.id) }}>
+                    <Card className="hover:border-primary/50 cursor-pointer" data-testid={`card-report-${r.id}`}>
+                      <CardContent className="py-3 flex items-center gap-3">
+                        <div className={cn("h-8 w-8 rounded-full flex items-center justify-center shrink-0", r.type === 'deposit' ? "bg-green-100" : "bg-red-100")}>
+                          {r.type === 'deposit' ? <ArrowDownLeft className="h-4 w-4 text-green-600" /> : <ArrowUpRight className="h-4 w-4 text-red-500" />}
                         </div>
-                        {isVet && (
-                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10 shrink-0" onClick={() => removeItem(item.id)} data-testid={`btn-delete-item-${item.id}`}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-semibold">{formatDate(r.reportDate)}</p>
+                            <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-medium uppercase", r.type === 'deposit' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700")}>
+                              {r.type === 'deposit' ? (t('depositType') || 'Deposit') : (t('creditType') || 'Credit')}
+                            </span>
+                          </div>
+                          {r.description && <p className="text-xs text-muted-foreground">{r.description}</p>}
+                        </div>
+                        <p className={cn("text-sm font-medium shrink-0", r.type === 'deposit' ? "text-green-600" : "text-red-500")}>
+                          {r.type === 'deposit' ? '+' : '-'}Rp {(r.amount ?? 0).toLocaleString('id-ID')}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ) : (
+                  <Card key={r.id} data-testid={`card-report-${r.id}`}>
+                    <CardContent className="py-3">
+                      <p className="text-xs font-semibold text-primary">{formatDate(r.reportDate)}</p>
+                      {r.description && <p className="text-sm mt-1">{r.description}</p>}
+                      {r.amount > 0 && <p className={cn("text-xs mt-1", r.type === 'deposit' ? "text-green-600" : "text-red-500")}>
+                        {r.type === 'deposit' ? '+' : '-'}Rp {(r.amount ?? 0).toLocaleString('id-ID')}
+                      </p>}
+                    </CardContent>
+                  </Card>
+                )
               ))}
             </div>
           </CardContent>
         </Card>
-
-        {v.type === 'inpatient' && (
-          <Card>
-            <CardHeader className="pb-3 flex-row items-center justify-between">
-              <CardTitle className="text-sm">{t('dailyReports')}</CardTitle>
-              {isVet && (
-                <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm" variant="outline" data-testid="btn-add-report"><Plus className="h-4 w-4 mr-1" />{t('add')}</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader><DialogTitle>{t('addDailyReport')}</DialogTitle></DialogHeader>
-                    <Form {...reportForm}>
-                      <form onSubmit={reportForm.handleSubmit(addDailyReport)} className="space-y-4 pt-2">
-                        <FormField control={reportForm.control} name="reportDate" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t('date')}</FormLabel>
-                            <FormControl><Input type="date" {...field} data-testid="input-report-date" /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={reportForm.control} name="condition" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t('reportCondition')}</FormLabel>
-                            <FormControl><Textarea {...field} rows={2} data-testid="input-condition" /></FormControl>
-                          </FormItem>
-                        )} />
-                        <FormField control={reportForm.control} name="treatment" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t('reportTreatment')}</FormLabel>
-                            <FormControl><Textarea {...field} rows={2} data-testid="input-treatment" /></FormControl>
-                          </FormItem>
-                        )} />
-                        <FormField control={reportForm.control} name="notes" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t('notes')}</FormLabel>
-                            <FormControl><Textarea {...field} rows={2} data-testid="input-report-notes" /></FormControl>
-                          </FormItem>
-                        )} />
-                        <FormField control={reportForm.control} name="cost" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t('reportCost')}</FormLabel>
-                            <FormControl><Input type="number" min="0" {...field} data-testid="input-report-cost" /></FormControl>
-                          </FormItem>
-                        )} />
-                        <Button type="submit" className="w-full" disabled={createReport.isPending} data-testid="btn-submit-report">
-                          {createReport.isPending ? t('addingReport') : t('addReport')}
-                        </Button>
-                      </form>
-                    </Form>
-                  </DialogContent>
-                </Dialog>
-              )}
-            </CardHeader>
-            <CardContent className="pb-4">
-              {reports.length === 0 && <p className="text-sm text-muted-foreground text-center py-3">{t('noReportsYet')}</p>}
-              <div className="space-y-3">
-                {reports.map((r: any) => (
-                  isVet ? (
-                    <Link key={r.id} to="/vet/daily-reports/$reportId" params={{ reportId: String(r.id) }}>
-                      <Card className="hover:border-primary/50 cursor-pointer" data-testid={`card-report-${r.id}`}>
-                        <CardContent className="py-3">
-                          <p className="text-xs font-semibold text-primary">{formatDate(r.reportDate)}</p>
-                          <p className="text-sm mt-1 text-foreground">{r.condition ?? '—'}</p>
-                          {r.cost > 0 && <p className="text-xs text-muted-foreground mt-1">Rp {r.cost.toLocaleString('id-ID')}</p>}
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ) : (
-                    <Card key={r.id} data-testid={`card-report-${r.id}`}>
-                      <CardContent className="py-3">
-                        <p className="text-xs font-semibold text-primary">{formatDate(r.reportDate)}</p>
-                        {r.condition && <p className="text-sm mt-1">{r.condition}</p>}
-                        {r.treatment && (
-                          <div className="mt-2">
-                            <p className="text-xs text-muted-foreground">{t('reportTreatment')}</p>
-                            <p className="text-sm">{r.treatment}</p>
-                          </div>
-                        )}
-                        {r.notes && (
-                          <div className="mt-2">
-                            <p className="text-xs text-muted-foreground">{t('notes')}</p>
-                            <p className="text-sm">{r.notes}</p>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {isVet && (
-          <Card>
-            <CardHeader className="pb-3 flex-row items-center justify-between">
-              <CardTitle className="text-sm">{t('healthMonitoring')}</CardTitle>
-              <Dialog open={monitoringDialogOpen} onOpenChange={setMonitoringDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="outline" data-testid="btn-add-monitoring">
-                    <Plus className="h-4 w-4 mr-1" />{t('add')}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>{t('addMonitoring')}</DialogTitle></DialogHeader>
-                  <Form {...monitoringForm}>
-                    <form onSubmit={monitoringForm.handleSubmit(addMonitoringRecord)} className="space-y-4 pt-2">
-                      <div className="grid grid-cols-3 gap-3">
-                        <FormField control={monitoringForm.control} name="weight" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">{t('weight')}</FormLabel>
-                            <FormControl><Input type="number" step="0.01" min="0" placeholder="—" {...field} data-testid="input-weight" /></FormControl>
-                          </FormItem>
-                        )} />
-                        <FormField control={monitoringForm.control} name="height" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">{t('height')}</FormLabel>
-                            <FormControl><Input type="number" step="0.01" min="0" placeholder="—" {...field} data-testid="input-height" /></FormControl>
-                          </FormItem>
-                        )} />
-                        <FormField control={monitoringForm.control} name="temperature" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">{t('temperature')}</FormLabel>
-                            <FormControl><Input type="number" step="0.1" min="0" placeholder="—" {...field} data-testid="input-temperature" /></FormControl>
-                          </FormItem>
-                        )} />
-                      </div>
-                      <FormField control={monitoringForm.control} name="notes" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t('notes')}</FormLabel>
-                          <FormControl><Textarea {...field} rows={2} data-testid="input-monitoring-notes" /></FormControl>
-                        </FormItem>
-                      )} />
-                      <Button type="submit" className="w-full" disabled={addMonitoring.isPending} data-testid="btn-submit-monitoring">
-                        {addMonitoring.isPending ? t('saving') : t('addMonitoring')}
-                      </Button>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <p className="text-xs text-muted-foreground text-center py-2">{t('noMonitoringRecords')}</p>
-            </CardContent>
-          </Card>
-        )}
 
         {isVet && (
           <Card>
@@ -811,7 +521,24 @@ function VisitDetailPage() {
               </Dialog>
             </CardHeader>
             <CardContent className="pb-4">
-              <p className="text-xs text-muted-foreground text-center py-2">{t('noVaccinationRecords')}</p>
+              {vaccinations.isLoading ? (
+                <p className="text-xs text-muted-foreground text-center py-2">Loading...</p>
+              ) : vaccinations.data && vaccinations.data.length > 0 ? (
+                <div className="space-y-2">
+                  {vaccinations.data.map((vac: any) => (
+                    <div key={vac.id} className="flex items-center gap-3 py-2 border-b last:border-0">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{vac.vaccineName}</p>
+                        <p className="text-xs text-muted-foreground">{vac.date}{vac.brand ? ` · ${vac.brand}` : ''}</p>
+                        {vac.nextDueDate && <p className="text-xs text-muted-foreground">Next: {vac.nextDueDate}</p>}
+                      </div>
+                      {vac.cost && <p className="text-xs text-muted-foreground shrink-0">Rp {Number(vac.cost).toLocaleString('id-ID')}</p>}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-2">{t('noVaccinationRecords')}</p>
+              )}
             </CardContent>
           </Card>
         )}

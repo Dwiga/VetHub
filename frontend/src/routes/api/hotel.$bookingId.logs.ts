@@ -20,11 +20,10 @@ export const Route = createFileRoute('/api/hotel/$bookingId/logs')({
         const log = await prisma.hotelDailyLog.create({
           data: {
             bookingId,
+            type: body.type ?? 'credit',
+            description: body.description ?? null,
+            amount: body.amount != null ? String(body.amount) : '0',
             logDate: body.logDate,
-            condition: body.condition,
-            feeding: body.feeding,
-            notes: body.notes,
-            cost: body.cost != null ? String(body.cost) : '0',
           },
         })
         return Response.json(log, { status: 201 })

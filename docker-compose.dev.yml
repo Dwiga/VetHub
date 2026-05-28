@@ -33,6 +33,37 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    
+  # app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #     args:
+  #       # VITE_* env vars are baked into the client bundle at build time.
+  #       VITE_CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY}
+  #   restart: unless-stopped
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   environment:
+  #     NODE_ENV: development
+  #     PORT: 3000
+  #     HOST: 0.0.0.0
+  #     # Switch the Prisma datasource to Postgres for prod. NOTE: you also need
+  #     # `provider = "postgresql"` in prisma/schema.prisma — see README §
+  #     # "Production database".
+  #     DATABASE_URL: postgresql://${POSTGRES_USER:-vetcare}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-vetcare}?schema=public
+  #     CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY}
+  #     CLERK_SECRET_KEY:      ${CLERK_SECRET_KEY}
+  #     # If you want the container to push the schema on startup the first time,
+  #     # set RUN_DB_PUSH=1. Disable it afterwards — real migrations belong in CI.
+  #     RUN_DB_PUSH:           ${RUN_DB_PUSH:-}
+  #     RUN_DB_SEED:           ${RUN_DB_SEED:-}
+  #   expose:
+  #     - "3000"
+  #   # If you'd rather skip nginx entirely, publish the port:
+  #   # ports:
+  #   #   - "3000:3000"
 
 volumes:
   db_dev_data:

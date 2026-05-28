@@ -11,11 +11,13 @@ export const Route = createFileRoute('/api/pets/$petId/vaccinations')({
           return Response.json({ error: 'unauthorized' }, { status: 401 })
         }
         const petId = Number(params.petId)
-        const pet = await prisma.pet.findFirst({
-          where: { id: petId, ownerId: user.id },
-        })
+        const pet = await prisma.pet.findFirst({ where: { id: petId } })
         if (!pet) {
           return Response.json({ error: 'not found' }, { status: 404 })
+        }
+        // Allow if: pet owner OR clinic staff (vet)
+        if (pet.ownerId !== user.id && !user.clinicId) {
+          return Response.json({ error: 'forbidden' }, { status: 403 })
         }
 
         const vaccinations = await prisma.vaccination.findMany({
@@ -30,11 +32,13 @@ export const Route = createFileRoute('/api/pets/$petId/vaccinations')({
           return Response.json({ error: 'unauthorized' }, { status: 401 })
         }
         const petId = Number(params.petId)
-        const pet = await prisma.pet.findFirst({
-          where: { id: petId, ownerId: user.id },
-        })
+        const pet = await prisma.pet.findFirst({ where: { id: petId } })
         if (!pet) {
           return Response.json({ error: 'not found' }, { status: 404 })
+        }
+        // Allow if: pet owner OR clinic staff (vet)
+        if (pet.ownerId !== user.id && !user.clinicId) {
+          return Response.json({ error: 'forbidden' }, { status: 403 })
         }
 
         const body = await request.json()

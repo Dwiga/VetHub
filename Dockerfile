@@ -47,14 +47,14 @@ COPY --from=builder /app/dist                 ./dist
 COPY --from=builder /app/server.ts            ./server.ts
 COPY --from=builder /app/prisma               ./prisma
 
-# Default DB location (override via env if you want a different path).
-ENV DATABASE_URL="file:./prisma/dev.db"
+# Default DB location — must be set via `DATABASE_URL` environment variable
+# (docker-compose.yml provides the Postgres connection string).
+# No default is set here so the container fails fast if DATABASE_URL is missing.
 
 EXPOSE 3000
 
-# Tiny shell wrapper so `prisma db push` happens before the server starts when
-# the DB schema is missing (only matters for SQLite — Postgres should run real
-# migrations in CI, see docker-compose.yml `migrate` service).
+# Entrypoint runs Prisma migrations on startup (safe — migrations are idempotent)
+# and then starts the server.
 RUN printf '#!/usr/bin/env sh\nset -e\nif [ -n "$RUN_DB_PUSH" ]; then\n  echo "[entrypoint] prisma db push"\n  bunx prisma db push --skip-generate\nfi\nif [ -n "$RUN_DB_SEED" ]; then\n  echo "[entrypoint] prisma seed"\n  bun run prisma/seed.ts\nfi\nexec bun run server.ts\n' > /usr/local/bin/entrypoint.sh \
  && chmod +x /usr/local/bin/entrypoint.sh
 

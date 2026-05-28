@@ -5,14 +5,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
  * Build an authenticated fetcher that injects a fresh Clerk JWT on each call.
  */
 function useAuthedFetch() {
-  const { getToken, isSignedIn } = useAuth()
+  const { getToken } = useAuth()
 
   return async function authedFetch(input: string, init: RequestInit = {}) {
     const headers = new Headers(init.headers)
     headers.set('content-type', 'application/json')
-    if (isSignedIn) {
-      const token = await getToken()
-      if (token) headers.set('authorization', `Bearer ${token}`)
+    // Always try to attach the Clerk token
+    const token = await getToken()
+    if (token) {
+      headers.set('authorization', `Bearer ${token}`)
     }
     const res = await fetch(input, { ...init, headers, credentials: 'include' })
     if (!res.ok) {
@@ -183,42 +184,6 @@ export function useUpdatePet() {
   })
 }
 
-// ─────────────────────────────  Monitoring  ────────────────────────────────
-
-export interface Monitoring {
-  id: number
-  petId: number
-  weight: string | null
-  height: string | null
-  temperature: string | null
-  notes: string | null
-  recordedBy: string | null
-  recordedAt: string
-}
-
-export function useListMonitoring(petId: number | string | undefined) {
-  const fetcher = useAuthedFetch()
-  return useQuery<Monitoring[]>({
-    queryKey: ['monitoring', petId],
-    queryFn: () => fetcher(`/api/pets/${petId}/monitoring`),
-    enabled: !!petId,
-  })
-}
-
-export function useAddMonitoring() {
-  const fetcher = useAuthedFetch()
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ petId, data }: { petId: number; data: Partial<Monitoring> }) =>
-      fetcher(`/api/pets/${petId}/monitoring`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    onSuccess: (_, { petId }) =>
-      qc.invalidateQueries({ queryKey: ['monitoring', petId] }),
-  })
-}
-
 // ─────────────────────────────  Vaccinations  ──────────────────────────────
 
 export interface Vaccination {
@@ -330,6 +295,7 @@ export interface Visit {
   status: string
   visitDate: string
   dischargeDate: string | null
+  dailyFee?: number
   totalCost?: number
   vetName?: string
   petName?: string
@@ -337,34 +303,22 @@ export interface Visit {
   ownerPhone?: string
   latestReport?: string
   billedCost?: number
-  deposit?: number
+  roomFeeTotal?: number
+  totalDeposits?: number
+  totalCredits?: number
+  balance?: number
   anamnesis?: string
   therapy?: string
-  items?: VisitItem[]
   dailyReports?: DailyReport[]
-}
-
-export interface VisitItem {
-  id: number
-  visitId: number
-  itemDate: string
-  category: string
-  name: string
-  description: string | null
-  quantity: number
-  unitPrice: number
-  totalPrice: number
-  isPaid: boolean
 }
 
 export interface DailyReport {
   id: number
   visitId: number
+  type: 'deposit' | 'credit'
+  description: string | null
+  amount: number
   reportDate: string
-  condition: string | null
-  treatment: string | null
-  notes: string | null
-  cost: number
 }
 
 export function useListVisits(petId: number | string | undefined) {
@@ -432,42 +386,6 @@ export function useUpdateVisit() {
       qc.invalidateQueries({ queryKey: ['visits', visitId] })
       qc.invalidateQueries({ queryKey: ['visits'] })
     },
-  })
-}
-
-export function useAddVisitItem() {
-  const fetcher = useAuthedFetch()
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ visitId, data }: { visitId: number; data: Record<string, any> }) =>
-      fetcher(`/api/visits/${visitId}/items`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['visits'] }),
-  })
-}
-
-export function useUpdateVisitItem() {
-  const fetcher = useAuthedFetch()
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ itemId, data }: { itemId: number; data: Record<string, any> }) =>
-      fetcher(`/api/visits/items/${itemId}`, {
-        method: 'PATCH',
-        body: JSON.stringify(data),
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['visits'] }),
-  })
-}
-
-export function useDeleteVisitItem() {
-  const fetcher = useAuthedFetch()
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ itemId }: { itemId: number }) =>
-      fetcher(`/api/visits/items/${itemId}`, { method: 'DELETE' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['visits'] }),
   })
 }
 
@@ -586,16 +504,22 @@ export interface HotelBooking {
   petSpecies: string | null
   ownerName: string | null
   ownerPhone: string | null
+  clinicName: string | null
+  roomType: string | null
+  daysIn: number | null
+  totalCredits: number | null
+  balance: number | null
+  roomFeeTotal: number | null
+  shareToken: string | null
 }
 
 export interface HotelDailyLog {
   id: number
   bookingId: number
+  type: 'deposit' | 'credit'
+  description: string | null
+  amount: number
   logDate: string
-  condition: string | null
-  feeding: string | null
-  notes: string | null
-  cost: number
 }
 
 export function useListActiveHotelBookings(clinicId: number | undefined) {
@@ -604,6 +528,15 @@ export function useListActiveHotelBookings(clinicId: number | undefined) {
     queryKey: ['hotel-bookings', 'active', clinicId],
     queryFn: () => fetcher(`/api/hotel-bookings?clinicId=${clinicId}&status=active`),
     enabled: !!clinicId,
+  })
+}
+
+export function useListHotelBookingsByPet(petId: number | string | undefined) {
+  const fetcher = useAuthedFetch()
+  return useQuery<HotelBooking[]>({
+    queryKey: ['hotel-bookings', 'pet', petId],
+    queryFn: () => fetcher(`/api/hotel-bookings?petId=${petId}`),
+    enabled: !!petId,
   })
 }
 
@@ -819,20 +752,32 @@ export function useDeleteProduct() {
   })
 }
 
-export function useGetReportSummary(clinicId: number | undefined, params: { period: string; date: string }) {
+export function useGetReportSummary(
+  clinicId: number | undefined,
+  params: { period: string; date: string; startDate?: string; endDate?: string },
+) {
   const fetcher = useAuthedFetch()
+  const qs = new URLSearchParams({ period: params.period, date: params.date })
+  if (params.startDate) qs.set('startDate', params.startDate)
+  if (params.endDate) qs.set('endDate', params.endDate)
   return useQuery<ReportSummary>({
     queryKey: ['reports', 'summary', clinicId, params],
-    queryFn: () => fetcher(`/api/clinic/${clinicId}/reports/summary?period=${params.period}&date=${params.date}`),
+    queryFn: () => fetcher(`/api/clinic/${clinicId}/reports/summary?${qs}`),
     enabled: !!clinicId,
   })
 }
 
-export function useGetVisitStats(clinicId: number | undefined, params: { period: string; date: string }) {
+export function useGetVisitStats(
+  clinicId: number | undefined,
+  params: { period: string; date: string; startDate?: string; endDate?: string },
+) {
   const fetcher = useAuthedFetch()
+  const qs = new URLSearchParams({ period: params.period, date: params.date })
+  if (params.startDate) qs.set('startDate', params.startDate)
+  if (params.endDate) qs.set('endDate', params.endDate)
   return useQuery<VisitStats>({
     queryKey: ['reports', 'stats', clinicId, params],
-    queryFn: () => fetcher(`/api/clinic/${clinicId}/reports/stats?period=${params.period}&date=${params.date}`),
+    queryFn: () => fetcher(`/api/clinic/${clinicId}/reports/stats?${qs}`),
     enabled: !!clinicId,
   })
 }
@@ -934,6 +879,15 @@ export function useGetSharedHotelBooking(token: string) {
   return useQuery({
     queryKey: ['share', 'hotel', token],
     queryFn: () => fetch(`/api/share/hotel/${token}`).then(r => { if (!r.ok) throw new Error('not found'); return r.json() }),
+    enabled: !!token,
+    refetchInterval: 30_000,
+  })
+}
+
+export function useGetSharedVetVisit(token: string) {
+  return useQuery({
+    queryKey: ['share', 'vet', token],
+    queryFn: () => fetch(`/api/share/vet/${token}`).then(r => { if (!r.ok) throw new Error('not found'); return r.json() }),
     enabled: !!token,
     refetchInterval: 30_000,
   })

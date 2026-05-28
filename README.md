@@ -503,3 +503,22 @@ The app is a standard Bun + TanStack Start project — any host that supports Bu
 ## License
 
 Proprietary — VetCare Pro / PetHub.
+
+Dynamic Database Adapter — Final State
+How it works
+db.ts checks DATABASE_URL at startup:
+DATABASE_URL starts with	Adapter used
+file:	PrismaLibSql (SQLite — local dev)
+postgresql://	PrismaPg (PostgreSQL — production/Docker)
+Files configured
+File	Default	Override via
+frontend/.env	file:./prisma/dev.db (SQLite)	Uncomment the PostgreSQL line
+.envrc	file:./prisma/dev.db (SQLite)	Change to postgresql://...
+frontend/prisma/schema.prisma	provider = "postgresql" (⚠️ see note below)	—
+Dockerfile	No default (fails fast if missing)	docker-compose.yml passes PostgreSQL URL
+Important note about Prisma provider
+The schema has provider = "postgresql" (production target). For local SQLite dev, prisma db push and prisma migrate will fail because the PostgreSQL provider doesn't match the SQLite URL. You have two options for local schema updates:
+1. Switch provider temporarily — Change to provider = "sqlite", run prisma db push, then switch back
+2. Use PostgreSQL locally — docker compose -f docker-compose.dev.yml up -d gives you a local PostgreSQL, then:
+DATABASE_URL="postgresql://vetcare:vetcare@localhost:5432/vetcare?schema=public" bun run prisma:push
+The app itself will run fine with either database since the client generation is adapter-agnostic.

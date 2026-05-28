@@ -12,19 +12,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { useLang } from '@/contexts/LangContext'
-import { Separator } from '@/components/ui/separator'
 
-export const Route = createFileRoute('/hotel/new')({
+export const Route = createFileRoute('/hotel/new/')({
   component: HotelNewGuestPage,
 })
 
 const schema = z.object({
-  guestName: z.string().min(1),
-  guestPhone: z.string().optional(),
-  petNameRaw: z.string().min(1),
-  petTypeRaw: z.string().optional(),
   checkIn: z.string().min(1),
-  deposit: z.string().optional(),
   roomType: z.string().optional(),
   dailyFee: z.string().optional(),
   notes: z.string().optional(),
@@ -40,12 +34,7 @@ function HotelNewGuestPage() {
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
-      guestName: '',
-      guestPhone: '',
-      petNameRaw: '',
-      petTypeRaw: '',
       checkIn: '',
-      deposit: '',
       roomType: '',
       dailyFee: '',
       notes: '',
@@ -65,14 +54,9 @@ function HotelNewGuestPage() {
       const booking = await createBooking.mutateAsync({
         data: {
           clinicId: hotelId,
-          guestName: values.guestName,
-          guestPhone: values.guestPhone || undefined,
-          petNameRaw: values.petNameRaw,
-          petTypeRaw: values.petTypeRaw || undefined,
           checkIn: values.checkIn,
-          deposit: values.deposit ? String(values.deposit) : undefined,
           roomType: values.roomType || undefined,
-          dailyFee: values.dailyFee ? parseFloat(values.dailyFee) : undefined,
+          dailyFee: values.dailyFee ? String(values.dailyFee) : undefined,
           notes: values.notes || undefined,
         },
       })
@@ -89,62 +73,11 @@ function HotelNewGuestPage() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-          <div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-3">{t('guestName')}</p>
-            <div className="space-y-4">
-              <FormField control={form.control} name="guestName" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('guestName')} *</FormLabel>
-                  <FormControl><Input placeholder="Budi Santoso" {...field} data-testid="input-guest-name" /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="guestPhone" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('guestPhone')}</FormLabel>
-                  <FormControl><Input type="tel" placeholder="08xx-xxxx-xxxx" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
-          </div>
-
-          <Separator />
-
-          <div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-3">{t('petNameRaw')}</p>
-            <div className="space-y-4">
-              <FormField control={form.control} name="petNameRaw" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('petNameRaw')} *</FormLabel>
-                  <FormControl><Input placeholder="Mochi" {...field} data-testid="input-pet-name" /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="petTypeRaw" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('petTypeRaw')}</FormLabel>
-                  <FormControl><Input placeholder="Kucing Persia" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
-          </div>
-
-          <Separator />
-
           <div className="space-y-4">
             <FormField control={form.control} name="checkIn" render={({ field }) => (
               <FormItem>
                 <FormLabel>{t('checkIn')} *</FormLabel>
                 <FormControl><Input type="date" {...field} data-testid="input-check-in" /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="deposit" render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('depositLabel')}</FormLabel>
-                <FormControl><Input type="number" min="0" placeholder="0" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />

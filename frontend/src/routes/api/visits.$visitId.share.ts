@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { prisma } from '@/lib/db'
 import { getOrCreateLocalUser } from '@/lib/clerk-server'
+import crypto from 'node:crypto'
 
 export const Route = createFileRoute('/api/visits/$visitId/share')({
   server: {
@@ -14,8 +15,20 @@ export const Route = createFileRoute('/api/visits/$visitId/share')({
           include: { pet: { include: { species: true, owner: true } } },
         })
         if (!visit) return Response.json({ error: 'not found' }, { status: 404 })
-        const shareUrl = `${request.headers.get('origin') || ''}/pets/${visit.petId}?visit=${visitId}`
-        return Response.json({ shareUrl })
+
+        let shareToken = visit.shareToken
+        if (!shareToken) {
+          shareToken = crypto.randomBytes(16).toString('hex')
+          await prisma.visit.update({
+            where: { id: visitId },
+            data: { shareToken },
+          })
+        }
+
+        const origin = request.headers.get('origin') || ''
+        const petName = visit.pet?.name ?? 'Pet'
+        const shareUrl = `${origin}/share/vet/${shareToken}`
+        return Response.json({ shareUrl, petName })
       },
     },
   },

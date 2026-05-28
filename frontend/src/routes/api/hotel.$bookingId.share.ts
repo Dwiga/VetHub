@@ -27,7 +27,7 @@ export const Route = createFileRoute('/api/hotel/$bookingId/share')({
         }
 
         const origin = request.headers.get('origin') || ''
-        const petName = booking.pet?.name ?? booking.petNameRaw ?? 'Pet'
+        const petName = booking.pet?.name ?? 'Pet'
         const shareUrl = `${origin}/share/hotel/${shareToken}`
         return Response.json({ shareUrl, petName })
       },

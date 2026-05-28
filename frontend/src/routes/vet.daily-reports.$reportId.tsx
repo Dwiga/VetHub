@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { AppShell } from '@/components/layout/AppShell'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { useGetDailyReport, useUpdateDailyReport } from '@/lib/api-client'
@@ -9,19 +9,20 @@ import { z } from 'zod'
 import { useEffect } from 'react'
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
+import { useLang } from '@/contexts/LangContext'
 
 export const Route = createFileRoute('/vet/daily-reports/$reportId')({
   component: DailyReportPage,
 })
 
 const schema = z.object({
-  condition: z.string().optional(),
-  treatment: z.string().optional(),
-  notes: z.string().optional(),
-  cost: z.string().optional(),
+  type: z.enum(['deposit', 'credit']),
+  description: z.string().optional(),
+  amount: z.string().optional(),
+  reportDate: z.string().min(1),
 })
 
 function DailyReportPage() {
@@ -31,19 +32,21 @@ function DailyReportPage() {
   const updateReport = useUpdateDailyReport()
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { t } = useLang()
+  const navigate = useNavigate()
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { condition: '', treatment: '', notes: '', cost: '0' },
+    defaultValues: { type: 'credit', description: '', amount: '', reportDate: '' },
   })
 
   useEffect(() => {
     if (report.data) {
       form.reset({
-        condition: report.data.condition ?? '',
-        treatment: report.data.treatment ?? '',
-        notes: report.data.notes ?? '',
-        cost: String(report.data.cost ?? 0),
+        type: report.data.type ?? 'credit',
+        description: report.data.description ?? '',
+        amount: String(report.data.amount ?? 0),
+        reportDate: report.data.reportDate ?? '',
       })
     }
   }, [report.data])
@@ -52,10 +55,10 @@ function DailyReportPage() {
     await updateReport.mutateAsync({
       reportId: id,
       data: {
-        condition: values.condition,
-        treatment: values.treatment,
-        notes: values.notes,
-        cost: values.cost ? parseFloat(values.cost) : 0,
+        type: values.type,
+        description: values.description || undefined,
+        amount: values.amount ? parseFloat(values.amount) : 0,
+        reportDate: values.reportDate,
       },
     })
     queryClient.invalidateQueries({ queryKey: ['daily-reports', id] })
@@ -69,31 +72,39 @@ function DailyReportPage() {
       <PageHeader title={`Daily report — ${r?.reportDate ?? '...'}`} back />
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-          <FormField control={form.control} name="condition" render={({ field }) => (
+          <FormField control={form.control} name="type" render={({ field }) => (
             <FormItem>
-              <FormLabel>Condition</FormLabel>
-              <FormControl><Textarea {...field} rows={3} placeholder="Patient's condition..." data-testid="input-condition" /></FormControl>
+              <FormLabel>{t('type') || 'Type'}</FormLabel>
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="deposit">{t('depositType') || 'Deposit (payment)'}</SelectItem>
+                  <SelectItem value="credit">{t('creditType') || 'Credit (expense)'}</SelectItem>
+                </SelectContent>
+              </Select>
             </FormItem>
           )} />
-          <FormField control={form.control} name="treatment" render={({ field }) => (
+          <FormField control={form.control} name="description" render={({ field }) => (
             <FormItem>
-              <FormLabel>Treatment</FormLabel>
-              <FormControl><Textarea {...field} rows={3} placeholder="Treatments administered..." data-testid="input-treatment" /></FormControl>
+              <FormLabel>{t('description') || 'Description'}</FormLabel>
+              <FormControl><Input {...field} placeholder="e.g. Food, Medicine, Deposit" /></FormControl>
             </FormItem>
           )} />
-          <FormField control={form.control} name="notes" render={({ field }) => (
+          <FormField control={form.control} name="amount" render={({ field }) => (
             <FormItem>
-              <FormLabel>Notes</FormLabel>
-              <FormControl><Textarea {...field} rows={3} data-testid="input-notes" /></FormControl>
+              <FormLabel>{t('amount') || 'Amount (Rp)'}</FormLabel>
+              <FormControl><Input type="number" min="0" {...field} /></FormControl>
             </FormItem>
           )} />
-          <FormField control={form.control} name="cost" render={({ field }) => (
+          <FormField control={form.control} name="reportDate" render={({ field }) => (
             <FormItem>
-              <FormLabel>Cost (Rp)</FormLabel>
-              <FormControl><Input type="number" min="0" {...field} data-testid="input-cost" /></FormControl>
+              <FormLabel>{t('logDate') || 'Report date'} *</FormLabel>
+              <FormControl><Input type="date" {...field} required /></FormControl>
             </FormItem>
           )} />
-          <Button type="submit" className="w-full" disabled={updateReport.isPending} data-testid="btn-save">
+          <Button type="submit" className="w-full" disabled={updateReport.isPending}>
             {updateReport.isPending ? 'Saving...' : 'Save report'}
           </Button>
         </form>

@@ -65,8 +65,8 @@ function HotelListPage() {
                   <PawPrint className="h-4 w-4 text-primary/60" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm">{b.petName ?? '—'}</p>
-                  <p className="text-xs text-muted-foreground">{b.petSpecies} · {b.ownerName}</p>
+                  <p className="font-semibold text-sm">{b.pet?.name ?? '—'}</p>
+                  <p className="text-xs text-muted-foreground">{b.pet?.species?.name ?? ''} · {b.pet?.owner?.name ?? ''}</p>
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-xs font-medium text-primary">{daysIn} {t('daysLabel')}</p>

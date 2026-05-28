@@ -169,6 +169,15 @@ function DashboardPage() {
     }
   }, [isLoaded, isSignedIn, navigate])
 
+  const user = me.data
+
+  // Redirect users who haven't completed onboarding (no name or phone set).
+  useEffect(() => {
+    if (isLoaded && isSignedIn && !me.isLoading && !user?.name && !user?.phone) {
+      navigate({ to: '/onboarding' })
+    }
+  }, [isLoaded, isSignedIn, me.isLoading, user?.name, user?.phone, navigate])
+
   if (!isLoaded || !isSignedIn) {
     return (
       <AppShell>
@@ -178,8 +187,6 @@ function DashboardPage() {
       </AppShell>
     )
   }
-
-  const user = me.data
   const isNew = !user?.isPetOwner && !user?.isVet && !user?.isVetOwner
   const isVet = !!(user?.isVet || user?.isVetOwner)
   const greetingName = user?.name ?? clerkUser?.firstName ?? null

@@ -14,10 +14,12 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog'
-import { Plus, Trash2, PawPrint } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Plus, Trash2, PawPrint, ArrowDownLeft, ArrowUpRight } from 'lucide-react'
 import { useState } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { useLang } from '@/contexts/LangContext'
+import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/vet/hotel/$bookingId')({
   component: HotelDetailPage,
@@ -25,10 +27,9 @@ export const Route = createFileRoute('/vet/hotel/$bookingId')({
 
 const EMPTY_LOG = {
   logDate: new Date().toISOString().split('T')[0],
-  condition: '',
-  feeding: '',
-  notes: '',
-  cost: '',
+  type: 'credit' as 'deposit' | 'credit',
+  description: '',
+  amount: '',
 }
 
 function HotelDetailPage() {
@@ -55,16 +56,19 @@ function HotelDetailPage() {
     setLogForm(f => ({ ...f, [e.target.name]: e.target.value }))
   }
 
+  function handleTypeChange(value: string) {
+    setLogForm(f => ({ ...f, type: value as 'deposit' | 'credit' }))
+  }
+
   async function handleAddLog(e: React.FormEvent) {
     e.preventDefault()
     await addLog.mutateAsync({
       bookingId,
       data: {
         logDate: logForm.logDate,
-        condition: logForm.condition || undefined,
-        feeding: logForm.feeding || undefined,
-        notes: logForm.notes || undefined,
-        cost: logForm.cost ? parseFloat(logForm.cost) : 0,
+        type: logForm.type,
+        description: logForm.description || undefined,
+        amount: logForm.amount ? parseFloat(logForm.amount) : 0,
       },
     })
     await qc.invalidateQueries({ queryKey: ['hotel-daily-logs', bookingId] })
@@ -106,6 +110,11 @@ function HotelDetailPage() {
   const daysIn = b.checkOut
     ? Math.ceil((new Date(b.checkOut).getTime() - new Date(b.checkIn).getTime()) / (1000 * 60 * 60 * 24))
     : Math.ceil((Date.now() - new Date(b.checkIn).getTime()) / (1000 * 60 * 60 * 24))
+  const dailyFeeNum = b.dailyFee ?? 0
+  const roomFeeTotal = dailyFeeNum * daysIn
+  const totalDeposits = (b as any).totalDeposits ?? 0
+  const totalCredits = (b as any).totalCredits ?? 0
+  const balance = (b as any).balance ?? 0
 
   return (
     <AppShell>
@@ -160,6 +169,27 @@ function HotelDetailPage() {
           </CardContent>
         </Card>
 
+        {/* Financial Summary */}
+        <Card>
+          <CardContent className="py-4 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">{t('totalDeposits') || 'Total deposits'}</span>
+              <span className="font-medium text-green-600">Rp {Number(totalDeposits).toLocaleString('id-ID')}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">{t('totalCredits') || 'Total credits'}</span>
+              <span className="font-medium text-red-500">Rp {Number(totalCredits).toLocaleString('id-ID')}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm font-semibold pt-1 border-t">
+              <span>{t('balance') || 'Balance'}</span>
+              <span className={cn(balance >= 0 ? 'text-green-600' : 'text-red-500')}>
+                Rp {Number(balance).toLocaleString('id-ID')}
+                {balance > 0 ? ` (${t('refundDue') || 'refund'})` : balance < 0 ? ` (${t('paymentDue') || 'owner pays'})` : ''}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
         {isActive && (
           <Card>
             <CardContent className="py-4 space-y-3">
@@ -202,24 +232,28 @@ function HotelDetailPage() {
                     </DialogHeader>
                     <form onSubmit={handleAddLog} className="space-y-3 pt-1">
                       <div className="space-y-1">
+                        <Label>{t('type') || 'Type'}</Label>
+                        <Select value={logForm.type} onValueChange={handleTypeChange}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="deposit">{t('depositType') || 'Deposit (payment)'}</SelectItem>
+                            <SelectItem value="credit">{t('creditType') || 'Credit (expense)'}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
                         <Label htmlFor="log-date">{t('logDate')} *</Label>
                         <Input id="log-date" name="logDate" type="date" value={logForm.logDate} onChange={handleLogChange} required />
                       </div>
                       <div className="space-y-1">
-                        <Label htmlFor="log-condition">{t('condition')}</Label>
-                        <Input id="log-condition" name="condition" value={logForm.condition} onChange={handleLogChange} placeholder="e.g. Baik, aktif" />
+                        <Label htmlFor="log-desc">{t('description') || 'Description'}</Label>
+                        <Input id="log-desc" name="description" value={logForm.description} onChange={handleLogChange} placeholder="e.g. Food, Grooming" />
                       </div>
                       <div className="space-y-1">
-                        <Label htmlFor="log-feeding">{t('feeding')}</Label>
-                        <Input id="log-feeding" name="feeding" value={logForm.feeding} onChange={handleLogChange} placeholder="e.g. 2x sehari" />
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="log-cost">{t('costLabel')}</Label>
-                        <Input id="log-cost" name="cost" type="number" min="0" value={logForm.cost} onChange={handleLogChange} placeholder="0" />
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="log-notes">{t('notes')}</Label>
-                        <Textarea id="log-notes" name="notes" value={logForm.notes} onChange={handleLogChange} rows={2} />
+                        <Label htmlFor="log-amount">{t('amount') || 'Amount (Rp)'} *</Label>
+                        <Input id="log-amount" name="amount" type="number" min="0" value={logForm.amount} onChange={handleLogChange} placeholder="0" required />
                       </div>
                       <Button type="submit" className="w-full" disabled={addLog.isPending}>
                         {addLog.isPending ? t('saving') : t('save')}
@@ -238,14 +272,35 @@ function HotelDetailPage() {
             ) : (
               <div className="space-y-2">
                 {logs.map((l: any) => (
-                  <div key={l.id} className="flex items-start gap-3 py-2 border-b last:border-0">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-foreground">{l.logDate}</p>
-                      {l.condition && <p className="text-xs text-muted-foreground">{t('condition')}: {l.condition}</p>}
-                      {l.feeding && <p className="text-xs text-muted-foreground">{t('feeding')}: {l.feeding}</p>}
-                      {l.notes && <p className="text-xs text-muted-foreground italic">{l.notes}</p>}
-                      {l.cost > 0 && <p className="text-xs text-muted-foreground">Rp {(l.cost as number).toLocaleString('id-ID')}</p>}
+                  <div key={l.id} className="flex items-center gap-3 py-2 border-b last:border-0">
+                    <div className={cn(
+                      "h-8 w-8 rounded-full flex items-center justify-center shrink-0",
+                      l.type === 'deposit' ? "bg-green-100" : "bg-red-100"
+                    )}>
+                      {l.type === 'deposit' ? (
+                        <ArrowDownLeft className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <ArrowUpRight className="h-4 w-4 text-red-500" />
+                      )}
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs font-semibold">{l.logDate}</p>
+                        <span className={cn(
+                          "text-[10px] px-1.5 py-0.5 rounded-full font-medium uppercase",
+                          l.type === 'deposit' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                        )}>
+                          {l.type === 'deposit' ? (t('depositType') || 'Deposit') : (t('creditType') || 'Credit')}
+                        </span>
+                      </div>
+                      {l.description && <p className="text-xs text-muted-foreground">{l.description}</p>}
+                    </div>
+                    <p className={cn(
+                      "text-sm font-medium shrink-0",
+                      l.type === 'deposit' ? "text-green-600" : "text-red-500"
+                    )}>
+                      {l.type === 'deposit' ? '+' : '-'}Rp {Number(l.amount).toLocaleString('id-ID')}
+                    </p>
                     {isActive && (
                       <Button
                         size="icon"

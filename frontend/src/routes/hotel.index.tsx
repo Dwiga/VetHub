@@ -95,9 +95,9 @@ function HotelDashboardPage() {
                   (1000 * 60 * 60 * 24),
               ),
             )
-            const displayName = b.petName ?? b.petNameRaw ?? '—'
-            const displayType = b.petSpecies ?? b.petTypeRaw ?? ''
-            const ownerName = b.ownerName ?? b.guestName ?? ''
+            const displayName = b.pet?.name ?? '—'
+            const displayType = b.pet?.species?.name ?? ''
+            const ownerName = b.pet?.owner?.name ?? ''
             return (
               <Card
                 key={b.id}

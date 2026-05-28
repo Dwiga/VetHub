@@ -5,14 +5,16 @@ import { useGetMe, useGetReportSummary, useGetVisitStats } from '@/lib/api-clien
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
-import { TrendingUp, Users, Activity, Heart, Skull, LogOut } from 'lucide-react'
+import { TrendingUp, Users, Activity, Heart, Skull, LogOut, Calendar } from 'lucide-react'
 
 export const Route = createFileRoute('/clinic/reports')({
   component: ClinicReportsPage,
 })
 
-type Period = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly'
+type Period = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'custom'
 
 const PERIODS: { key: Period; label: string }[] = [
   { key: 'daily', label: 'Today' },
@@ -20,6 +22,7 @@ const PERIODS: { key: Period; label: string }[] = [
   { key: 'monthly', label: 'Month' },
   { key: 'quarterly', label: 'Quarter' },
   { key: 'yearly', label: 'Year' },
+  { key: 'custom', label: 'Custom' },
 ]
 
 function formatRp(n: number) {
@@ -34,14 +37,81 @@ function formatXLabel(label: string, period: Period) {
   return label
 }
 
+function computeDateRange(period: Period, date: string): { startDate: string; endDate: string } {
+  const d = new Date(date)
+  const y = d.getFullYear()
+  const m = d.getMonth()
+
+  switch (period) {
+    case 'daily':
+      return { startDate: date, endDate: date }
+    case 'weekly': {
+      const day = d.getDay()
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1)
+      const mon = new Date(d.setDate(diff))
+      const sun = new Date(mon)
+      sun.setDate(mon.getDate() + 6)
+      return {
+        startDate: mon.toISOString().split('T')[0],
+        endDate: sun.toISOString().split('T')[0],
+      }
+    }
+    case 'monthly': {
+      const start = new Date(y, m, 1)
+      const end = new Date(y, m + 1, 0)
+      return {
+        startDate: start.toISOString().split('T')[0],
+        endDate: end.toISOString().split('T')[0],
+      }
+    }
+    case 'quarterly': {
+      const q = Math.floor(m / 3)
+      const start = new Date(y, q * 3, 1)
+      const end = new Date(y, q * 3 + 3, 0)
+      return {
+        startDate: start.toISOString().split('T')[0],
+        endDate: end.toISOString().split('T')[0],
+      }
+    }
+    case 'yearly':
+      return {
+        startDate: `${y}-01-01`,
+        endDate: `${y}-12-31`,
+      }
+    default:
+      return { startDate: date, endDate: date }
+  }
+}
+
 function ClinicReportsPage() {
   const me = useGetMe()
   const clinicId = me.data?.clinicId
   const [period, setPeriod] = useState<Period>('monthly')
-  const [date] = useState(() => new Date().toISOString().split('T')[0])
+  const [refDate, setRefDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [customStart, setCustomStart] = useState(() => {
+    const d = new Date()
+    d.setDate(1)
+    return d.toISOString().split('T')[0]
+  })
+  const [customEnd, setCustomEnd] = useState(() => new Date().toISOString().split('T')[0])
 
-  const summary = useGetReportSummary(clinicId ?? undefined, { period, date })
-  const stats = useGetVisitStats(clinicId ?? undefined, { period, date })
+  const range =
+    period === 'custom'
+      ? { startDate: customStart, endDate: customEnd }
+      : computeDateRange(period, refDate)
+
+  const summary = useGetReportSummary(clinicId ?? undefined, {
+    period,
+    date: refDate,
+    startDate: range.startDate,
+    endDate: range.endDate,
+  })
+  const stats = useGetVisitStats(clinicId ?? undefined, {
+    period,
+    date: refDate,
+    startDate: range.startDate,
+    endDate: range.endDate,
+  })
 
   const s = summary.data
   const v = stats.data
@@ -56,6 +126,13 @@ function ClinicReportsPage() {
 
   const isLoading = summary.isLoading || stats.isLoading
 
+  const handlePeriod = (p: Period) => {
+    setPeriod(p)
+    if (p !== 'custom') {
+      setRefDate(new Date().toISOString().split('T')[0])
+    }
+  }
+
   return (
     <AppShell>
       <PageHeader title="Reports" subtitle="Clinic analytics" back backHref="/clinic" />
@@ -67,13 +144,40 @@ function ClinicReportsPage() {
               key={p.key}
               size="sm"
               variant={period === p.key ? 'default' : 'outline'}
-              onClick={() => setPeriod(p.key)}
+              onClick={() => handlePeriod(p.key)}
               className="flex-1 min-w-0 text-xs"
               data-testid={`btn-period-${p.key}`}
             >
               {p.label}
             </Button>
           ))}
+        </div>
+
+        {period === 'custom' && (
+          <div className="flex items-center gap-3">
+            <div className="flex-1 space-y-1">
+              <Label className="text-xs">From</Label>
+              <Input
+                type="date"
+                value={customStart}
+                onChange={e => setCustomStart(e.target.value)}
+                data-testid="input-start-date"
+              />
+            </div>
+            <div className="flex-1 space-y-1">
+              <Label className="text-xs">To</Label>
+              <Input
+                type="date"
+                value={customEnd}
+                onChange={e => setCustomEnd(e.target.value)}
+                data-testid="input-end-date"
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="text-xs text-muted-foreground text-center">
+          {range.startDate} — {range.endDate}
         </div>
 
         {isLoading && (
