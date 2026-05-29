@@ -783,6 +783,38 @@ export function useGetVisitStats(
   })
 }
 
+export interface HotelReportSummary {
+  totalGuests: number
+  activeStays: number
+  totalRevenue: number
+  topServices: Array<{ name: string; count: number; revenue: number }>
+  guests: Array<{
+    bookingId: number
+    petName: string
+    ownerPhone: string
+    checkIn: string
+    checkOut: string | null
+    totalCost: number
+    balance: number
+    status: string
+  }>
+}
+
+export function useGetHotelReportSummary(
+  hotelId: number | undefined,
+  params: { period: string; date: string; startDate?: string; endDate?: string },
+) {
+  const fetcher = useAuthedFetch()
+  const qs = new URLSearchParams({ period: params.period, date: params.date })
+  if (params.startDate) qs.set('startDate', params.startDate)
+  if (params.endDate) qs.set('endDate', params.endDate)
+  return useQuery<HotelReportSummary>({
+    queryKey: ['hotel', 'reports', 'summary', hotelId, params],
+    queryFn: () => fetcher(`/api/hotel/${hotelId}/reports/summary?${qs}`),
+    enabled: !!hotelId,
+  })
+}
+
 // ─────────────────────────────  Standalone Hotel  ───────────────────────────
 
 export function useListHotelBookings(hotelId: number | undefined, status?: string) {

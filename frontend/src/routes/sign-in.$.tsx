@@ -1,21 +1,30 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { SignIn } from '@clerk/clerk-react'
 import { HAS_CLERK } from '@/lib/auth'
+import { useState, useEffect } from 'react'
 
 export const Route = createFileRoute('/sign-in/$')({
   component: SignInPage,
 })
 
 function SignInPage() {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4" data-testid="sign-in-page">
       {HAS_CLERK ? (
-        <SignIn
-          routing="path"
-          path="/sign-in"
-          signUpUrl="/sign-up"
-          fallbackRedirectUrl="/dashboard"
-        />
+        mounted ? (
+          <SignIn
+            key="sign-in"
+            routing="path"
+            path="/sign-in"
+            signUpUrl="/sign-up"
+            fallbackRedirectUrl="/dashboard"
+          />
+        ) : (
+          <div className="h-[400px]" />
+        )
       ) : (
         <ClerkMissingNotice />
       )}

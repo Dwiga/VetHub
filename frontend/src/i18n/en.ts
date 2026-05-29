@@ -340,8 +340,10 @@ export const en = {
   sharedVetVisit: "Vet visit receipt",
   sharedVetVisitActive: "Your pet is being treated",
   sharedVetVisitCompleted: "Treatment completed",
-  petInHotel: "Your pet is currently at",
+   petInHotel: "Your pet is currently at",
   viewFeeDetails: "View fee details",
+  nav_reports: "Reports",
+  topServices: "Top services",
 };
 
 export type LangKeys = keyof typeof en;

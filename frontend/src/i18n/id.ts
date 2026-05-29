@@ -342,6 +342,8 @@ export const id: Record<LangKeys, string> = {
   sharedVetVisit: "Struk kunjungan dokter hewan",
   sharedVetVisitActive: "Hewan Anda sedang dirawat",
   sharedVetVisitCompleted: "Perawatan selesai",
-  petInHotel: "Hewan Anda sedang berada di",
+   petInHotel: "Hewan Anda sedang berada di",
   viewFeeDetails: "Lihat rincian biaya",
+  nav_reports: "Laporan",
+  topServices: "Layanan teratas",
 };

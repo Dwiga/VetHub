@@ -14,6 +14,7 @@ import {
   Clock,
   User,
   LogOut,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/contexts/RoleContext";
@@ -204,6 +205,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <DropdownMenuLabel>
                 {user?.name ?? t("profile")}
               </DropdownMenuLabel>
+              {user?.clinicId && (
+                <DropdownMenuItem onClick={() => navigate({ to: "/vet/reports" as never })}>
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  {t("nav_reports")}
+                </DropdownMenuItem>
+              )}
+              {user?.hotelId && (
+                <DropdownMenuItem onClick={() => navigate({ to: "/hotel/reports" as never })}>
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  {t("nav_reports")}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate({ to: "/settings" as never })}>
                 <Settings className="h-4 w-4 mr-2" />

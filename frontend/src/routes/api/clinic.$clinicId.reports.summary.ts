@@ -38,6 +38,23 @@ export const Route = createFileRoute('/api/clinic/$clinicId/reports/summary')({
           return s + deposits
         }, 0)
 
+        // Top services: group credit daily reports by description
+        const serviceMap = new Map<string, { count: number; revenue: number }>()
+        for (const v of visits) {
+          for (const report of v.dailyReports || []) {
+            if (report.type === 'credit' && report.description) {
+              const existing = serviceMap.get(report.description) || { count: 0, revenue: 0 }
+              existing.count += 1
+              existing.revenue += parseFloat(report.amount || '0')
+              serviceMap.set(report.description, existing)
+            }
+          }
+        }
+        const topServices = Array.from(serviceMap.entries())
+          .map(([name, val]) => ({ name, count: val.count, revenue: val.revenue }))
+          .sort((a, b) => b.revenue - a.revenue)
+          .slice(0, 10)
+
         const completedInpatient = visits.filter(v => v.type === 'inpatient' && v.status === 'completed')
         const survivedCount = completedInpatient.length
         const diedCount = 0
@@ -51,7 +68,7 @@ export const Route = createFileRoute('/api/clinic/$clinicId/reports/summary')({
           survivedCount,
           diedCount,
           earlyDischargeCount,
-          topServices: [],
+          topServices,
         })
       },
     },
