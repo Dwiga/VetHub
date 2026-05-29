@@ -1,7 +1,7 @@
 # example netlify.toml
 [build]
   base = "frontend/"
-  command = "bun run build"
+  command = "bun run prisma:generate && bun run build"
   functions = "netlify/functions"
   publish = "dist/client"
 
