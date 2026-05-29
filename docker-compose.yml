@@ -1,58 +1,85 @@
-services:
+# ──────────────────────────────────────────────────────────────────────────────
+# VetCare Pro — production compose stack
+#
+# Three services:
+#   • db    — PostgreSQL 16 (volume-backed)
+#   • app   — Bun + TanStack Start (SSR + /api + static)
+#   • web   — nginx reverse proxy (TLS termination + caching)
+#
+# Bring it up:
+#     cp .env.example .env      # fill in DB password + Clerk keys
+#     docker compose up --build -d
+#     # First boot only: push the Prisma schema into the empty Postgres DB.
+#     docker compose run --rm app bunx prisma db push
+#     docker compose run --rm app bun run prisma/seed.ts
+#
+# Hit it at http://localhost (nginx → app:3000).
+# ──────────────────────────────────────────────────────────────────────────────
 
-  # ── PostgreSQL database ────────────────────────────────────────────────────
+services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: vetcare
-      POSTGRES_USER: vetcare
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_USER:     ${POSTGRES_USER:-vetcare}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      POSTGRES_DB:       ${POSTGRES_DB:-vetcare}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vetcare -d vetcare"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vetcare} -d ${POSTGRES_DB:-vetcare}"]
       interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+      timeout: 3s
+      retries: 10
+    # Don't publish 5432 to the host by default — only the `app` service needs it.
+    # Uncomment if you want to connect with psql / a GUI from outside Docker.
+    # ports:
+    #   - "5432:5432"
 
-  # ── Express API server ────────────────────────────────────────────────────
-  api:
+  app:
     build:
       context: .
       dockerfile: Dockerfile
-      target: api-runner
+      args:
+        # VITE_* env vars are baked into the client bundle at build time.
+        VITE_CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY}
     restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      PORT: "8080"
-      DATABASE_URL: postgres://vetcare:${POSTGRES_PASSWORD:-changeme}@db:5432/vetcare
-      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
-      CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY}
-      CLERK_FRONTEND_API_URL: ${CLERK_FRONTEND_API_URL:-}
-      SESSION_SECRET: ${SESSION_SECRET}
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
     depends_on:
       db:
         condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOST: 0.0.0.0
+      # Switch the Prisma datasource to Postgres for prod. NOTE: you also need
+      # `provider = "postgresql"` in prisma/schema.prisma — see README §
+      # "Production database".
+      DATABASE_URL: postgresql://${POSTGRES_USER:-vetcare}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-vetcare}?schema=public
+      CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY}
+      CLERK_SECRET_KEY:      ${CLERK_SECRET_KEY}
+      # If you want the container to push the schema on startup the first time,
+      # set RUN_DB_PUSH=1. Disable it afterwards — real migrations belong in CI.
+      RUN_DB_PUSH:           ${RUN_DB_PUSH:-}
+      RUN_DB_SEED:           ${RUN_DB_SEED:-}
+    expose:
+      - "3000"
+    # If you'd rather skip nginx entirely, publish the port:
+    # ports:
+    #   - "3000:3000"
 
-  # ── nginx: serves the frontend and proxies /api to the API server ─────────
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: web-runner
-      args:
-        VITE_CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY}
-        VITE_CLERK_PROXY_URL: ${VITE_CLERK_PROXY_URL:-}
+    image: nginx:1.27-alpine
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:8080:80"   # Caddy (on host) proxies here; not exposed publicly
     depends_on:
-      - api
+      - app
+    ports:
+      - "${WEB_HTTP_PORT:-80}:80"
+      # - "443:443"   # uncomment after wiring TLS in nginx.conf
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # Mount your certs here when ready (Let's Encrypt / your CA).
+      # - ./nginx/certs:/etc/nginx/certs:ro
+      # - ./nginx/www:/var/www/certbot:ro
 
 volumes:
-  postgres_data:
+  db_data:

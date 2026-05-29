@@ -1,0 +1,1892 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: VetHub API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: admin
+    description: Admin operations
+  - name: users
+    description: User profile operations
+  - name: clinics
+    description: Veterinary clinic operations
+  - name: staff
+    description: Vet staff management
+  - name: species
+    description: Pet species operations
+  - name: pets
+    description: Pet management
+  - name: monitoring
+    description: Pet health monitoring
+  - name: visits
+    description: Hospital visit records
+  - name: daily-reports
+    description: Inpatient daily status reports
+  - name: products
+    description: Clinic products and inventory
+  - name: vaccinations
+    description: Pet vaccination records
+  - name: reports
+    description: Revenue and analytics reports
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ── User / Profile ────────────────────────────────────────────────────────
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+    patch:
+      operationId: updateMe
+      tags: [users]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfileUpdate"
+      responses:
+        "200":
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /users/register-as-pet-owner:
+    post:
+      operationId: registerAsPetOwner
+      tags: [users]
+      summary: Register current user as pet owner
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /users/register-for-hotel:
+    post:
+      operationId: registerForHotel
+      tags: [users]
+      summary: Register as hotel owner (creates a hotel entity)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HotelRegistrationInput"
+      responses:
+        "201":
+          description: Hotel registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Clinic"
+
+  /users/register-for-vet:
+    post:
+      operationId: registerForVet
+      tags: [users]
+      summary: Register current user as vet owner (creates a clinic)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClinicInput"
+      responses:
+        "201":
+          description: Created clinic and updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Clinic"
+
+  # ── Clinics ───────────────────────────────────────────────────────────────
+  /clinics/mine:
+    get:
+      operationId: getMyClinic
+      tags: [clinics]
+      summary: Get the clinic owned by the current user
+      responses:
+        "200":
+          description: Clinic details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Clinic"
+
+  /clinics/{clinicId}:
+    patch:
+      operationId: updateClinic
+      tags: [clinics]
+      summary: Update clinic details
+      parameters:
+        - name: clinicId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClinicUpdate"
+      responses:
+        "200":
+          description: Updated clinic
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Clinic"
+
+  # ── Staff ─────────────────────────────────────────────────────────────────
+  /clinics/{clinicId}/staff:
+    get:
+      operationId: listStaff
+      tags: [staff]
+      summary: List all staff members of a clinic
+      parameters:
+        - name: clinicId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Staff list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StaffMember"
+    post:
+      operationId: inviteStaff
+      tags: [staff]
+      summary: Invite a veterinarian to the clinic by email or phone
+      parameters:
+        - name: clinicId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffInviteInput"
+      responses:
+        "201":
+          description: Staff invitation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+
+  /clinics/{clinicId}/staff/{staffId}:
+    delete:
+      operationId: removeStaff
+      tags: [staff]
+      summary: Remove a staff member from the clinic
+      parameters:
+        - name: clinicId
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: staffId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Removed
+
+  # ── Species ───────────────────────────────────────────────────────────────
+  /species:
+    get:
+      operationId: listSpecies
+      tags: [species]
+      summary: List all pet species
+      responses:
+        "200":
+          description: Species list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Species"
+    post:
+      operationId: createSpecies
+      tags: [species]
+      summary: Add a new species
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpeciesInput"
+      responses:
+        "201":
+          description: Created species
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Species"
+
+  # ── Pets (owner) ──────────────────────────────────────────────────────────
+  /pets:
+    get:
+      operationId: listMyPets
+      tags: [pets]
+      summary: List all pets for the current pet owner
+      responses:
+        "200":
+          description: Pets list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pet"
+    post:
+      operationId: createPet
+      tags: [pets]
+      summary: Add a new pet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PetInput"
+      responses:
+        "201":
+          description: Created pet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+
+  /pets/{petId}:
+    get:
+      operationId: getPet
+      tags: [pets]
+      summary: Get a pet by ID
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Pet details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+    patch:
+      operationId: updatePet
+      tags: [pets]
+      summary: Update pet details
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PetUpdate"
+      responses:
+        "200":
+          description: Updated pet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+
+  /pets/{petId}/status:
+    patch:
+      operationId: updatePetStatus
+      tags: [pets]
+      summary: Change pet status
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PetStatusUpdate"
+      responses:
+        "200":
+          description: Updated pet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+
+  # ── Monitoring ────────────────────────────────────────────────────────────
+  /pets/{petId}/monitoring:
+    get:
+      operationId: listMonitoring
+      tags: [monitoring]
+      summary: Get latest 10 monitoring records for a pet
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Monitoring records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MonitoringRecord"
+    post:
+      operationId: addMonitoring
+      tags: [monitoring]
+      summary: Add a monitoring record
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MonitoringInput"
+      responses:
+        "201":
+          description: Created monitoring record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonitoringRecord"
+
+  /vet/visits:
+    get:
+      operationId: listVetVisits
+      tags: [vet]
+      summary: List all visits for a clinic (including completed history), sorted by date
+      parameters:
+        - name: clinicId
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: All clinic visits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VisitSummary"
+
+  # ── Vet: Search pet owners ────────────────────────────────────────────────
+  /vet/search-owner:
+    get:
+      operationId: searchPetOwner
+      tags: [pets]
+      summary: Search pet owner by phone number
+      parameters:
+        - name: phone
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Owner and their pets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnerWithPets"
+
+  /vet/search-pet:
+    get:
+      operationId: searchPet
+      tags: [pets]
+      summary: Search pets by name (vet)
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema: { type: string }
+        - name: clinicId
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Matching pets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PetWithOwner"
+
+  /vet/add-pet-for-owner:
+    post:
+      operationId: addPetForOwner
+      tags: [pets]
+      summary: Vet adds a pet linked to an owner by phone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VetAddPetInput"
+      responses:
+        "201":
+          description: Created pet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+
+  # ── Vaccinations ──────────────────────────────────────────────────────────
+  /pets/{petId}/vaccinations:
+    get:
+      operationId: listVaccinations
+      tags: [vaccinations]
+      summary: List all vaccinations for a pet
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Vaccination records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vaccination"
+    post:
+      operationId: addVaccination
+      tags: [vaccinations]
+      summary: Add a vaccination record (vet only, date can be backdated)
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VaccinationInput"
+      responses:
+        "201":
+          description: Created vaccination record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vaccination"
+
+  /vaccinations/{vaccinationId}:
+    delete:
+      operationId: deleteVaccination
+      tags: [vaccinations]
+      summary: Delete a vaccination record
+      parameters:
+        - name: vaccinationId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Health Events ─────────────────────────────────────────────────────────
+  /pets/{petId}/health-events:
+    get:
+      operationId: listHealthEvents
+      tags: [pets]
+      summary: List health events for a pet (deworming, anti-flea, etc.)
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Health events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HealthEvent"
+    post:
+      operationId: addHealthEvent
+      tags: [pets]
+      summary: Add a health event record
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HealthEventInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthEvent"
+
+  /pets/{petId}/health-events/{eventId}:
+    delete:
+      operationId: deleteHealthEvent
+      tags: [pets]
+      summary: Delete a health event
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: eventId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Hospital Visits ───────────────────────────────────────────────────────
+  /pets/{petId}/visits:
+    get:
+      operationId: listVisits
+      tags: [visits]
+      summary: List all visits for a pet
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Visits list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Visit"
+    post:
+      operationId: createVisit
+      tags: [visits]
+      summary: Create a new hospital visit
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VisitInput"
+      responses:
+        "201":
+          description: Created visit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Visit"
+
+  /visits/{visitId}:
+    get:
+      operationId: getVisit
+      tags: [visits]
+      summary: Get a visit by ID with all details
+      parameters:
+        - name: visitId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Visit with full details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisitDetail"
+    patch:
+      operationId: updateVisit
+      tags: [visits]
+      summary: Update visit (anamnesis, therapy, status, etc.)
+      parameters:
+        - name: visitId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VisitUpdate"
+      responses:
+        "200":
+          description: Updated visit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisitDetail"
+
+  /visits/{visitId}/items:
+    post:
+      operationId: addVisitItem
+      tags: [visits]
+      summary: Add a service, medicine, supporting item, or custom item to a visit
+      parameters:
+        - name: visitId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VisitItemInput"
+      responses:
+        "201":
+          description: Created visit item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisitItem"
+
+  /visit-items/{itemId}:
+    patch:
+      operationId: updateVisitItem
+      tags: [visits]
+      summary: Update a visit item
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VisitItemUpdate"
+      responses:
+        "200":
+          description: Updated visit item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisitItem"
+    delete:
+      operationId: deleteVisitItem
+      tags: [visits]
+      summary: Remove a visit item
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Daily Reports (inpatient) ─────────────────────────────────────────────
+  /visits/{visitId}/daily-reports:
+    get:
+      operationId: listDailyReports
+      tags: [daily-reports]
+      summary: List daily reports for an inpatient visit
+      parameters:
+        - name: visitId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Daily reports list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DailyReport"
+    post:
+      operationId: createDailyReport
+      tags: [daily-reports]
+      summary: Add a daily inpatient report
+      parameters:
+        - name: visitId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DailyReportInput"
+      responses:
+        "201":
+          description: Created daily report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyReport"
+
+  /visits/{visitId}/share:
+    post:
+      operationId: shareVisit
+      tags: [visits]
+      summary: Generate or return a public share token for a visit
+      parameters:
+        - name: visitId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Share info with token and URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisitShare"
+
+  /visits/shared/{token}:
+    get:
+      operationId: getSharedVisit
+      tags: [visits]
+      summary: Get a visit by share token (public, no auth required)
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Visit with full details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisitDetail"
+        "404":
+          description: Not found
+
+  /daily-reports/{reportId}:
+    get:
+      operationId: getDailyReport
+      tags: [daily-reports]
+      summary: Get a daily report
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Daily report details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyReport"
+    patch:
+      operationId: updateDailyReport
+      tags: [daily-reports]
+      summary: Update a daily report
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DailyReportUpdate"
+      responses:
+        "200":
+          description: Updated daily report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyReport"
+
+  # ── Admin ──────────────────────────────────────────────────────────────────
+  /admin/me:
+    get:
+      operationId: getAdminStatus
+      tags: [admin]
+      summary: Check if current user is admin
+      responses:
+        "200":
+          description: Admin status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isAdmin: { type: boolean }
+                required: [isAdmin]
+
+  /admin/vets:
+    get:
+      operationId: listVetApplications
+      tags: [admin]
+      summary: List all vet registrations with approval status
+      responses:
+        "200":
+          description: Vet applications list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VetApplication"
+
+  /admin/vets/{userId}:
+    patch:
+      operationId: updateVetApplication
+      tags: [admin]
+      summary: Approve or reject a vet registration
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VetApplicationUpdate"
+      responses:
+        "200":
+          description: Updated vet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VetApplication"
+
+  /admin/species:
+    post:
+      operationId: adminAddSpecies
+      tags: [admin]
+      summary: Add a new species (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpeciesInput"
+      responses:
+        "201":
+          description: Created species
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Species"
+
+  /admin/species/{speciesId}:
+    delete:
+      operationId: adminDeleteSpecies
+      tags: [admin]
+      summary: Delete a species (admin only)
+      parameters:
+        - name: speciesId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  /admin/admins:
+    get:
+      operationId: listAdmins
+      tags: [admin]
+      summary: List all admins
+      responses:
+        "200":
+          description: Admin list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminRecord"
+    post:
+      operationId: addAdmin
+      tags: [admin]
+      summary: Add a new admin by email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+              required: [email]
+      responses:
+        "201":
+          description: Created admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminRecord"
+
+  /admin/admins/{adminId}:
+    delete:
+      operationId: deleteAdmin
+      tags: [admin]
+      summary: Remove an admin
+      parameters:
+        - name: adminId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Products (POS) ────────────────────────────────────────────────────────
+  /clinics/{clinicId}/products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List all products for a clinic
+      parameters:
+        - name: clinicId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Products list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      operationId: createProduct
+      tags: [products]
+      summary: Add a product to the clinic catalog
+      parameters:
+        - name: clinicId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "201":
+          description: Created product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+
+  /products/{productId}:
+    patch:
+      operationId: updateProduct
+      tags: [products]
+      summary: Update a product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpdate"
+      responses:
+        "200":
+          description: Updated product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+    delete:
+      operationId: deleteProduct
+      tags: [products]
+      summary: Delete a product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Reports / Analytics ───────────────────────────────────────────────────
+  /clinics/{clinicId}/reports/summary:
+    get:
+      operationId: getReportSummary
+      tags: [reports]
+      summary: Get daily/monthly/yearly revenue and visit summary
+      parameters:
+        - name: clinicId
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: period
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/ReportPeriod"
+        - name: date
+          in: query
+          required: true
+          description: ISO date string (YYYY-MM-DD) for reference point
+          schema: { type: string }
+      responses:
+        "200":
+          description: Report summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportSummary"
+
+  /clinics/{clinicId}/reports/visits:
+    get:
+      operationId: getVisitStats
+      tags: [reports]
+      summary: Get visit count statistics
+      parameters:
+        - name: clinicId
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: period
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/ReportPeriod"
+        - name: date
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Visit stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisitStats"
+
+  /clinics/{clinicId}/visits/active:
+    get:
+      operationId: listActiveVisits
+      tags: [visits]
+      summary: Get all currently active/inpatient visits for a clinic
+      parameters:
+        - name: clinicId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Active visits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VisitWithPet"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status: { type: string }
+      required: [status]
+
+    ReportPeriod:
+      type: string
+      enum: [daily, weekly, monthly, quarterly, yearly]
+
+    UserProfile:
+      type: object
+      properties:
+        id: { type: integer }
+        clerkId: { type: string }
+        name: { type: ["string", "null"] }
+        phone: { type: ["string", "null"] }
+        email: { type: ["string", "null"] }
+        role:
+          type: string
+          enum: [pet_owner, vet, vet_owner, both, none]
+        isPetOwner: { type: boolean }
+        isVet: { type: boolean }
+        isVetOwner: { type: boolean }
+        isHotelOwner: { type: boolean }
+        vetStatus: { type: ["string", "null"] }
+        isAdmin: { type: boolean }
+        clinicId: { type: ["integer", "null"] }
+        hotelId: { type: ["integer", "null"] }
+        createdAt: { type: string }
+      required: [id, clerkId, role, isPetOwner, isVet, isVetOwner, isHotelOwner, isAdmin, createdAt]
+
+    UserProfileUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        phone: { type: string }
+
+    Clinic:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        address: { type: ["string", "null"] }
+        phone: { type: ["string", "null"] }
+        email: { type: ["string", "null"] }
+        ownerId: { type: integer }
+        createdAt: { type: string }
+      required: [id, name, ownerId, createdAt]
+
+    ClinicInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        address: { type: string }
+        phone: { type: string }
+        email: { type: string }
+      required: [name]
+
+    ClinicUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        address: { type: string }
+        phone: { type: string }
+        email: { type: string }
+
+    StaffMember:
+      type: object
+      properties:
+        id: { type: integer }
+        clinicId: { type: integer }
+        userId: { type: integer }
+        name: { type: ["string", "null"] }
+        email: { type: ["string", "null"] }
+        phone: { type: ["string", "null"] }
+        role: { type: string }
+        status: { type: string }
+        createdAt: { type: string }
+      required: [id, clinicId, userId, role, status, createdAt]
+
+    StaffInviteInput:
+      type: object
+      properties:
+        email: { type: string }
+        phone: { type: string }
+        name: { type: string }
+      required: [name]
+
+    Species:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        icon: { type: ["string", "null"] }
+      required: [id, name]
+
+    SpeciesInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        icon: { type: string }
+      required: [name]
+
+    Pet:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        dateOfBirth: { type: ["string", "null"] }
+        gender:
+          type: string
+          enum: [male, female, unknown]
+        sterilized: { type: boolean }
+        color: { type: ["string", "null"] }
+        speciesId: { type: integer }
+        speciesName: { type: ["string", "null"] }
+        ownerId: { type: integer }
+        ownerName: { type: ["string", "null"] }
+        ownerPhone: { type: ["string", "null"] }
+        status:
+          type: string
+          enum: [healthy, sick, hospitalized, need_intensive_care, passed_away]
+        photoUrl: { type: ["string", "null"] }
+        createdAt: { type: string }
+      required:
+        [id, name, gender, sterilized, speciesId, ownerId, status, createdAt]
+
+    PetInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        dateOfBirth: { type: string }
+        gender:
+          type: string
+          enum: [male, female, unknown]
+        sterilized: { type: boolean }
+        color: { type: string }
+        speciesId: { type: integer }
+        photoUrl: { type: string }
+      required: [name, gender, sterilized, speciesId]
+
+    PetUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        dateOfBirth: { type: string }
+        gender:
+          type: string
+          enum: [male, female, unknown]
+        sterilized: { type: boolean }
+        color: { type: string }
+        speciesId: { type: integer }
+        photoUrl: { type: string }
+
+    PetStatusUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, sick, hospitalized, need_intensive_care, passed_away]
+      required: [status]
+
+    PetWithOwner:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        speciesName: { type: ["string", "null"] }
+        gender: { type: string }
+        status: { type: string }
+        color: { type: ["string", "null"] }
+        photoUrl: { type: ["string", "null"] }
+        ownerId: { type: integer }
+        ownerName: { type: ["string", "null"] }
+        ownerPhone: { type: ["string", "null"] }
+      required: [id, name, gender, status, ownerId]
+
+    OwnerWithPets:
+      type: object
+      properties:
+        owner:
+          $ref: "#/components/schemas/UserProfile"
+        pets:
+          type: array
+          items:
+            $ref: "#/components/schemas/Pet"
+      required: [owner, pets]
+
+    VetAddPetInput:
+      type: object
+      properties:
+        ownerPhone: { type: string }
+        name: { type: string, minLength: 1 }
+        dateOfBirth: { type: string }
+        gender:
+          type: string
+          enum: [male, female, unknown]
+        sterilized: { type: boolean }
+        color: { type: string }
+        speciesId: { type: integer }
+      required: [ownerPhone, name, gender, sterilized, speciesId]
+
+    MonitoringRecord:
+      type: object
+      properties:
+        id: { type: integer }
+        petId: { type: integer }
+        weight: { type: ["number", "null"] }
+        height: { type: ["number", "null"] }
+        temperature: { type: ["number", "null"] }
+        recordedAt: { type: string }
+        recordedBy: { type: ["string", "null"] }
+        notes: { type: ["string", "null"] }
+      required: [id, petId, recordedAt]
+
+    MonitoringInput:
+      type: object
+      properties:
+        weight: { type: number }
+        height: { type: number }
+        temperature: { type: number }
+        notes: { type: string }
+      required: []
+
+    Visit:
+      type: object
+      properties:
+        id: { type: integer }
+        petId: { type: integer }
+        petName: { type: ["string", "null"] }
+        clinicId: { type: integer }
+        vetId: { type: ["integer", "null"] }
+        vetName: { type: ["string", "null"] }
+        type:
+          type: string
+          enum: [inpatient, outpatient]
+        status:
+          type: string
+          enum: [active, completed, cancelled]
+        anamnesis: { type: ["string", "null"] }
+        therapy: { type: ["string", "null"] }
+        visitDate: { type: string }
+        dischargeDate: { type: ["string", "null"] }
+        deposit: { type: ["number", "null"] }
+        totalCost: { type: number }
+        createdAt: { type: string }
+      required:
+        [id, petId, clinicId, type, status, visitDate, totalCost, createdAt]
+
+    VisitSummary:
+      type: object
+      properties:
+        id: { type: integer }
+        petId: { type: integer }
+        petName: { type: ["string", "null"] }
+        clinicId: { type: integer }
+        type: { type: string }
+        status: { type: string }
+        visitDate: { type: string }
+        totalCost: { type: number }
+        vetId: { type: ["integer", "null"] }
+        vetName: { type: ["string", "null"] }
+        createdAt: { type: string }
+      required: [id, petId, clinicId, type, status, visitDate, totalCost, createdAt]
+
+    VisitWithPet:
+      type: object
+      properties:
+        id: { type: integer }
+        petId: { type: integer }
+        petName: { type: string }
+        speciesName: { type: ["string", "null"] }
+        petStatus: { type: string }
+        ownerName: { type: ["string", "null"] }
+        ownerPhone: { type: ["string", "null"] }
+        clinicId: { type: integer }
+        type: { type: string }
+        status: { type: string }
+        visitDate: { type: string }
+        totalCost: { type: number }
+        latestReport: { type: ["string", "null"] }
+      required:
+        [id, petId, petName, clinicId, type, status, visitDate, totalCost]
+
+    VisitShare:
+      type: object
+      properties:
+        shareToken: { type: string }
+        shareUrl: { type: string }
+      required: [shareToken, shareUrl]
+
+    VisitDetail:
+      type: object
+      properties:
+        id: { type: integer }
+        petId: { type: integer }
+        petName: { type: ["string", "null"] }
+        clinicId: { type: integer }
+        vetId: { type: ["integer", "null"] }
+        vetName: { type: ["string", "null"] }
+        type: { type: string }
+        status: { type: string }
+        anamnesis: { type: ["string", "null"] }
+        therapy: { type: ["string", "null"] }
+        visitDate: { type: string }
+        dischargeDate: { type: ["string", "null"] }
+        deposit: { type: ["number", "null"] }
+        totalCost: { type: number }
+        billedCost: { type: number }
+        shareToken: { type: ["string", "null"] }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/VisitItem"
+        dailyReports:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyReport"
+        createdAt: { type: string }
+      required:
+        [
+          id,
+          petId,
+          clinicId,
+          type,
+          status,
+          visitDate,
+          totalCost,
+          billedCost,
+          items,
+          dailyReports,
+          createdAt,
+        ]
+
+    VisitInput:
+      type: object
+      properties:
+        clinicId: { type: integer }
+        vetId: { type: integer }
+        type:
+          type: string
+          enum: [inpatient, outpatient]
+        anamnesis: { type: string }
+        therapy: { type: string }
+        visitDate: { type: string }
+      required: [clinicId, type]
+
+    VisitUpdate:
+      type: object
+      properties:
+        anamnesis: { type: string }
+        therapy: { type: string }
+        status:
+          type: string
+          enum: [active, completed, cancelled]
+        dischargeDate: { type: string }
+        vetId: { type: integer }
+        deposit: { type: number }
+
+    VisitItem:
+      type: object
+      properties:
+        id: { type: integer }
+        visitId: { type: integer }
+        category:
+          type: string
+          enum: [service, medicine, supporting, other]
+        name: { type: string }
+        description: { type: ["string", "null"] }
+        quantity: { type: number }
+        unitPrice: { type: number }
+        totalPrice: { type: number }
+        itemDate: { type: string }
+        isPaid: { type: boolean }
+      required:
+        [
+          id,
+          visitId,
+          category,
+          name,
+          quantity,
+          unitPrice,
+          totalPrice,
+          itemDate,
+          isPaid,
+        ]
+
+    VisitItemInput:
+      type: object
+      properties:
+        category:
+          type: string
+          enum: [service, medicine, supporting, other]
+        name: { type: string, minLength: 1 }
+        description: { type: string }
+        quantity: { type: number }
+        unitPrice: { type: number }
+        itemDate: { type: string, description: "ISO date YYYY-MM-DD" }
+        isPaid: { type: boolean }
+      required: [category, name, quantity, unitPrice, itemDate]
+
+    VisitItemUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string }
+        quantity: { type: number }
+        unitPrice: { type: number }
+        isPaid: { type: boolean }
+
+    DailyReport:
+      type: object
+      properties:
+        id: { type: integer }
+        visitId: { type: integer }
+        reportDate: { type: string }
+        condition: { type: ["string", "null"] }
+        treatment: { type: ["string", "null"] }
+        notes: { type: ["string", "null"] }
+        cost: { type: number }
+        vetName: { type: ["string", "null"] }
+        createdAt: { type: string }
+      required: [id, visitId, reportDate, cost, createdAt]
+
+    DailyReportInput:
+      type: object
+      properties:
+        reportDate: { type: string }
+        condition: { type: string }
+        treatment: { type: string }
+        notes: { type: string }
+        cost: { type: number }
+      required: [reportDate, cost]
+
+    DailyReportUpdate:
+      type: object
+      properties:
+        condition: { type: string }
+        treatment: { type: string }
+        notes: { type: string }
+        cost: { type: number }
+
+    Product:
+      type: object
+      properties:
+        id: { type: integer }
+        clinicId: { type: integer }
+        name: { type: string }
+        category: { type: ["string", "null"] }
+        description: { type: ["string", "null"] }
+        price: { type: number }
+        stock: { type: ["integer", "null"] }
+        unit: { type: ["string", "null"] }
+        isActive: { type: boolean }
+        createdAt: { type: string }
+      required: [id, clinicId, name, price, isActive, createdAt]
+
+    ProductInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        category: { type: string }
+        description: { type: string }
+        price: { type: number }
+        stock: { type: integer }
+        unit: { type: string }
+      required: [name, price]
+
+    ProductUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        category: { type: string }
+        description: { type: string }
+        price: { type: number }
+        stock: { type: integer }
+        unit: { type: string }
+        isActive: { type: boolean }
+
+    VetApplication:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: ["string", "null"] }
+        email: { type: ["string", "null"] }
+        phone: { type: ["string", "null"] }
+        isVet: { type: boolean }
+        isVetOwner: { type: boolean }
+        vetStatus: { type: ["string", "null"] }
+        clinicId: { type: ["integer", "null"] }
+        createdAt: { type: string }
+      required: [id, isVet, isVetOwner, createdAt]
+
+    VetApplicationUpdate:
+      type: object
+      properties:
+        vetStatus:
+          type: string
+          enum: [pending, approved, rejected]
+      required: [vetStatus]
+
+    AdminRecord:
+      type: object
+      properties:
+        id: { type: integer }
+        email: { type: string }
+        createdAt: { type: string }
+      required: [id, email, createdAt]
+
+    Vaccination:
+      type: object
+      properties:
+        id: { type: integer }
+        petId: { type: integer }
+        vaccineName: { type: string }
+        brand: { type: ["string", "null"] }
+        date: { type: string, description: "Date administered YYYY-MM-DD" }
+        nextDueDate: { type: ["string", "null"] }
+        batchNumber: { type: ["string", "null"] }
+        administeredBy: { type: ["string", "null"] }
+        cost: { type: ["number", "null"] }
+        notes: { type: ["string", "null"] }
+        vetId: { type: ["integer", "null"] }
+        createdAt: { type: string }
+      required: [id, petId, vaccineName, date, createdAt]
+
+    VaccinationInput:
+      type: object
+      properties:
+        vaccineName: { type: string, minLength: 1 }
+        brand: { type: string }
+        date:
+          {
+            type: string,
+            description: "Date administered YYYY-MM-DD (can be backdated)",
+          }
+        nextDueDate: { type: string }
+        batchNumber: { type: string }
+        administeredBy: { type: string }
+        cost: { type: number }
+        notes: { type: string }
+      required: [vaccineName, date]
+
+    ReportSummary:
+      type: object
+      properties:
+        period: { type: string }
+        date: { type: string }
+        totalRevenue: { type: number }
+        totalVisits: { type: integer }
+        inpatientVisits: { type: integer }
+        outpatientVisits: { type: integer }
+        averageRevenuePerVisit: { type: number }
+        diedCount:
+          {
+            type: integer,
+            description: "Inpatient visits where pet passed away",
+          }
+        survivedCount:
+          {
+            type: integer,
+            description: "Completed inpatient visits where pet survived",
+          }
+        earlyDischargeCount:
+          {
+            type: integer,
+            description: "Visits cancelled before completion (taken early by owner)",
+          }
+        topServices:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopItem"
+        topProducts:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopItem"
+      required:
+        [
+          period,
+          date,
+          totalRevenue,
+          totalVisits,
+          inpatientVisits,
+          outpatientVisits,
+          averageRevenuePerVisit,
+          diedCount,
+          survivedCount,
+          earlyDischargeCount,
+          topServices,
+          topProducts,
+        ]
+
+    TopItem:
+      type: object
+      properties:
+        name: { type: string }
+        count: { type: integer }
+        revenue: { type: number }
+      required: [name, count, revenue]
+
+    VisitStats:
+      type: object
+      properties:
+        period: { type: string }
+        labels:
+          type: array
+          items: { type: string }
+        visitCounts:
+          type: array
+          items: { type: integer }
+        revenues:
+          type: array
+          items: { type: number }
+      required: [period, labels, visitCounts, revenues]
+
+    HealthEvent:
+      type: object
+      properties:
+        id: { type: integer }
+        petId: { type: integer }
+        title: { type: string }
+        notes: { type: ["string", "null"] }
+        eventDate: { type: string }
+        createdAt: { type: string }
+      required: [id, petId, title, eventDate, createdAt]
+
+    HealthEventInput:
+      type: object
+      properties:
+        title: { type: string, minLength: 1 }
+        notes: { type: string }
+        eventDate: { type: string }
+      required: [title]
+
+    HotelBooking:
+      type: object
+      properties:
+        id: { type: integer }
+        petId: { type: ["integer", "null"] }
+        clinicId: { type: integer }
+        guestName: { type: ["string", "null"] }
+        guestPhone: { type: ["string", "null"] }
+        petNameRaw: { type: ["string", "null"] }
+        petTypeRaw: { type: ["string", "null"] }
+        checkIn: { type: string }
+        checkOut: { type: ["string", "null"] }
+        dailyFee: { type: ["number", "null"] }
+        status: { type: string }
+        notes: { type: ["string", "null"] }
+        createdAt: { type: string }
+      required: [id, clinicId, checkIn, status, createdAt]
+
+    HotelBookingDetail:
+      type: object
+      properties:
+        id: { type: integer }
+        petId: { type: ["integer", "null"] }
+        petName: { type: ["string", "null"] }
+        petSpecies: { type: ["string", "null"] }
+        ownerName: { type: ["string", "null"] }
+        ownerPhone: { type: ["string", "null"] }
+        guestName: { type: ["string", "null"] }
+        guestPhone: { type: ["string", "null"] }
+        petNameRaw: { type: ["string", "null"] }
+        petTypeRaw: { type: ["string", "null"] }
+        clinicId: { type: integer }
+        checkIn: { type: string }
+        checkOut: { type: ["string", "null"] }
+        dailyFee: { type: ["number", "null"] }
+        status: { type: string }
+        notes: { type: ["string", "null"] }
+        totalDays: { type: ["integer", "null"] }
+        totalCost: { type: number }
+        createdAt: { type: string }
+      required: [id, clinicId, checkIn, status, totalCost, createdAt]
+
+    HotelBookingInput:
+      type: object
+      properties:
+        checkIn: { type: string }
+        dailyFee: { type: number }
+        notes: { type: string }
+        guestName: { type: string }
+        guestPhone: { type: string }
+        petNameRaw: { type: string }
+        petTypeRaw: { type: string }
+      required: [checkIn]
+
+    HotelBookingUpdate:
+      type: object
+      properties:
+        checkOut: { type: string }
+        status: { type: string }
+        dailyFee: { type: number }
+        notes: { type: string }
+
+    HotelDailyLog:
+      type: object
+      properties:
+        id: { type: integer }
+        bookingId: { type: integer }
+        logDate: { type: string }
+        condition: { type: ["string", "null"] }
+        feeding: { type: ["string", "null"] }
+        notes: { type: ["string", "null"] }
+        cost: { type: number }
+        createdAt: { type: string }
+      required: [id, bookingId, logDate, cost, createdAt]
+
+    HotelDailyLogInput:
+      type: object
+      properties:
+        logDate: { type: string }
+        condition: { type: string }
+        feeding: { type: string }
+        notes: { type: string }
+        cost: { type: number }
+      required: [logDate]
+
+    HotelRegistrationInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        address: { type: string }
+        phone: { type: string }
+        email: { type: string }
+      required: [name]
