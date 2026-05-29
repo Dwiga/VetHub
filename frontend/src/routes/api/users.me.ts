@@ -62,6 +62,22 @@ export const Route = createFileRoute('/api/users/me')({
             email: body.email,
           },
         })
+
+        // Auto-link any previously-unowned pets whose ownerPhone matches
+        if (body.phone) {
+          const normalizedPhone = normalizePhone(body.phone)
+          await prisma.pet.updateMany({
+            where: {
+              ownerId: null,
+              ownerPhone: normalizedPhone,
+            },
+            data: {
+              ownerId: user.id,
+              ownerPhone: null,
+            },
+          })
+        }
+
         return Response.json(updated)
       },
     },

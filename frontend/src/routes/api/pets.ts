@@ -26,9 +26,11 @@ export const Route = createFileRoute('/api/pets')({
         const body = await request.json()
 
         // Determine the pet ownerId.
-        // If ownerPhone is provided (hotel staff adding a pet for a walk-in owner),
-        // look up the owner by phone. If not found, create a placeholder user.
-        let ownerId = user.id
+        // If ownerPhone is provided (vet/hotel staff adding a pet for a walk-in owner),
+        // look up the owner by phone. If not found, store ownerPhone on the pet instead
+        // of creating a placeholder user — the owner can claim the pet when they sign up.
+        let ownerId: number | null = user.id
+        let ownerPhone: string | null = null
         if (body.ownerPhone) {
           const normalizedPhone = normalizePhone(body.ownerPhone)
           const existingOwner = await prisma.user.findFirst({
@@ -37,14 +39,8 @@ export const Route = createFileRoute('/api/pets')({
           if (existingOwner) {
             ownerId = existingOwner.id
           } else {
-            const newOwner = await prisma.user.create({
-              data: {
-                clerkId: `walkin-${normalizedPhone.replace(/[^0-9]/g, '')}-${Date.now()}`,
-                phone: normalizedPhone,
-                name: body.ownerName || null,
-              },
-            })
-            ownerId = newOwner.id
+            ownerId = null
+            ownerPhone = normalizedPhone
           }
         }
 
@@ -57,6 +53,7 @@ export const Route = createFileRoute('/api/pets')({
             color: body.color || undefined,
             dateOfBirth: body.dateOfBirth || undefined,
             ownerId,
+            ownerPhone,
           },
         })
         return Response.json(pet)

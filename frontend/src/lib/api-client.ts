@@ -129,7 +129,8 @@ export interface Pet {
   sterilized: boolean
   color: string | null
   speciesId: number
-  ownerId: number
+  ownerId?: number | null
+  ownerPhone?: string | null
   status: string
   photoUrl: string | null
   species?: Species | null
@@ -453,7 +454,7 @@ export function useUpdatePetStatus() {
 // ─────────────────────────────  Search  ─────────────────────────────────────
 
 export interface OwnerSearchResult {
-  owner: { id: number; name: string | null; phone: string | null }
+  owner: { id: number; name: string | null; phone: string | null } | null
   pets: Array<{ id: number; name: string; speciesName: string | null; status: string; ownerName: string | null; ownerPhone: string | null }>
 }
 

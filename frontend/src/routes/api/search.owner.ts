@@ -10,24 +10,52 @@ export const Route = createFileRoute('/api/search/owner')({
         if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
         const url = new URL(request.url)
         const phone = url.searchParams.get('phone') ?? ''
+
+        // 1. Look up registered user by phone
         const owner = await prisma.user.findFirst({
           where: { phone: { contains: phone } },
         })
-        if (!owner) return Response.json({ error: 'not found' }, { status: 404 })
-        const pets = await prisma.pet.findMany({
-          where: { ownerId: owner.id },
+
+        // 2. Collect pets — from registered owner AND from unowned pets with matching ownerPhone
+        const ownedPets = owner
+          ? await prisma.pet.findMany({
+              where: { ownerId: owner.id },
+              include: { species: true },
+            })
+          : []
+
+        const unownedPets = await prisma.pet.findMany({
+          where: {
+            ownerId: null,
+            ownerPhone: { contains: phone },
+          },
           include: { species: true },
         })
-        return Response.json({
-          owner: { id: owner.id, name: owner.name, phone: owner.phone },
-          pets: pets.map((p) => ({
+
+        const allPets = [
+          ...ownedPets.map(p => ({
             id: p.id,
             name: p.name,
             speciesName: p.species?.name ?? null,
             status: p.status,
-            ownerName: owner.name ?? null,
-            ownerPhone: owner.phone ?? null,
+            ownerName: owner!.name ?? null,
+            ownerPhone: owner!.phone ?? null,
           })),
+          ...unownedPets.map(p => ({
+            id: p.id,
+            name: p.name,
+            speciesName: p.species?.name ?? null,
+            status: p.status,
+            ownerName: null,
+            ownerPhone: p.ownerPhone,
+          })),
+        ]
+
+        return Response.json({
+          owner: owner
+            ? { id: owner.id, name: owner.name, phone: owner.phone }
+            : null,
+          pets: allPets,
         })
       },
     },

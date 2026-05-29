@@ -90,14 +90,15 @@ model Pet {
   sterilized  Boolean  @default(false)
   color       String?
   speciesId   Int      @map("species_id")
-  ownerId     Int      @map("owner_id")
+  ownerId     Int?     @map("owner_id")
+  ownerPhone  String?  @map("owner_phone")
   status      String   @default("healthy")
   photoUrl    String?  @map("photo_url")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   species       Species        @relation(fields: [speciesId], references: [id])
-  owner         User           @relation("PetOwner", fields: [ownerId], references: [id])
+  owner         User?          @relation("PetOwner", fields: [ownerId], references: [id])
   vaccinations  Vaccination[]
   visits        Visit[]
   healthEvents  HealthEvent[]

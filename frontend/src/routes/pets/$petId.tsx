@@ -97,6 +97,7 @@ function PetDetailPage() {
     [t('gender'), p.gender],
     [t('dateOfBirth'), age],
     [t('colorMarkings'), p.color],
+    ...(p.ownerPhone ? [['Owner', `${p.ownerPhone} (not registered)`]] : []),
   ].filter(([, v]) => v) as [string, string][]
 
   return (

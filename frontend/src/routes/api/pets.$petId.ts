@@ -30,10 +30,17 @@ export const Route = createFileRoute('/api/pets/$petId')({
         }
         const id = Number(params.petId)
         const pet = await prisma.pet.findFirst({
-          where: { id, ownerId: user.id },
+          where: { id },
         })
         if (!pet) {
           return Response.json({ error: 'not found' }, { status: 404 })
+        }
+
+        // Allow if: pet owner OR clinic/hotel staff
+        const isOwner = pet.ownerId === user.id
+        const isStaff = !!user.clinicId || !!user.hotelId
+        if (!isOwner && !isStaff) {
+          return Response.json({ error: 'forbidden' }, { status: 403 })
         }
 
         const body = await request.json()

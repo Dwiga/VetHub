@@ -58,3 +58,4 @@ credentials.json
 *.db
 *.sqlite3
 .worktrees
+migrations-sqlite/
