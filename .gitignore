@@ -48,3 +48,17 @@ Thumbs.db
 .cache/
 .local/
 .env
+.env.*
+*.env
+credentials.json
+*.pem
+*.key
+.credentials
+
+*.db
+*.sqlite3
+.worktrees
+migrations-sqlite/
+
+# Local Netlify folder
+.netlify

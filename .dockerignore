@@ -1,44 +1,57 @@
-# Dependencies — reinstalled inside the image
-node_modules
-**/node_modules
-
-# Build outputs — rebuilt inside the image
-**/dist
-**/.vite
-
-# Mockup sandbox — not part of the production build
-artifacts/mockup-sandbox
-
-# Local env files — secrets must not enter the image
-.env
-.env.local
-.env.*.local
-
-# Git and editor
+# Dockerfile inputs
 .git
 .gitignore
 .github
-.vscode
-.idea
+.dockerignore
+Dockerfile
+docker-compose*.yml
+nginx/
 
-# Replit workspace files
-.replit
-.config
-.cache
-.local
-
-# Attached assets and canvas state
-attached_assets
-.canvas
-
-# Logs
+# Project meta
+README.md
+LICENSE
+.env
+.env.*
 *.log
 npm-debug.log*
 pnpm-debug.log*
 
-# OS
+# Legacy monorepo (kept in-repo for reference but not needed in the image).
+_legacy/
+
+# Backend (FastAPI proxy is only used inside the Emergent pod — not in prod
+# Docker since the TanStack Start app serves /api/* directly).
+backend/
+
+# Frontend caches / artefacts that should be rebuilt inside the image.
+frontend/node_modules
+frontend/dist
+frontend/.vite
+frontend/.output
+frontend/.cache
+frontend/.tanstack
+frontend/coverage
+frontend/test-results
+frontend/playwright-report
+frontend/prisma/dev.db
+frontend/prisma/dev.db-journal
+frontend/src/routeTree.gen.ts
+
+# Editor / OS junk
+.vscode
+.idea
 .DS_Store
 Thumbs.db
 
-# Docs (not needed in the image)
-README.md
+# Tests
+**/__tests__
+**/*.test.ts
+**/*.spec.ts
+test_reports/
+tests/
+
+# Memory / PRD scratch
+memory/
+
+# Tooling
+scripts/
