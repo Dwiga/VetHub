@@ -361,4 +361,8 @@ export const id: Record<LangKeys, string> = {
   receiptBalanceNegative: "(-) Kurang bayar",
   receiptDay: "hari",
   receiptDays: "hari",
+  cancel: "Batal",
+  confirm: "Konfirmasi",
+  passedAwayTitle: "Tandai Sebagai Meninggal?",
+  passedAwayDesc: "Ini akan menandai hewan sebagai meninggal. Anda dapat mengubahnya nanti dari form edit.",
 };

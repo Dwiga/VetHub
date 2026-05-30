@@ -103,6 +103,23 @@ function EditPetPage() {
 
   const isPending = updatePet.isPending
 
+  if (pet.isLoading) {
+    return (
+      <AppShell>
+        <PageHeader title={t('editPetTitle')} back backHref="/pets/$petId" backParams={{ petId }} />
+        <div className="space-y-4">
+          <div className="h-12 bg-muted animate-pulse rounded-lg" />
+          <div className="h-12 bg-muted animate-pulse rounded-lg" />
+          <div className="h-12 bg-muted animate-pulse rounded-lg" />
+          <div className="h-12 bg-muted animate-pulse rounded-lg" />
+          <div className="h-12 bg-muted animate-pulse rounded-lg" />
+          <div className="h-12 bg-muted animate-pulse rounded-lg" />
+          <div className="h-12 bg-muted animate-pulse rounded-lg" />
+        </div>
+      </AppShell>
+    )
+  }
+
   const petStatuses = [
     { value: 'healthy', label: t('statusHealthy') },
     { value: 'sick', label: t('statusSick') },
