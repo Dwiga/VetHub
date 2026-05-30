@@ -57,7 +57,7 @@ jobs:
           DEST="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/pethub"
 
           echo "→ Rsyncing dist/..."
-          sudo chmod 755 "$DEST/dist/"
+          sudo chmod -R 755 "/var/"
           rsync -az --delete frontend/dist/ "$DEST/dist/"
 
           echo "→ Rsyncing prisma/..."
