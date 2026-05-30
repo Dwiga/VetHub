@@ -107,16 +107,16 @@ jobs:
 
             # Write .env.production from GitHub secrets
             echo "→ Writing .env.production..."
-            cat > .env.production << EOF
-NODE_ENV=production
-PORT=3000
-HOST=0.0.0.0
-DATABASE_URL=$DATABASE_URL
-CLERK_SECRET_KEY=$CLERK_SECRET_KEY
-CLERK_PUBLISHABLE_KEY=$CLERK_PUBLISHABLE_KEY
-VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
-SESSION_SECRET=$SESSION_SECRET
-EOF
+            printf '%s\n' \
+              "NODE_ENV=production" \
+              "PORT=3000" \
+              "HOST=0.0.0.0" \
+              "DATABASE_URL=$DATABASE_URL" \
+              "CLERK_SECRET_KEY=$CLERK_SECRET_KEY" \
+              "CLERK_PUBLISHABLE_KEY=$CLERK_PUBLISHABLE_KEY" \
+              "VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY" \
+              "SESSION_SECRET=$SESSION_SECRET" \
+              > .env.production
 
             # Pass DATABASE_URL into Prisma
             export DATABASE_URL="$DATABASE_URL"
