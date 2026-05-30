@@ -244,7 +244,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <main
         className={cn(
-          "flex-1 pb-20 max-w-lg mx-auto w-full px-4 pt-4",
+          "flex-1 pb-20 max-w-lg md:max-w-full mx-auto w-full px-4 pt-4",
           hasBothRoles && "pt-3",
         )}
       >

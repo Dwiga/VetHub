@@ -55,8 +55,8 @@ function PetOwnerDashboard() {
   const { t } = useLang()
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
+    <>
+      <div className="flex items-center justify-between mb-4">
         <h2 className="font-semibold text-foreground">{t('myPets')}</h2>
         <Button asChild size="sm" variant="outline" data-testid="btn-add-pet">
           <Link to="/pets">
@@ -65,47 +65,51 @@ function PetOwnerDashboard() {
           </Link>
         </Button>
       </div>
-      {pets.isLoading && (
-        <div className="space-y-3">
-          {[1, 2].map((i) => (
-            <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />
-          ))}
-        </div>
-      )}
-      {!pets.isLoading && petList.length === 0 && (
-        <Card>
-          <CardContent className="py-10 flex flex-col items-center gap-3">
-            <PawPrint className="h-10 w-10 text-muted-foreground/40" />
-            <p className="text-muted-foreground text-sm text-center">{t('noPets')}</p>
-            <Button asChild size="sm" data-testid="btn-add-first-pet">
-              <Link to="/pets">{t('addPet')}</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-      {petList.map((pet) => (
-        <div className='grid'>
-          <Link key={pet.id} to="/pets/$petId" params={{ petId: String(pet.id) }}>
-            <Card className="hover:border-primary/50 transition-colors cursor-pointer" data-testid={`card-pet-${pet.id}`}>
-              <CardContent className="py-4 flex items-center gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-secondary flex items-center justify-center shrink-0 overflow-hidden">
-                  {pet.photoUrl ? (
-                    <img src={pet.photoUrl} alt={pet.name} className="h-full w-full object-cover" />
-                  ) : (
-                    <PawPrint className="h-6 w-6 text-primary/60" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-foreground" data-testid={`text-pet-name-${pet.id}`}>{pet.name}</p>
-                  <p className="text-xs text-muted-foreground">{pet.species?.name ?? ''}</p>
-                </div>
-                <StatusBadge status={pet.status ?? 'healthy'} />
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
-      ))}
-    </div>
+      <div className='space-y-5'>
+        {pets.isLoading && (
+          <div className="space-y-3">
+            {[1, 2].map((i) => (
+              <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />
+            ))}
+          </div>
+        )}
+        {!pets.isLoading && petList.length === 0 && (
+          <Card>
+            <CardContent className="py-10 flex flex-col items-center gap-3">
+              <PawPrint className="h-10 w-10 text-muted-foreground/40" />
+              <p className="text-muted-foreground text-sm text-center">{t('noPets')}</p>
+              <Button asChild size="sm" data-testid="btn-add-first-pet">
+                <Link to="/pets">{t('addPet')}</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+      <div className="space-y-5 grid md:flex md:gap-4">
+        {petList.map((pet) => (
+          <div className='grid md:flex'>
+            <Link key={pet.id} to="/pets/$petId" params={{ petId: String(pet.id) }}>
+              <Card className="hover:border-primary/50 transition-colors cursor-pointer" data-testid={`card-pet-${pet.id}`}>
+                <CardContent className="py-4 flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-2xl bg-secondary flex items-center justify-center shrink-0 overflow-hidden">
+                    {pet.photoUrl ? (
+                      <img src={pet.photoUrl} alt={pet.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <PawPrint className="h-6 w-6 text-primary/60" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-foreground" data-testid={`text-pet-name-${pet.id}`}>{pet.name}</p>
+                    <p className="text-xs text-muted-foreground">{pet.species?.name ?? ''}</p>
+                  </div>
+                  <StatusBadge status={pet.status ?? 'healthy'} />
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
+        ))}
+      </div>
+    </>
   )
 }
 
