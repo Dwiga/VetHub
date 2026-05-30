@@ -12,7 +12,7 @@ concurrency:
 env:
   VPS_USER: ${{ secrets.VPS_USER }}
   VPS_HOST: ${{ secrets.VPS_HOST }}
-  DEPLOY_DIR: /var/www/vethub
+  DEPLOY_DIR: /var/www/pethub
 
 jobs:
   deploy:
@@ -57,6 +57,7 @@ jobs:
           DEST="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/vethub"
 
           echo "→ Rsyncing dist/..."
+          sudo chmod 755 "$DEST/dist/"
           rsync -az --delete frontend/dist/ "$DEST/dist/"
 
           echo "→ Rsyncing prisma/..."
@@ -81,7 +82,7 @@ jobs:
           port: 22
           script: |
             set -euo pipefail
-            cd /var/www/vethub
+            cd /var/www/pethub
 
             echo "→ Installing production dependencies..."
             bun install --production --frozen-lockfile
@@ -93,10 +94,10 @@ jobs:
             bunx prisma migrate deploy
 
             echo "→ Installing systemd service (if not yet installed)..."
-            if [ ! -f /etc/systemd/system/vethub.service ]; then
-              sudo cp deployment/systemd/vethub.service /etc/systemd/system/vethub.service
+            if [ ! -f /etc/systemd/system/pethub.service ]; then
+              sudo cp deployment/systemd/pethub.service /etc/systemd/system/pethub.service
               sudo systemctl daemon-reload
-              sudo systemctl enable vethub
+              sudo systemctl enable pethub
             fi
 
             echo "→ Installing Caddyfile..."
@@ -107,7 +108,7 @@ jobs:
 
             echo "→ Restarting app..."
             sudo systemctl daemon-reload
-            sudo systemctl restart vethub
+            sudo systemctl restart pethub
 
             echo "→ Waiting for service..."
             sleep 5
@@ -116,7 +117,7 @@ jobs:
             curl -fsS --max-time 5 http://localhost:3000/api/health || {
               echo "✗ Health check failed!"
               echo "  Logs:"
-              sudo journalctl -u vethub --no-pager -n 30
+              sudo journalctl -u pethub --no-pager -n 30
               exit 1
             }
 
