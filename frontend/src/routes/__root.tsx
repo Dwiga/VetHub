@@ -21,7 +21,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'VetCare Pro' },
+      { title: 'PetHub' },
       { name: 'description', content: 'Modern veterinary care management' },
     ],
     links: [{ rel: 'stylesheet', href: globalsCss }],
