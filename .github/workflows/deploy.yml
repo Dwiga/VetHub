@@ -94,6 +94,10 @@ jobs:
             set -euo pipefail
             cd /var/www/pethub
 
+            # Bun installs to ~/.bun/bin/ — not in PATH for non-interactive SSH
+            export BUN_PATH="$HOME/.bun/bin"
+            export PATH="$BUN_PATH:$PATH"
+
             echo "→ Installing production dependencies..."
             bun install --production --frozen-lockfile
 
