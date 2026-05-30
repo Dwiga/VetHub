@@ -78,6 +78,7 @@ jobs:
             frontend/server.ts \
             frontend/package.json \
             frontend/bun.lock \
+            frontend/prisma.config.ts \
             "$DEST/"
 
           echo "→ Rsyncing deployment configs..."
