@@ -71,13 +71,13 @@ function formatDate(dateStr: string) {
 
 function BillingSummary({ v }: { v: any }) {
   const { t } = useLang()
-  const totalCost = v.totalCost ?? 0
-  const billedCost = v.billedCost ?? 0
-  const paidDirectly = totalCost - billedCost
-  const roomFeeTotal = v.roomFeeTotal ?? 0
   const totalDeposits = v.totalDeposits ?? 0
   const totalCredits = v.totalCredits ?? 0
   const balance = v.balance ?? 0
+  const roomFeeTotal = v.roomFeeTotal ?? 0
+  // totalCredits already includes roomFeeTotal on the backend,
+  // so we subtract it here to avoid double-counting in the display
+  const serviceCredits = totalCredits - roomFeeTotal
 
   return (
     <Card className="border-primary/20">
@@ -88,41 +88,27 @@ function BillingSummary({ v }: { v: any }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="pb-4 space-y-1.5">
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">{t('totalCare')}</span>
-          <span>Rp {totalCost.toLocaleString('id-ID')}</span>
-        </div>
-        {paidDirectly > 0 && (
+        {serviceCredits > 0 && (
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">{t('paidDirectly')}</span>
-            <span className="text-green-600">− Rp {paidDirectly.toLocaleString('id-ID')}</span>
+            <span className="text-muted-foreground">{t('receiptCredit') || 'Biaya'}</span>
+            <span className="text-red-500">Rp {serviceCredits.toLocaleString('id-ID')}</span>
           </div>
         )}
-        <div className="flex justify-between text-sm font-medium border-t border-border pt-1.5 mt-1.5">
-          <span>{t('billedTotal')}</span>
-          <span>Rp {billedCost.toLocaleString('id-ID')}</span>
-        </div>
         {roomFeeTotal > 0 && (
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">{t('autoRoomFee') || 'Room fee'}</span>
             <span className="text-red-500">Rp {roomFeeTotal.toLocaleString('id-ID')}</span>
           </div>
         )}
-        {totalCredits > 0 && (
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">{t('totalCredits') || 'Care credits'}</span>
-            <span className="text-red-500">Rp {totalCredits.toLocaleString('id-ID')}</span>
-          </div>
-        )}
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">{t('totalDeposits') || 'Deposits'}</span>
+          <span className="text-muted-foreground">{t('totalDeposits') || 'Pembayaran'}</span>
           <span className="text-green-600">Rp {totalDeposits.toLocaleString('id-ID')}</span>
         </div>
         <div className={cn(
-          'flex justify-between text-base font-bold border-t border-border pt-2 mt-1',
+          "flex justify-between text-sm font-semibold border-t border-border pt-1.5 mt-1.5",
           balance < 0 ? 'text-red-500' : balance === 0 ? 'text-green-600' : 'text-blue-600',
         )}>
-          <span>{balance < 0 ? t('paymentDue') || 'Owner pays' : balance > 0 ? t('refundToOwner') : t('settled')}</span>
+          <span>{balance < 0 ? t('paymentDue') || 'Kekurangan' : balance > 0 ? t('refundToOwner') || 'Kelebihan' : t('settled') || 'Lunas'}</span>
           <span>Rp {Math.abs(balance).toLocaleString('id-ID')}</span>
         </div>
       </CardContent>

@@ -10,7 +10,8 @@ export const Route = createFileRoute('/api/share/hotel/$token')({
           where: { shareToken: token },
           include: {
             pet: { include: { species: true, owner: true } },
-            dailyLogs: { orderBy: { logDate: 'desc' } },
+            clinic: { select: { name: true, phone: true, address: true } },
+            dailyLogs: { orderBy: { logDate: 'asc' } },
           },
         })
         if (!booking) return Response.json({ error: 'not found' }, { status: 404 })
@@ -29,6 +30,13 @@ export const Route = createFileRoute('/api/share/hotel/$token')({
           .reduce((sum, l) => sum + (parseFloat(l.amount) || 0), 0)
         const balance = totalDeposits - totalCredits
 
+        const roomFeeLineItem = dailyFeeNum > 0 ? {
+          date: booking.checkIn,
+          type: 'roomFee',
+          description: `${dailyFeeNum.toLocaleString('id-ID')}/hari × ${daysIn} hari`,
+          amount: -roomFeeTotal,
+        } : null
+
         return Response.json({
           id: booking.id,
           petName: booking.pet?.name ?? null,
@@ -45,6 +53,10 @@ export const Route = createFileRoute('/api/share/hotel/$token')({
           totalDeposits,
           totalCredits,
           balance,
+          clinicName: booking.clinic.name,
+          clinicPhone: booking.clinic.phone,
+          clinicAddress: booking.clinic.address,
+          roomFeeLineItem,
           dailyLogs: booking.dailyLogs.map(l => ({
             id: l.id,
             type: l.type,

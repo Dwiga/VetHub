@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useGetSharedHotelBooking } from '@/lib/api-client'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PawPrint, Building2, ArrowDownLeft, ArrowUpRight } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Building2 } from 'lucide-react'
 import { useLang } from '@/contexts/LangContext'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { SignupPrompt } from '@/components/shared/SignupPrompt'
@@ -18,10 +18,10 @@ function SharedHotelPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background p-4">
+      <div className="min-h-screen bg-muted/30 p-4">
         <div className="max-w-md mx-auto space-y-4 pt-8">
           <div className="h-8 w-48 bg-muted animate-pulse rounded" />
-          <div className="h-32 bg-muted animate-pulse rounded-xl" />
+          <div className="h-64 bg-muted animate-pulse rounded-xl" />
         </div>
       </div>
     )
@@ -29,7 +29,7 @@ function SharedHotelPage() {
 
   if (isError || !b) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
         <div className="text-center space-y-3">
           <Building2 className="h-12 w-12 text-muted-foreground/40 mx-auto" />
           <p className="text-sm text-muted-foreground">{t('visitNotFound')}</p>
@@ -40,145 +40,174 @@ function SharedHotelPage() {
 
   const isActive = b.status === 'active'
   const logs: any[] = b.dailyLogs ?? []
+  const roomFeeItem: any = b.roomFeeLineItem
+
+  // Merge all items chronologically
+  const allItems: any[] = [
+    ...logs.map((l: any) => ({
+      date: l.logDate,
+      type: l.type,
+      description: l.description,
+      amount: l.amount,
+    })),
+  ]
+  if (roomFeeItem) {
+    allItems.push(roomFeeItem)
+  }
+  allItems.sort((a: any, b: any) => a.date.localeCompare(b.date) || 0)
+
+  const totalExpenses = Math.abs(b.totalCredits ?? 0)
+  const totalPayments = b.totalDeposits ?? 0
+  const balance = b.balance ?? 0
+
+  function formatRp(n: number) {
+    return `Rp ${Math.abs(n).toLocaleString('id-ID')}`
+  }
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-md mx-auto space-y-5 pt-6">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <PawPrint className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-bold">{b.petName ?? '—'}</h1>
-          </div>
-          {b.petSpecies && <p className="text-sm text-muted-foreground ml-7">{b.petSpecies}</p>}
-          <div className="ml-7 mt-1">
-            <StatusBadge status={b.status} />
-          </div>
-        </div>
-
-        <p className="text-xs text-muted-foreground text-center">
-          {isActive ? t('sharedStayActive') : t('sharedStayCompleted')}
-        </p>
-
-        <Card>
-          <CardContent className="py-4 space-y-2">
-            {b.ownerName && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Owner</span>
-                <span className="font-medium">{b.ownerName}</span>
-              </div>
-            )}
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">{t('checkInLabel')}</span>
-              <span className="font-medium">{b.checkIn}</span>
+    <div className="min-h-screen bg-muted/30 p-4">
+      <div className="max-w-md mx-auto pt-6">
+        {/* Receipt Card */}
+        <Card className="border-2 shadow-sm">
+          <CardContent className="py-6 px-5 space-y-4">
+            {/* Header — Hotel info */}
+            <div className="text-center space-y-1">
+              <Building2 className="h-8 w-8 text-primary mx-auto mb-1" />
+              <h1 className="text-lg font-bold">{b.clinicName ?? 'Hotel'}</h1>
+              {b.clinicAddress && (
+                <p className="text-xs text-muted-foreground">{b.clinicAddress}</p>
+              )}
+              {b.clinicPhone && (
+                <p className="text-xs text-muted-foreground">{b.clinicPhone}</p>
+              )}
             </div>
-            {b.checkOut && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">{t('checkOutLabel')}</span>
-                <span className="font-medium">{b.checkOut}</span>
+
+            {/* Divider */}
+            <hr className="border-dashed" />
+
+            {/* Pet + Booking info */}
+            <div className="space-y-1 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-base">{b.petName ?? '—'}</span>
+                <StatusBadge status={b.status} />
               </div>
-            )}
-            {b.roomType && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">{t('roomTypeLabel')}</span>
-                <span className="font-medium">{b.roomType}</span>
+              {b.petSpecies && (
+                <p className="text-xs text-muted-foreground">{b.petSpecies}</p>
+              )}
+              <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
+                <span>{t('receiptOwner')}: {b.ownerName ?? '—'}</span>
               </div>
-            )}
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">{t('daysLabel')}</span>
-              <span className="font-medium">{b.daysIn}</span>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{t('checkInLabel')}: {b.checkIn}</span>
+                {b.checkOut && <span>{t('checkOutLabel')}: {b.checkOut}</span>}
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{b.roomType ?? ''}</span>
+                <span>{b.daysIn} {b.daysIn === 1 ? t('receiptDay') : t('receiptDays')}</span>
+              </div>
+              {isActive && (
+                <p className="text-xs text-center text-amber-600 font-medium pt-1">
+                  {t('sharedStayActive')}
+                </p>
+              )}
             </div>
-            {b.dailyFee != null && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">{t('dailyFee')}</span>
-                <span className="font-medium">Rp {Number(b.dailyFee).toLocaleString('id-ID')}</span>
+
+            {/* Divider */}
+            <hr className="border-dashed" />
+
+            {/* Transaction list */}
+            <div>
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                {t('receiptTransactions')}
+              </h2>
+
+              {allItems.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">{t('noLogsYet')}</p>
+              ) : (
+                <div className="space-y-3">
+                  {allItems.map((item: any, i: number) => (
+                    <div key={i} className="flex items-start justify-between text-sm">
+                      <div className="flex-1 min-w-0 pr-3">
+                        <div className="flex items-center gap-2">
+                          {item.type === 'roomFee' ? (
+                            <span className="text-xs text-muted-foreground font-medium">
+                              {t('receiptStayFee') || 'Stay fee'}
+                            </span>
+                          ) : item.type === 'deposit' ? (
+                            <span className="text-xs font-medium text-green-700">
+                              {t('receiptDeposit') || 'Payment'}
+                            </span>
+                          ) : (
+                            <span className="text-xs font-medium text-red-600">
+                              {t('receiptCredit') || 'Expense'}
+                            </span>
+                          )}
+                          <span className="text-[10px] text-muted-foreground">{item.date}</span>
+                        </div>
+                        {item.description && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {item.description}
+                          </p>
+                        )}
+                      </div>
+                      <p className={cn(
+                        "text-sm font-medium shrink-0 whitespace-nowrap",
+                        item.type === 'deposit' ? "text-green-600" : "text-red-500"
+                      )}>
+                        {item.type === 'deposit' ? '+' : '-'}{formatRp(item.amount)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Divider */}
+            <hr className="border-dashed" />
+
+            {/* Totals */}
+            <div className="space-y-1.5 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">{t('receiptTotal')}</span>
+                <span className="font-medium text-red-500">{formatRp(totalExpenses)}</span>
               </div>
-            )}
-            <div className="flex items-center justify-between text-sm font-semibold pt-1 border-t">
-              <span>{t('totalCostLabel')}</span>
-              <span className="text-primary">Rp {Number(b.totalCost ?? 0).toLocaleString('id-ID')}</span>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">{t('receiptPayment')}</span>
+                <span className="font-medium text-green-600">{formatRp(totalPayments)}</span>
+              </div>
+              <hr className="border-dashed" />
+              <div className="flex items-center justify-between font-semibold text-base pt-1">
+                <span>{t('receiptBalance')}</span>
+                <span className={cn(balance >= 0 ? 'text-green-600' : 'text-red-500')}>
+                  {balance >= 0 ? '+' : '-'}{formatRp(balance)}
+                </span>
+              </div>
+              <p className={cn(
+                "text-[10px] text-center",
+                balance >= 0 ? "text-green-600" : "text-red-500"
+              )}>
+                {balance >= 0 ? t('receiptBalancePositive') : t('receiptBalanceNegative')}
+              </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Financial Summary */}
-        <Card>
-          <CardContent className="py-4 space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">{t('totalDeposits') || 'Total deposits'}</span>
-              <span className="font-medium text-green-600">Rp {Number(b.totalDeposits ?? 0).toLocaleString('id-ID')}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">{t('totalCredits') || 'Total credits'}</span>
-              <span className="font-medium text-red-500">Rp {Number(b.totalCredits ?? 0).toLocaleString('id-ID')}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm font-semibold pt-1 border-t">
-              <span>{t('balance') || 'Balance'}</span>
-              <span className={cn((b.balance ?? 0) >= 0 ? 'text-green-600' : 'text-red-500')}>
-                Rp {Number(b.balance ?? 0).toLocaleString('id-ID')}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
+        {/* Hotel notes */}
         {b.notes && (
-          <Card>
-            <CardContent className="py-4">
-              <p className="text-xs text-muted-foreground">{t('notes')}</p>
-              <p className="text-sm mt-1">{b.notes}</p>
+          <Card className="mt-4 border shadow-sm">
+            <CardContent className="py-4 px-5">
+              <p className="text-xs text-muted-foreground mb-0.5">{t('notes')}</p>
+              <p className="text-sm">{b.notes}</p>
             </CardContent>
           </Card>
         )}
 
-        <Card>
-          <CardHeader className="pb-2 pt-4">
-            <CardTitle className="text-sm">{t('dailyLog')}</CardTitle>
-          </CardHeader>
-          <CardContent className="pb-4">
-            {logs.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">{t('noLogsYet')}</p>
-            ) : (
-              <div className="space-y-2">
-                {logs.map((l: any) => (
-                  <div key={l.id} className="flex items-center gap-3 py-2 border-b last:border-0">
-                    <div className={cn(
-                      "h-8 w-8 rounded-full flex items-center justify-center shrink-0",
-                      l.type === 'deposit' ? "bg-green-100" : "bg-red-100"
-                    )}>
-                      {l.type === 'deposit' ? (
-                        <ArrowDownLeft className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <ArrowUpRight className="h-4 w-4 text-red-500" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs font-semibold">{l.logDate}</p>
-                        <span className={cn(
-                          "text-[10px] px-1.5 py-0.5 rounded-full font-medium uppercase",
-                          l.type === 'deposit' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                        )}>
-                          {l.type === 'deposit' ? (t('depositType') || 'Deposit') : (t('creditType') || 'Credit')}
-                        </span>
-                      </div>
-                      {l.description && <p className="text-xs text-muted-foreground">{l.description}</p>}
-                    </div>
-                    <p className={cn(
-                      "text-sm font-medium shrink-0",
-                      l.type === 'deposit' ? "text-green-600" : "text-red-500"
-                    )}>
-                      {l.type === 'deposit' ? '+' : '-'}Rp {Number(l.amount).toLocaleString('id-ID')}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         {/* Signup Prompt */}
-        <SignupPrompt />
+        <div className="mt-5">
+          <SignupPrompt />
+        </div>
 
-        <p className="text-xs text-center text-muted-foreground pb-8">PetHub</p>
+        <p className="text-xs text-center text-muted-foreground pb-8 mt-4">PetHub</p>
       </div>
     </div>
   )
