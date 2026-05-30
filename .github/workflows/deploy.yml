@@ -9,15 +9,41 @@ concurrency:
   group: deploy
   cancel-in-progress: false
 
+env:
+  VPS_USER: ${{ secrets.VPS_USER }}
+  VPS_HOST: ${{ secrets.VPS_HOST }}
+  DEPLOY_DIR: /var/www/vethub
+
 jobs:
   deploy:
     name: Build & Deploy
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          bun install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: |
+          cd frontend
+          DATABASE_URL="${{ secrets.DATABASE_URL }}" bunx prisma generate
+
+      - name: Build
+        run: |
+          cd frontend
+          VITE_CLERK_PUBLISHABLE_KEY="${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}" \
+          bun run build
 
       - name: Set up SSH key
         run: |
@@ -25,116 +51,73 @@ jobs:
           echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           echo "StrictHostKeyChecking no" >> ~/.ssh/config
 
-      - name: Create deployment archive
+      - name: Rsync built files to VPS
         run: |
-          tar \
-            --exclude='.git' \
-            --exclude='node_modules' \
-            --exclude='*/node_modules' \
-            --exclude='*/dist' \
-            --exclude='.env' \
-            --exclude='.env.local' \
-            --exclude='artifacts/mockup-sandbox' \
-            --exclude='.local' \
-            --exclude='.config' \
-            --exclude='.cache' \
-            --exclude='attached_assets' \
-            --exclude='.canvas' \
-            --exclude='*.log' \
-            -czf /tmp/vetcare-deploy.tar.gz \
-            .
-          echo "Archive size: $(du -sh /tmp/vetcare-deploy.tar.gz | cut -f1)"
+          set -euo pipefail
+          DEST="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/vethub"
 
-      - name: Upload archive to VPS
-        run: |
-          scp /tmp/vetcare-deploy.tar.gz \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/vetcare-deploy.tar.gz
+          echo "→ Rsyncing dist/..."
+          rsync -az --delete frontend/dist/ "$DEST/dist/"
 
-      - name: Extract, rebuild, and restart on VPS
-        run: |
-          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} bash -s << 'ENDSSH'
+          echo "→ Rsyncing prisma/..."
+          rsync -az --delete frontend/prisma/ "$DEST/prisma/"
+
+          echo "→ Rsyncing server.ts + package files..."
+          rsync -az \
+            frontend/server.ts \
+            frontend/package.json \
+            frontend/bun.lock \
+            "$DEST/"
+
+          echo "→ Rsyncing deployment configs..."
+          rsync -az --delete deployment/ "$DEST/deployment/"
+
+      - name: Post-deploy — restart services
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
             set -euo pipefail
-            REMOTE_DIR="/home/ubuntu/vetcare-pro"
+            cd /var/www/vethub
 
-            echo "→ Extracting..."
-            mkdir -p "$REMOTE_DIR"
-            tar -xzf /tmp/vetcare-deploy.tar.gz -C "$REMOTE_DIR"
-            rm -f /tmp/vetcare-deploy.tar.gz
+            echo "→ Installing production dependencies..."
+            bun install --production --frozen-lockfile
 
-            echo "→ Rebuilding containers (no cache)..."
-            cd "$REMOTE_DIR"
-            sudo docker compose build --no-cache
-            sudo docker compose up -d --remove-orphans
+            echo "→ Generating Prisma client..."
+            bunx prisma generate
 
-            echo "→ Waiting for services to be healthy..."
-            sleep 8
-            sudo docker compose ps
+            echo "→ Running database migrations..."
+            bunx prisma migrate deploy
 
-            echo "→ Running DB migrations..."
-            sudo docker compose exec -T db psql -U vetcare -d vetcare -c "
-              ALTER TABLE visits ADD COLUMN IF NOT EXISTS share_token TEXT UNIQUE;
-              ALTER TABLE users ADD COLUMN IF NOT EXISTS vet_status TEXT;
-              ALTER TABLE users ADD COLUMN IF NOT EXISTS is_hotel_owner BOOLEAN NOT NULL DEFAULT FALSE;
-              ALTER TABLE users ADD COLUMN IF NOT EXISTS hotel_id INTEGER;
-              ALTER TABLE clinics ADD COLUMN IF NOT EXISTS type TEXT NOT NULL DEFAULT 'vet';
-              CREATE TABLE IF NOT EXISTS admins (
-                id SERIAL PRIMARY KEY,
-                email TEXT UNIQUE NOT NULL,
-                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-              );
-              CREATE TABLE IF NOT EXISTS health_events (
-                id SERIAL PRIMARY KEY,
-                pet_id INTEGER NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
-                title TEXT NOT NULL,
-                notes TEXT,
-                event_date TEXT NOT NULL,
-                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-              );
-              CREATE TABLE IF NOT EXISTS hotel_bookings (
-                id SERIAL PRIMARY KEY,
-                clinic_id INTEGER NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
-                pet_id INTEGER REFERENCES pets(id) ON DELETE SET NULL,
-                guest_name TEXT,
-                guest_phone TEXT,
-                pet_name_raw TEXT,
-                pet_type_raw TEXT,
-                check_in TEXT NOT NULL,
-                check_out TEXT,
-                daily_fee NUMERIC,
-                status TEXT NOT NULL DEFAULT 'active',
-                notes TEXT,
-                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-              );
-              CREATE TABLE IF NOT EXISTS hotel_daily_logs (
-                id SERIAL PRIMARY KEY,
-                booking_id INTEGER NOT NULL REFERENCES hotel_bookings(id) ON DELETE CASCADE,
-                log_date TEXT NOT NULL,
-                condition TEXT,
-                feeding TEXT,
-                notes TEXT,
-                cost NUMERIC NOT NULL DEFAULT 0,
-                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-              );
-              ALTER TABLE hotel_bookings ADD COLUMN IF NOT EXISTS guest_name TEXT;
-              ALTER TABLE hotel_bookings ADD COLUMN IF NOT EXISTS guest_phone TEXT;
-              ALTER TABLE hotel_bookings ADD COLUMN IF NOT EXISTS pet_name_raw TEXT;
-              ALTER TABLE hotel_bookings ADD COLUMN IF NOT EXISTS pet_type_raw TEXT;
-              ALTER TABLE hotel_bookings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
-              ALTER TABLE hotel_daily_logs ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
-              UPDATE users SET vet_status = 'approved' WHERE (is_vet = true OR is_vet_owner = true) AND vet_status IS NULL;
-              INSERT INTO admins (email) VALUES ('ahmad_dwis@yahoo.com') ON CONFLICT (email) DO NOTHING;
-            "
+            echo "→ Installing systemd service (if not yet installed)..."
+            if [ ! -f /etc/systemd/system/vethub.service ]; then
+              sudo cp deployment/systemd/vethub.service /etc/systemd/system/vethub.service
+              sudo systemctl daemon-reload
+              sudo systemctl enable vethub
+            fi
 
-            echo "→ Seeding species..."
-            sudo docker compose exec -T db psql -U vetcare -d vetcare -c "
-              INSERT INTO species (name) VALUES
-                ('Anjing'), ('Kucing'), ('Kelinci'), ('Burung'),
-                ('Hamster'), ('Guinea Pig'), ('Reptil'), ('Ikan'),
-                ('Ular'), ('Kura-kura')
-              ON CONFLICT (name) DO NOTHING;
-            "
+            echo "→ Installing Caddyfile..."
+            if [ -f deployment/caddy/Caddyfile ]; then
+              sudo cp deployment/caddy/Caddyfile /etc/caddy/Caddyfile
+              sudo systemctl reload caddy 2>/dev/null || sudo systemctl restart caddy
+            fi
+
+            echo "→ Restarting app..."
+            sudo systemctl daemon-reload
+            sudo systemctl restart vethub
+
+            echo "→ Waiting for service..."
+            sleep 5
+
+            echo "→ Health check..."
+            curl -fsS --max-time 5 http://localhost:3000/api/health || {
+              echo "✗ Health check failed!"
+              echo "  Logs:"
+              sudo journalctl -u vethub --no-pager -n 30
+              exit 1
+            }
 
             echo "✓ Deploy complete"
-          ENDSSH
