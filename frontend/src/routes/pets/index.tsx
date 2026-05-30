@@ -60,7 +60,7 @@ function PetsPage() {
           </CardContent>
         </Card>
       )}
-      <div className="space-y-3">
+      <div className="space-y-3 grid">
         {petList.map((pet) => (
           <Link
             key={pet.id}

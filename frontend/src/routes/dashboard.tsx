@@ -84,24 +84,26 @@ function PetOwnerDashboard() {
         </Card>
       )}
       {petList.map((pet) => (
-        <Link key={pet.id} to="/pets/$petId" params={{ petId: String(pet.id) }}>
-          <Card className="hover:border-primary/50 transition-colors cursor-pointer" data-testid={`card-pet-${pet.id}`}>
-            <CardContent className="py-4 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-2xl bg-secondary flex items-center justify-center shrink-0 overflow-hidden">
-                {pet.photoUrl ? (
-                  <img src={pet.photoUrl} alt={pet.name} className="h-full w-full object-cover" />
-                ) : (
-                  <PawPrint className="h-6 w-6 text-primary/60" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-foreground" data-testid={`text-pet-name-${pet.id}`}>{pet.name}</p>
-                <p className="text-xs text-muted-foreground">{pet.species?.name ?? ''}</p>
-              </div>
-              <StatusBadge status={pet.status ?? 'healthy'} />
-            </CardContent>
-          </Card>
-        </Link>
+        <div className='grid'>
+          <Link key={pet.id} to="/pets/$petId" params={{ petId: String(pet.id) }}>
+            <Card className="hover:border-primary/50 transition-colors cursor-pointer" data-testid={`card-pet-${pet.id}`}>
+              <CardContent className="py-4 flex items-center gap-4">
+                <div className="h-12 w-12 rounded-2xl bg-secondary flex items-center justify-center shrink-0 overflow-hidden">
+                  {pet.photoUrl ? (
+                    <img src={pet.photoUrl} alt={pet.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <PawPrint className="h-6 w-6 text-primary/60" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-foreground" data-testid={`text-pet-name-${pet.id}`}>{pet.name}</p>
+                  <p className="text-xs text-muted-foreground">{pet.species?.name ?? ''}</p>
+                </div>
+                <StatusBadge status={pet.status ?? 'healthy'} />
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
       ))}
     </div>
   )
