@@ -522,3 +522,8 @@ The schema has provider = "postgresql" (production target). For local SQLite dev
 2. Use PostgreSQL locally — docker compose -f docker-compose.dev.yml up -d gives you a local PostgreSQL, then:
 DATABASE_URL="postgresql://vetcare:vetcare@localhost:5432/vetcare?schema=public" bun run prisma:push
 The app itself will run fine with either database since the client generation is adapter-agnostic.
+
+sudo -i -u postgres
+psql
+
+DB_PASSWORD=asdf1234@
