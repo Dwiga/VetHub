@@ -62,27 +62,27 @@ jobs:
             sudo mkdir -p /var/www/pethub
             sudo chown -R $USER:$USER /var/www/pethub
 
-      - name: Rsync built files to VPS
-        run: |
-          set -euo pipefail
-          DEST="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/pethub"
+      # - name: Rsync built files to VPS
+      #   run: |
+      #     set -euo pipefail
+      #     DEST="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/pethub"
 
-          echo "→ Rsyncing dist/..."
-          rsync -az --delete frontend/dist/ "$DEST/dist/"
+      #     echo "→ Rsyncing dist/..."
+      #     rsync -az --delete frontend/dist/ "$DEST/dist/"
 
-          echo "→ Rsyncing prisma/..."
-          rsync -az --delete frontend/prisma/ "$DEST/prisma/"
+      #     echo "→ Rsyncing prisma/..."
+      #     rsync -az --delete frontend/prisma/ "$DEST/prisma/"
 
-          echo "→ Rsyncing server.ts + package files..."
-          rsync -az \
-            frontend/server.ts \
-            frontend/package.json \
-            frontend/bun.lock \
-            frontend/prisma.config.ts \
-            "$DEST/"
+      #     echo "→ Rsyncing server.ts + package files..."
+      #     rsync -az \
+      #       frontend/server.ts \
+      #       frontend/package.json \
+      #       frontend/bun.lock \
+      #       frontend/prisma.config.ts \
+      #       "$DEST/"
 
-          echo "→ Rsyncing deployment configs..."
-          rsync -az --delete deployment/ "$DEST/deployment/"
+      #     echo "→ Rsyncing deployment configs..."
+      #     rsync -az --delete deployment/ "$DEST/deployment/"
 
       - name: Post-deploy — restart services
         uses: appleboy/ssh-action@v1
