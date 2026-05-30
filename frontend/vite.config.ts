@@ -3,7 +3,6 @@ import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
-import netlify from '@netlify/vite-plugin-tanstack-start'
 
 export default defineConfig({
   resolve: {
@@ -19,7 +18,6 @@ export default defineConfig({
   },
   plugins: [
     tanstackStart(),
-    netlify(),
     viteReact(),
     tailwindcss(),
   ],
