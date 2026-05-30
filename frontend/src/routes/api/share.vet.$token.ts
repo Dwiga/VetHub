@@ -10,7 +10,8 @@ export const Route = createFileRoute('/api/share/vet/$token')({
           where: { shareToken: token },
           include: {
             pet: { include: { species: true, owner: true } },
-            dailyReports: { orderBy: { reportDate: 'desc' } },
+            clinic: { select: { name: true, phone: true, address: true } },
+            dailyReports: { orderBy: { reportDate: 'asc' } },
           },
         })
         if (!visit) return Response.json({ error: 'not found' }, { status: 404 })
@@ -31,6 +32,14 @@ export const Route = createFileRoute('/api/share/vet/$token')({
           .reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0)
         const balance = totalDeposits - totalCredits
 
+        // Build room fee line item for inpatients
+        const roomFeeLineItem = dailyFeeNum > 0 && visit.type === 'inpatient' ? {
+          date: visit.visitDate,
+          type: 'roomFee',
+          description: `${dailyFeeNum.toLocaleString('id-ID')}/hari × ${daysIn} hari`,
+          amount: -roomFeeTotal,
+        } : null
+
         return Response.json({
           id: visit.id,
           petName: visit.pet?.name ?? null,
@@ -48,6 +57,10 @@ export const Route = createFileRoute('/api/share/vet/$token')({
           totalDeposits,
           totalCredits,
           balance,
+          clinicName: visit.clinic.name,
+          clinicPhone: visit.clinic.phone,
+          clinicAddress: visit.clinic.address,
+          roomFeeLineItem,
           dailyReports: visit.dailyReports.map(r => ({
             id: r.id,
             type: r.type,
