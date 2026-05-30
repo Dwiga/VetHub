@@ -1,111 +1,64 @@
-# ────────────────────────────────────────────────────────────────────────────
-# VetCare Pro — Multi-stage Dockerfile
+# ──────────────────────────────────────────────────────────────────────────────
+# VetCare Pro — production image
 #
-# All runtime images are Alpine-based to keep the footprint small.
-#
-# Build stages:
-#   base       — node:24-slim (Debian/glibc) + pnpm  ← build tooling only
-#   deps       — install all workspace dependencies
-#   build-api  — bundle the Express API server with esbuild
-#   build-web  — build the React frontend with Vite
-#   api-runner — node:24-alpine  (production API server)
-#   web-runner — nginx:alpine    (static FE + /api reverse proxy)
-#
-# Notes:
-#   • Build stages use Debian slim because TailwindCSS v4, Rollup, and
-#     lightningcss ship glibc-only native binaries (the musl/Alpine variants
-#     are excluded in pnpm-workspace.yaml overrides).
-#   • Runtime stages are pure Alpine — the esbuild bundle needs no native
-#     deps, and nginx is statically linked, so both are safe on musl.
-#   • PostgreSQL is provided by docker-compose (postgres:16-alpine).
-#
-# Usage:
-#   docker compose up --build        (recommended — uses docker-compose.yml)
-#   docker build --target api-runner -t vetcare-api .
-#   docker build --target web-runner --build-arg VITE_CLERK_PUBLISHABLE_KEY=pk_... -t vetcare-web .
-# ────────────────────────────────────────────────────────────────────────────
+# Multi-stage Bun build that produces a single self-contained image serving
+# TanStack Start SSR + the /api/* ServerRoute handlers + the static client
+# bundle on a single port. Postgres is expected to live in a separate
+# container — see docker-compose.yml.
+# ──────────────────────────────────────────────────────────────────────────────
 
+# ── Stage 1 ─ install all deps (including dev) + build ───────────────────────
+FROM oven/bun:1.3-debian AS builder
 
-# ── Stage 1: Build base — Node 24 slim (Debian/glibc, avoids musl issues) ────
-#    TailwindCSS v4, Rollup, and lightningcss ship glibc-only native binaries;
-#    the Alpine (musl) variants are excluded in pnpm-workspace.yaml overrides.
-FROM node:24-slim AS base
-RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
+# Copy manifest first so layer caching keeps deps cached across source edits.
+COPY frontend/package.json frontend/bun.lock* ./
+# `bun install --frozen-lockfile` fails if bun.lock is out of sync — desirable for CI.
+RUN bun install --frozen-lockfile
 
-# ── Stage 2: Install all workspace dependencies ──────────────────────────────
-FROM base AS deps
+# Copy the rest of the frontend source.
+COPY frontend/ ./
 
-# Copy workspace manifests first — Docker layer cache busts only on changes
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+# Generate Prisma client for the Linux platform.
+RUN bunx prisma generate
 
-# Copy every package manifest so pnpm can resolve the workspace graph
-COPY lib/api-client-react/package.json ./lib/api-client-react/
-COPY lib/api-spec/package.json         ./lib/api-spec/
-COPY lib/api-zod/package.json          ./lib/api-zod/
-COPY lib/db/package.json               ./lib/db/
-COPY artifacts/api-server/package.json ./artifacts/api-server/
-COPY artifacts/vetcare/package.json    ./artifacts/vetcare/
-COPY scripts/package.json             ./scripts/
-
-RUN pnpm install --frozen-lockfile --ignore-scripts
-
-
-# ── Stage 3: Build the API server ────────────────────────────────────────────
-FROM deps AS build-api
-
-COPY tsconfig.base.json ./
-COPY lib/              ./lib/
-COPY artifacts/api-server/ ./artifacts/api-server/
-
-RUN pnpm --filter @workspace/api-server run build
-
-
-# ── Stage 4: Build the React frontend ────────────────────────────────────────
-FROM deps AS build-web
-
-# Clerk publishable key is baked into the JS bundle at build time.
-# It is intentionally public — safe to include in the image.
+# Build the TanStack Start app (produces dist/client + dist/server).
+# Build-time env vars: only VITE_* values are baked into the client bundle.
+# For everything else we let the runtime container env take over.
 ARG VITE_CLERK_PUBLISHABLE_KEY
-ARG VITE_CLERK_PROXY_URL=""
+ENV VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
+RUN bun run build
 
-ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
-ENV VITE_CLERK_PROXY_URL=$VITE_CLERK_PROXY_URL
+# ── Stage 2 ─ slim runtime image ─────────────────────────────────────────────
+FROM oven/bun:1.3-debian AS runtime
 
-# Required by vite.config.ts at config-evaluation time
-ENV PORT=3000
-ENV BASE_PATH=/
 ENV NODE_ENV=production
-
-COPY tsconfig.base.json ./
-COPY lib/           ./lib/
-COPY artifacts/vetcare/ ./artifacts/vetcare/
-
-RUN pnpm --filter @workspace/vetcare run build
-
-
-# ── Stage 5: API server runtime — node:24-alpine (minimal, pnpm-managed) ─────
-FROM node:24-alpine AS api-runner
+ENV PORT=3000
+ENV HOST=0.0.0.0
 
 WORKDIR /app
-ENV NODE_ENV=production
 
-# Copy only the esbuild bundle — no node_modules needed (everything is bundled)
-COPY --from=build-api /app/artifacts/api-server/dist ./dist
+# Only the artefacts we actually need at runtime.
+COPY --from=builder /app/package.json         ./package.json
+COPY --from=builder /app/bun.lock             ./bun.lock
+COPY --from=builder /app/node_modules         ./node_modules
+COPY --from=builder /app/dist                 ./dist
+COPY --from=builder /app/server.ts            ./server.ts
+COPY --from=builder /app/prisma               ./prisma
 
-EXPOSE 8080
+# Default DB location — must be set via `DATABASE_URL` environment variable
+# (docker-compose.yml provides the Postgres connection string).
+# No default is set here so the container fails fast if DATABASE_URL is missing.
 
-CMD ["node", "--enable-source-maps", "./dist/index.mjs"]
+EXPOSE 3000
 
+# Entrypoint runs Prisma migrations on startup (safe — migrations are idempotent)
+# and then starts the server.
+RUN printf '#!/usr/bin/env sh\nset -e\nif [ -n "$RUN_DB_PUSH" ]; then\n  echo "[entrypoint] prisma db push"\n  bunx prisma db push --skip-generate\nfi\nif [ -n "$RUN_DB_SEED" ]; then\n  echo "[entrypoint] prisma seed"\n  bun run prisma/seed.ts\nfi\nexec bun run server.ts\n' > /usr/local/bin/entrypoint.sh \
+ && chmod +x /usr/local/bin/entrypoint.sh
 
-# ── Stage 6: Frontend web server (nginx Alpine + static files) ────────────────
-FROM nginx:alpine AS web-runner
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD bun -e 'fetch("http://127.0.0.1:" + (process.env.PORT||3000) + "/api/health").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))'
 
-# Copy the built React SPA
-COPY --from=build-web /app/artifacts/vetcare/dist/public /var/www/html
-
-# Copy the nginx config (serves static files + proxies /api to the API container)
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-EXPOSE 80
+CMD ["/usr/local/bin/entrypoint.sh"]
