@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { AppShell } from '@/components/layout/AppShell'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -187,7 +187,7 @@ function DashboardPage() {
       </AppShell>
     )
   }
-  const isNew = !user?.isPetOwner && !user?.isVet && !user?.isVetOwner
+  const isNew = !user?.isPetOwner
   const isVet = !!(user?.isVet || user?.isVetOwner)
   const greetingName = user?.name ?? clerkUser?.firstName ?? null
 
@@ -195,7 +195,7 @@ function DashboardPage() {
     <AppShell>
       <PageHeader
         title={greetingName ? `${t('welcome')}, ${greetingName.split(' ')[0]}` : t('welcome')}
-        subtitle="VetHub"
+        subtitle="PetHub"
       />
       {isNew && !me.isLoading && <RoleSelector />}
       {!isNew && activeRole === 'vet' && isVet && user?.clinicId && <VetDashboardStub />}
