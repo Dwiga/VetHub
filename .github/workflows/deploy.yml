@@ -87,12 +87,16 @@ jobs:
         uses: appleboy/ssh-action@v1
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           port: 22
-          envs: DATABASE_URL
+          envs: DATABASE_URL,CLERK_SECRET_KEY,CLERK_PUBLISHABLE_KEY,VITE_CLERK_PUBLISHABLE_KEY,SESSION_SECRET
           script: |
             set -euo pipefail
             cd /var/www/pethub
@@ -100,6 +104,19 @@ jobs:
             # Bun installs to ~/.bun/bin/ — not in PATH for non-interactive SSH
             export BUN_PATH="$HOME/.bun/bin"
             export PATH="$BUN_PATH:$PATH"
+
+            # Write .env.production from GitHub secrets
+            echo "→ Writing .env.production..."
+            cat > .env.production << EOF
+NODE_ENV=production
+PORT=3000
+HOST=0.0.0.0
+DATABASE_URL=$DATABASE_URL
+CLERK_SECRET_KEY=$CLERK_SECRET_KEY
+CLERK_PUBLISHABLE_KEY=$CLERK_PUBLISHABLE_KEY
+VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
+SESSION_SECRET=$SESSION_SECRET
+EOF
 
             # Pass DATABASE_URL into Prisma
             export DATABASE_URL="$DATABASE_URL"

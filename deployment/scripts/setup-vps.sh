@@ -85,20 +85,21 @@ sudo systemctl restart postgresql
 
 # ── 5. Create app directory ──────────────────────────────────────────────────
 echo "→ Setting up app directory..."
-sudo mkdir -p /var/www/vethub
-sudo chown -R www-data:www-data /var/www/vethub
+sudo mkdir -p /var/www/pethub
+sudo chown -R www-data:www-data /var/www/pethub
 
 # Create log directory
-sudo mkdir -p /var/log/vethub
-sudo chown -R www-data:www-data /var/log/vethub
+sudo mkdir -p /var/log/pethub
+sudo chown -R www-data:www-data /var/log/pethub
 
 # ── 6. Create .env.production template ─────────────────────────────────────
 echo "→ Creating .env.production template..."
-if [ ! -f /var/www/vethub/.env.production ]; then
+if [ ! -f /var/www/pethub/.env.production ]; then
     cat > /tmp/.env.production << 'ENVEOF'
 # ── Vethub — Production Environment ───────────────────────────────────────────
 # This file is created by setup-vps.sh and MUST be kept secret.
 # NEVER commit this file to git.
+# NOTE: On each deploy, GitHub Actions overwrites this file with real secrets.
 
 NODE_ENV=production
 PORT=3000
@@ -114,16 +115,12 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_test_YOUR_CLERK_PUBLISHABLE_KEY
 
 # Session
 SESSION_SECRET=replace-with-a-long-random-string
-
-# Prisma
-RUN_DB_PUSH=0
-RUN_DB_SEED=0
 ENVEOF
-    sudo mv /tmp/.env.production /var/www/vethub/.env.production
-    sudo chown www-data:www-data /var/www/vethub/.env.production
-    sudo chmod 600 /var/www/vethub/.env.production
-    echo "  Template created at /var/www/vethub/.env.production"
-    echo "  ⚠  EDIT IT with your real secrets!"
+    sudo mv /tmp/.env.production /var/www/pethub/.env.production
+    sudo chown www-data:www-data /var/www/pethub/.env.production
+    sudo chmod 600 /var/www/pethub/.env.production
+    echo "  Template created at /var/www/pethub/.env.production"
+    echo "  ⚠  You can ignore it — GitHub Actions will overwrite it on deploy"
 fi
 
 # ── 7. Install systemd service ──────────────────────────────────────────────
@@ -135,7 +132,7 @@ echo "
 
 # ── 8. Configure Caddy ───────────────────────────────────────────────────────
 echo "→ Configuring Caddy..."
-# Caddyfile will be placed by deploy workflow at /var/www/vethub/deployment/caddy/Caddyfile
+# Caddyfile will be placed by deploy workflow at /var/www/pethub/deployment/caddy/Caddyfile
 # We create a symlink to the standard location
 sudo mkdir -p /etc/caddy
 
@@ -154,12 +151,14 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "  ✅ VPS setup complete!"
 echo ""
 echo "  Next steps:"
-echo "    1. Edit /var/www/vethub/.env.production with your real secrets"
-echo "       (DB password, Clerk keys, SESSION_SECRET)"
+echo "    1. Make sure these GitHub secrets are set:"
+echo "       - VPS_HOST, VPS_USER, VPS_SSH_PRIVATE_KEY"
+echo "       - DATABASE_URL, CLERK_SECRET_KEY, CLERK_PUBLISHABLE_KEY"
+echo "       - VITE_CLERK_PUBLISHABLE_KEY, SESSION_SECRET"
 echo "    2. Update /etc/postgresql/*/main/pg_hba.conf if needed"
 echo "    3. Push to main to trigger the first deploy"
 echo "    4. After first deploy, copy the Caddyfile:"
-echo "       sudo cp /var/www/vethub/deployment/caddy/Caddyfile /etc/caddy/"
+echo "       sudo cp /var/www/pethub/deployment/caddy/Caddyfile /etc/caddy/"
 echo "       sudo sed -i 's/your-domain.com/YOUR_DOMAIN/g' /etc/caddy/Caddyfile"
 echo "       sudo systemctl reload caddy"
 echo ""
