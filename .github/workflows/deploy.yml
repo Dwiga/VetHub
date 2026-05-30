@@ -85,11 +85,14 @@ jobs:
 
       - name: Post-deploy — restart services
         uses: appleboy/ssh-action@v1
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           port: 22
+          envs: DATABASE_URL
           script: |
             set -euo pipefail
             cd /var/www/pethub
@@ -97,6 +100,9 @@ jobs:
             # Bun installs to ~/.bun/bin/ — not in PATH for non-interactive SSH
             export BUN_PATH="$HOME/.bun/bin"
             export PATH="$BUN_PATH:$PATH"
+
+            # Pass DATABASE_URL into Prisma
+            export DATABASE_URL="$DATABASE_URL"
 
             echo "→ Installing production dependencies..."
             bun install --production --frozen-lockfile
