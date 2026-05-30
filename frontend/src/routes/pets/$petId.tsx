@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { AppShell } from '@/components/layout/AppShell'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -16,6 +16,37 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import { useToast } from '@/hooks/use-toast'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import {
   LineChart,
   Line,
   XAxis,
@@ -31,9 +62,11 @@ import {
   Syringe,
   Trash2,
   ClipboardList,
+  Heart,
+  UserX,
 } from 'lucide-react'
 import { format } from 'date-fns'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   useGetPet,
@@ -45,6 +78,8 @@ import {
   useAddHealthEvent,
   useDeleteHealthEvent,
   useListHotelBookingsByPet,
+  useUpdatePet,
+  useListSpecies,
 } from '@/lib/api-client'
 import { useRole } from '@/contexts/RoleContext'
 import { useLang } from '@/contexts/LangContext'
@@ -56,11 +91,81 @@ export const Route = createFileRoute('/pets/$petId')({
 function PetDetailPage() {
   const { petId } = Route.useParams()
   const id = Number(petId)
+  const navigate = useNavigate()
   const pet = useGetPet(id)
   const { t } = useLang()
   const p = pet.data
   const hotelBookings = useListHotelBookingsByPet(p?.id)
   const activeHotel = (hotelBookings.data ?? []).find((b: any) => b.status === 'active')
+  const [editOpen, setEditOpen] = useState(false)
+  const qc = useQueryClient()
+  const updatePet = useUpdatePet()
+  const species = useListSpecies()
+  const { toast } = useToast()
+
+  const editSchema = z.object({
+    name: z.string().min(1),
+    speciesId: z.string().min(1),
+    dateOfBirth: z.string().optional(),
+    gender: z.enum(['male', 'female', 'unknown']),
+    sterilized: z.boolean(),
+    color: z.string().optional(),
+    status: z.enum(['healthy', 'sick', 'hospitalized', 'need_intensive_care', 'passed_away']),
+  })
+
+  const editForm = useForm<z.infer<typeof editSchema>>({
+    resolver: zodResolver(editSchema),
+    defaultValues: {
+      name: '',
+      speciesId: '',
+      gender: 'unknown',
+      sterilized: false,
+      color: '',
+      dateOfBirth: '',
+      status: 'healthy',
+    },
+  })
+
+  useEffect(() => {
+    if (p) {
+      editForm.reset({
+        name: p.name,
+        speciesId: String(p.speciesId),
+        dateOfBirth: p.dateOfBirth ?? '',
+        gender: (p.gender as 'male' | 'female' | 'unknown') ?? 'unknown',
+        sterilized: p.sterilized ?? false,
+        color: p.color ?? '',
+        status: (p.status as any) ?? 'healthy',
+      })
+    }
+  }, [p, editForm])
+
+  async function onEditSubmit(values: z.infer<typeof editSchema>) {
+    await updatePet.mutateAsync({
+      petId: id,
+      data: {
+        name: values.name,
+        speciesId: parseInt(values.speciesId),
+        dateOfBirth: values.dateOfBirth || undefined,
+        gender: values.gender,
+        sterilized: values.sterilized,
+        color: values.color || undefined,
+        status: values.status,
+      },
+    })
+    toast({ title: t('petUpdated') })
+    setEditOpen(false)
+    qc.invalidateQueries({ queryKey: ['pets', id] })
+  }
+
+  async function handlePassedAway() {
+    await updatePet.mutateAsync({
+      petId: id,
+      data: { status: 'passed_away' as const },
+    })
+    toast({ title: t('petUpdated') })
+    qc.invalidateQueries({ queryKey: ['pets', id] })
+  }
 
   if (pet.isLoading) {
     return (
@@ -108,11 +213,47 @@ function PetDetailPage() {
         back
         backHref="/pets"
         action={
-          <Button asChild size="sm" variant="ghost" data-testid="btn-edit-pet">
-            <Link to="/pets/$petId/edit" params={{ petId }}>
+          <div className="flex items-center gap-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setEditOpen(true)}
+              data-testid="btn-edit-pet"
+            >
               <Edit className="h-4 w-4" />
-            </Link>
-          </Button>
+            </Button>
+            {p.status !== 'passed_away' && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                    data-testid="btn-passed-away"
+                  >
+                    <Heart className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t('passedAwayTitle') || 'Mark as Passed Away?'}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {t('passedAwayDesc') || `This will mark ${p.name} as passed away. You can change this later from the edit form.`}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t('cancel') || 'Cancel'}</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-red-500 hover:bg-red-600"
+                      onClick={handlePassedAway}
+                    >
+                      {t('confirm') || 'Confirm'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
         }
       />
 
@@ -154,6 +295,158 @@ function PetDetailPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Edit Pet Modal */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent className="max-w-sm mx-auto max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{t('editPetTitle')}</DialogTitle>
+            </DialogHeader>
+            <Form {...editForm}>
+              <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+                <FormField
+                  control={editForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('petName')}</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-pet-name" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="speciesId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('species')}</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-species">
+                            <SelectValue placeholder={t('selectSpecies')} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {(species.data ?? []).map((s: any) => (
+                            <SelectItem key={s.id} value={String(s.id)}>
+                              {s.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('petStatus')}</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-status">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {[
+                            { value: 'healthy', label: t('statusHealthy') },
+                            { value: 'sick', label: t('statusSick') },
+                            { value: 'hospitalized', label: t('statusHospitalized') },
+                            { value: 'need_intensive_care', label: t('statusNeedsCare') },
+                            { value: 'passed_away', label: t('statusPassedAway') },
+                          ].map((s) => (
+                            <SelectItem key={s.value} value={s.value}>
+                              {s.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="dateOfBirth"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('dateOfBirth')}</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} data-testid="input-dob" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="gender"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('gender')}</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-gender">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="male">{t('male')}</SelectItem>
+                          <SelectItem value="female">{t('female')}</SelectItem>
+                          <SelectItem value="unknown">{t('unknown')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="color"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('colorMarkings')}</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-color" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="sterilized"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between">
+                      <FormLabel className="mb-0">{t('sterilized')}</FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="switch-sterilized"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={updatePet.isPending}
+                  data-testid="btn-submit"
+                >
+                  {updatePet.isPending ? t('saving') : t('save')}
+                </Button>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
 
         <VaccinationSection petId={petId} />
 

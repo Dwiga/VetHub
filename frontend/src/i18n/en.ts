@@ -359,6 +359,10 @@ export const en = {
   receiptBalanceNegative: "(-) means outstanding",
   receiptDay: "day",
   receiptDays: "days",
+  cancel: "Cancel",
+  confirm: "Confirm",
+  passedAwayTitle: "Mark as Passed Away?",
+  passedAwayDesc: "This will mark the pet as passed away. You can change this later from the edit form.",
 };
 
 export type LangKeys = keyof typeof en;
