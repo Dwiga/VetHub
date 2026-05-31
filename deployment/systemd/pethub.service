@@ -26,7 +26,7 @@ Group=www-data
 WorkingDirectory=/var/www/pethub
 
 # ── Executable ────────────────────────────────────────────────────────────────
-ExecStart=/usr/local/bin/bun run server.ts
+ExecStart=./server-run.sh
 ExecReload=/bin/kill -HUP $MAINPID
 
 # ── Restart policy ────────────────────────────────────────────────────────────
