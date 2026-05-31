@@ -61,6 +61,11 @@ jobs:
           script: |
             sudo mkdir -p /var/www/pethub
             sudo chown -R $USER:$USER /var/www/pethub
+            # Ensure bun binary is globally accessible (copy, not symlink — ProtectHome blocks symlinks)
+            if [ ! -f /usr/local/bin/bun ]; then
+              sudo cp "$HOME/.bun/bin/bun" /usr/local/bin/bun
+              sudo chmod 755 /usr/local/bin/bun
+            fi
 
       - name: Rsync built files to VPS
         run: |

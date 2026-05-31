@@ -42,8 +42,15 @@ if ! command -v bun &>/dev/null; then
 fi
 echo "  Bun version: $(bun --version)"
 
-# Ensure bun is in global PATH (link to /usr/local/bin)
-sudo ln -sf "$(which bun)" /usr/local/bin/bun
+# Ensure bun is in global PATH (copy real binary — symlink fails with systemd ProtectHome)
+if [ -f /usr/local/bin/bun ] && [ -L /usr/local/bin/bun ]; then
+  sudo rm -f /usr/local/bin/bun
+fi
+if [ ! -f /usr/local/bin/bun ]; then
+  sudo cp "$HOME/.bun/bin/bun" /usr/local/bin/bun
+  sudo chmod 755 /usr/local/bin/bun
+fi
+echo "  Bun global path: /usr/local/bin/bun"
 
 # ── 3. Install Caddy ───────────────────────────────────────────────────────────
 echo "→ Installing Caddy..."
