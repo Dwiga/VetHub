@@ -9,7 +9,7 @@
 # ──────────────────────────────────────────────────────────────────────────────
 
 # ── Production ────────────────────────────────────────────────────────────────
-your-domain.com {
+pethub.silvertech.dev {
     # Reverse proxy to Bun app
     reverse_proxy localhost:3000
 
@@ -34,7 +34,7 @@ your-domain.com {
 
     # Logs
     log {
-        output file /var/log/caddy/vethub.log
+        output file /var/log/caddy/pethub.log
     }
 }
 

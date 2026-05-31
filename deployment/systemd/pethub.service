@@ -42,7 +42,7 @@ NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
-ReadWritePaths=/var/www/vethub /var/log/vethub
+ReadWritePaths=/var/www/pethub /var/log/pethub
 
 # ── Resource limits ────────────────────────────────────────────────────────────
 LimitNOFILE=65536
