@@ -52,20 +52,24 @@ function NewVisitPage() {
       toast({ title: t('noClinicAssigned'), variant: 'destructive' })
       return
     }
-    const visit = await createVisit.mutateAsync({
-      petId: id,
-      data: {
-        clinicId,
-        vetId: me.data?.id ?? undefined,
-        type: values.type,
-        visitDate: values.visitDate,
-        anamnesis: values.anamnesis || undefined,
-        therapy: values.therapy || undefined,
-      },
-    })
-    queryClient.invalidateQueries({ queryKey: ['visits', 'pet', id] })
-    toast({ title: t('visitSaved') })
-    navigate({ to: '/vet/visits/$visitId', params: { visitId: String((visit as any).id) } })
+    try {
+      const visit = await createVisit.mutateAsync({
+        petId: id,
+        data: {
+          clinicId,
+          vetId: me.data?.id ?? undefined,
+          type: values.type,
+          visitDate: values.visitDate,
+          anamnesis: values.anamnesis || undefined,
+          therapy: values.therapy || undefined,
+        },
+      })
+      queryClient.invalidateQueries({ queryKey: ['visits', 'pet', id] })
+      toast({ title: t('visitSaved') })
+      navigate({ to: '/vet/visits/$visitId', params: { visitId: String((visit as any).id) } })
+    } catch {
+      toast({ title: t('errorCreatingVisit') || 'Failed to create visit', variant: 'destructive' })
+    }
   }
 
   const p = pet.data
@@ -83,9 +87,7 @@ function NewVisitPage() {
             <FormItem>
               <FormLabel>{t('visitType')}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger data-testid="select-type"><SelectValue /></SelectTrigger>
-                </FormControl>
+                <SelectTrigger data-testid="select-type"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="outpatient">{t('outpatient')}</SelectItem>
                   <SelectItem value="inpatient">{t('inpatient')}</SelectItem>
@@ -113,7 +115,7 @@ function NewVisitPage() {
               <FormControl><Textarea {...field} rows={3} placeholder={t('therapyPlaceholder')} data-testid="input-therapy" /></FormControl>
             </FormItem>
           )} />
-          <Button type="submit" className="w-full" disabled={createVisit.isPending} data-testid="btn-submit">
+          <Button type="submit" className="w-full" disabled={createVisit.isPending || me.isLoading} data-testid="btn-submit">
             {createVisit.isPending ? t('creatingVisit') : t('createVisit')}
           </Button>
         </form>

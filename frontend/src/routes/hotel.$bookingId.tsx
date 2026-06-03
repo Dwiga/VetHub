@@ -141,6 +141,10 @@ function HotelBookingPage() {
   const totalCredits = (b as any).totalCredits ?? 0
   const balance = (b as any).balance ?? 0
 
+  const getTodayString = () => {
+    return new Date().toISOString().split("T")[0]
+  }
+
   return (
     <AppShell>
       <PageHeader
@@ -215,30 +219,6 @@ function HotelBookingPage() {
             </div>
           </CardContent>
         </Card>
-
-        {isActive && (
-          <Card>
-            <CardContent className="py-4 space-y-3">
-              <h3 className="text-sm font-semibold">{t('checkOutBtn')}</h3>
-              <div className="flex gap-2">
-                <Input
-                  type="date"
-                  value={checkOutDate}
-                  onChange={e => setCheckOutDate(e.target.value)}
-                  className="flex-1"
-                />
-                <Button
-                  onClick={handleCheckOut}
-                  disabled={updateBooking.isPending}
-                  size="sm"
-                  className="shrink-0"
-                >
-                  {updateBooking.isPending ? t('saving') : t('checkOutBtn')}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Daily Logs / Financial Transactions */}
         <Card>
@@ -344,6 +324,30 @@ function HotelBookingPage() {
             )}
           </CardContent>
         </Card>
+
+        {isActive && (
+          <Card>
+            <CardContent className="py-4 space-y-3">
+              <h3 className="text-sm font-semibold">{t('checkOutBtn')}</h3>
+              <div className="flex gap-2">
+                <Input
+                  type="date"
+                  value={checkOutDate || getTodayString()}
+                  onChange={e => setCheckOutDate(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={handleCheckOut}
+                  disabled={updateBooking.isPending}
+                  size="sm"
+                  className="shrink-0"
+                >
+                  {updateBooking.isPending ? t('saving') : t('checkOutBtn')}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </AppShell>
   )
