@@ -59,6 +59,8 @@ const vaccinationSchema = z.object({
   brand: z.string().optional(),
   date: z.string().min(1),
   nextDueDate: z.string().optional(),
+  batchNumber: z.string().optional(),
+  administeredBy: z.string().optional(),
   cost: z.string().optional(),
   notes: z.string().optional(),
 })
@@ -186,7 +188,7 @@ function VisitDetailPage() {
 
   const vaccinationForm = useForm<z.infer<typeof vaccinationSchema>>({
     resolver: zodResolver(vaccinationSchema),
-    defaultValues: { vaccineName: '', brand: '', date: today, nextDueDate: '', cost: '', notes: '' },
+    defaultValues: { vaccineName: '', brand: '', date: today, nextDueDate: '', batchNumber: '', administeredBy: '', cost: '', notes: '' },
   })
 
   async function saveVisit(values: z.infer<typeof visitSchema>) {
@@ -230,11 +232,27 @@ function VisitDetailPage() {
         brand: values.brand || undefined,
         date: values.date,
         nextDueDate: values.nextDueDate || undefined,
+        batchNumber: values.batchNumber || undefined,
+        administeredBy: values.administeredBy || undefined,
         cost: values.cost || undefined,
         notes: values.notes || undefined,
       },
     })
-    vaccinationForm.reset({ vaccineName: '', brand: '', date: today, nextDueDate: '', cost: '', notes: '' })
+    // Auto-create a credit entry in the visit's daily reports so the vaccine cost reflects in billing
+    const costNum = values.cost ? parseFloat(values.cost) : 0
+    if (costNum > 0) {
+      await createReport.mutateAsync({
+        visitId: id,
+        data: {
+          reportDate: values.date,
+          type: 'credit',
+          description: `Vaccine: ${values.vaccineName}${values.brand ? ` (${values.brand})` : ''}`,
+          amount: costNum,
+        },
+      })
+      queryClient.invalidateQueries({ queryKey: ['visits', id] })
+    }
+    vaccinationForm.reset({ vaccineName: '', brand: '', date: today, nextDueDate: '', batchNumber: '', administeredBy: '', cost: '', notes: '' })
     setVaccinationDialogOpen(false)
     toast({ title: t('vaccinationAdded') })
   }
@@ -486,12 +504,26 @@ function VisitDetailPage() {
                           <FormControl><Input {...field} data-testid="input-vaccine-brand" /></FormControl>
                         </FormItem>
                       )} />
-                      <FormField control={vaccinationForm.control} name="cost" render={({ field }) => (
+                      <FormField control={vaccinationForm.control} name="administeredBy" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('costLabel')}</FormLabel>
-                          <FormControl><Input type="number" min="0" {...field} data-testid="input-vaccine-cost" /></FormControl>
+                          <FormLabel>{t('administeredBy')}</FormLabel>
+                          <FormControl><Input {...field} data-testid="input-vaccine-administered-by" /></FormControl>
                         </FormItem>
                       )} />
+                      <div className="flex gap-3">
+                        <FormField control={vaccinationForm.control} name="batchNumber" render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel>{t('batchNo')}</FormLabel>
+                            <FormControl><Input {...field} data-testid="input-vaccine-batch" /></FormControl>
+                          </FormItem>
+                        )} />
+                        <FormField control={vaccinationForm.control} name="cost" render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel>{t('costLabel')}</FormLabel>
+                            <FormControl><Input type="number" min="0" {...field} data-testid="input-vaccine-cost" /></FormControl>
+                          </FormItem>
+                        )} />
+                      </div>
                       <FormField control={vaccinationForm.control} name="notes" render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t('notes')}</FormLabel>
