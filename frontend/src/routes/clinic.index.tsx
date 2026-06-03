@@ -206,7 +206,8 @@ function ClinicPage() {
 
         <TabsContent value="staff" className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
+            Fitur ini dalam tahap pengembangan.
+            {/* <p className="text-sm text-muted-foreground">
               {staffList.length} {staffList.length === 1 ? t('staffMemberSingular') : t('staffMemberPlural')}
             </p>
             <Dialog open={staffDialogOpen} onOpenChange={setStaffDialogOpen}>
@@ -243,7 +244,7 @@ function ClinicPage() {
                   </form>
                 </Form>
               </DialogContent>
-            </Dialog>
+            </Dialog> */}
           </div>
           <div className="space-y-3">
             {staffList.map((s: any) => (
@@ -281,7 +282,8 @@ function ClinicPage() {
 
         <TabsContent value="products" className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
+            Fitur ini dalamtahap pengembangan
+            {/* <p className="text-sm text-muted-foreground">
               {productList.length} {productList.length === 1 ? t('productSingular') : t('productPlural')}
             </p>
             <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
@@ -340,7 +342,7 @@ function ClinicPage() {
                   </form>
                 </Form>
               </DialogContent>
-            </Dialog>
+            </Dialog> */}
           </div>
           <div className="space-y-3">
             {productList.map((p: any) => (
