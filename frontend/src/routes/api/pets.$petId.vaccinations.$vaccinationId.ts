@@ -14,10 +14,14 @@ export const Route = createFileRoute('/api/pets/$petId/vaccinations/$vaccination
         const vaccinationId = Number(params.vaccinationId)
         
         const pet = await prisma.pet.findFirst({
-          where: { id: petId, ownerId: user.id },
+          where: { id: petId },
         })
         if (!pet) {
           return Response.json({ error: 'not found' }, { status: 404 })
+        }
+        // Allow if: pet owner OR clinic staff (vet)
+        if (pet.ownerId !== user.id && !user.clinicId) {
+          return Response.json({ error: 'forbidden' }, { status: 403 })
         }
 
         await prisma.vaccination.delete({

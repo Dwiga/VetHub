@@ -42,9 +42,30 @@ export const Route = createFileRoute('/api/pets/$petId/vaccinations')({
         }
 
         const body = await request.json()
+        const isVet = !!(user.clinicId)
+
+        // Pet owners can only add basic info (no cost, batch, vet details)
+        const ownerFields = {
+          vaccineName: body.vaccineName,
+          brand: body.brand || null,
+          date: body.date,
+          nextDueDate: body.nextDueDate || null,
+          notes: body.notes || null,
+        }
+
+        const vetFields = {
+          ...ownerFields,
+          batchNumber: body.batchNumber || null,
+          administeredBy: body.administeredBy || user.name || null,
+          cost: body.cost || null,
+          vetId: user.id,
+        }
+
+        const data = isVet ? vetFields : ownerFields
+
         const vaccination = await prisma.vaccination.create({
           data: {
-            ...body,
+            ...data,
             petId,
           },
         })

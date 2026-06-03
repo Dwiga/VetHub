@@ -582,6 +582,7 @@ function VaccinationSection({ petId }: { petId: string }) {
   const id = Number(petId)
   const { activeRole } = useRole()
   const isVet = activeRole === 'vet'
+  const canAdd = true // Both pet owners and vets can add vaccinations
   const { t } = useLang()
   const vaccinationsQuery = useListVaccinations(id)
   const addMutation = useAddVaccination()
@@ -600,19 +601,20 @@ function VaccinationSection({ petId }: { petId: string }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.vaccineName || !form.date) return
-    await addMutation.mutateAsync({
-      petId: id,
-      data: {
-        vaccineName: form.vaccineName,
-        brand: form.brand || undefined,
-        date: form.date,
-        nextDueDate: form.nextDueDate || undefined,
-        batchNumber: form.batchNumber || undefined,
-        administeredBy: form.administeredBy || undefined,
-        cost: form.cost || undefined,
-        notes: form.notes || undefined,
-      },
-    })
+    const data: any = {
+      vaccineName: form.vaccineName,
+      brand: form.brand || undefined,
+      date: form.date,
+      nextDueDate: form.nextDueDate || undefined,
+      notes: form.notes || undefined,
+    }
+    // Vets can submit extra fields; owners only send basic fields (API strips the rest anyway)
+    if (isVet) {
+      data.batchNumber = form.batchNumber || undefined
+      data.administeredBy = form.administeredBy || undefined
+      data.cost = form.cost || undefined
+    }
+    await addMutation.mutateAsync({ petId: id, data })
     setForm(EMPTY_FORM)
     setOpen(false)
   }
@@ -628,7 +630,7 @@ function VaccinationSection({ petId }: { petId: string }) {
         <h2 className="font-semibold text-foreground text-sm">
           {t('vaccinationRecords')}
         </h2>
-        {isVet && (
+        {canAdd && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button size="sm" variant="outline" data-testid="btn-add-vaccination">
@@ -685,40 +687,44 @@ function VaccinationSection({ petId }: { petId: string }) {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="batchNumber">{t('batchNo')}</Label>
-                    <Input
-                      id="batchNumber"
-                      name="batchNumber"
-                      value={form.batchNumber}
-                      onChange={handleChange}
-                      placeholder="Optional"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="cost">{t('costLabel') || 'Cost (Rp)'}</Label>
-                    <Input
-                      id="cost"
-                      name="cost"
-                      type="number"
-                      min="0"
-                      value={form.cost}
-                      onChange={handleChange}
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="administeredBy">{t('administeredBy')}</Label>
-                  <Input
-                    id="administeredBy"
-                    name="administeredBy"
-                    value={form.administeredBy}
-                    onChange={handleChange}
-                    placeholder="Vet name or clinic"
-                  />
-                </div>
+                {isVet && (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label htmlFor="batchNumber">{t('batchNo')}</Label>
+                        <Input
+                          id="batchNumber"
+                          name="batchNumber"
+                          value={form.batchNumber}
+                          onChange={handleChange}
+                          placeholder="Optional"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="cost">{t('costLabel') || 'Cost (Rp)'}</Label>
+                        <Input
+                          id="cost"
+                          name="cost"
+                          type="number"
+                          min="0"
+                          value={form.cost}
+                          onChange={handleChange}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="administeredBy">{t('administeredBy')}</Label>
+                      <Input
+                        id="administeredBy"
+                        name="administeredBy"
+                        value={form.administeredBy}
+                        onChange={handleChange}
+                        placeholder="Vet name or clinic"
+                      />
+                    </div>
+                  </>
+                )}
                 <div className="space-y-1">
                   <Label htmlFor="notes">{t('notes')}</Label>
                   <Textarea
@@ -749,11 +755,9 @@ function VaccinationSection({ petId }: { petId: string }) {
           <CardContent className="py-8 flex flex-col items-center gap-2">
             <Syringe className="h-8 w-8 text-muted-foreground/40" />
             <p className="text-sm text-muted-foreground">{t('noVaccinationRecords')}</p>
-            {isVet && (
-              <p className="text-xs text-muted-foreground text-center">
-                {t('vaccinationTip')}
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground text-center">
+              {t('vaccinationTip')}
+            </p>
           </CardContent>
         </Card>
       ) : (
@@ -804,18 +808,16 @@ function VaccinationSection({ petId }: { petId: string }) {
                       </p>
                     )}
                   </div>
-                  {isVet && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
-                      onClick={() => handleDelete(v.id)}
-                      disabled={deleteMutation.isPending}
-                      data-testid={`btn-delete-vaccination-${v.id}`}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
+                    onClick={() => handleDelete(v.id)}
+                    disabled={deleteMutation.isPending}
+                    data-testid={`btn-delete-vaccination-${v.id}`}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>
