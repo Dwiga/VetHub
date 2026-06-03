@@ -525,5 +525,9 @@ The app itself will run fine with either database since the client generation is
 
 sudo -i -u postgres
 psql
+\l -> list databases
+\c pethub -> connect to pethub database
+
+INSERT INTO species (name) VALUES ('Burung'); -> insert a new species record for Burung
 
 DB_PASSWORD=asdf1234@

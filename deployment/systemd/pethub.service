@@ -1,20 +1,20 @@
 # ──────────────────────────────────────────────────────────────────────────────
-# Vethub — Systemd service unit
+# Pethub — Process manager for Bun server
 #
-# Place at: /etc/systemd/system/vethub.service
+# Place at: /etc/systemd/system/pethub.service
 # (deployment/scripts/setup-vps.sh does this automatically)
 #
 # Commands:
-#   sudo systemctl start vethub      — start now
-#   sudo systemctl enable vethub     — auto-start on boot
-#   sudo systemctl restart vethub    — restart (safe, graceful)
-#   sudo systemctl status vethub     — check status
-#   sudo journalctl -u vethub -f     — tail logs
+#   sudo systemctl start pethub       — start now
+#   sudo systemctl enable pethub      — auto-start on boot
+#   sudo systemctl restart pethub     — restart (safe, graceful)
+#   sudo systemctl status pethub      — check status
+#   sudo journalctl -u pethub -f      — tail logs
 # ──────────────────────────────────────────────────────────────────────────────
 
 [Unit]
-Description=Vethub — VetCare Pro Bun server
-Documentation=https://github.com/your-org/vethub
+Description=Pethub — PetCare Pro Bun server
+Documentation=https://github.com/your-org/pethub
 After=network-online.target postgresql.service
 Wants=network-online.target
 Requires=postgresql.service
@@ -23,7 +23,7 @@ Requires=postgresql.service
 Type=exec
 User=www-data
 Group=www-data
-WorkingDirectory=/var/www/vethub
+WorkingDirectory=/var/www/pethub
 
 # ── Executable ────────────────────────────────────────────────────────────────
 ExecStart=/usr/local/bin/bun run server.ts
@@ -34,15 +34,15 @@ Restart=always
 RestartSec=5
 
 # ── Environment ────────────────────────────────────────────────────────────────
-# Load from a `.env` file that's NOT in the repo (created by setup-vps.sh)
-EnvironmentFile=/var/www/vethub/.env.production
+# Load from a `.env` file that's NOT in the repo (created by GitHub Actions deploy)
+EnvironmentFile=/var/www/pethub/.env.production
 
 # ── Security hardening ─────────────────────────────────────────────────────────
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
-ReadWritePaths=/var/www/vethub /var/log/vethub
+ReadWritePaths=/var/www/pethub /var/log/pethub
 
 # ── Resource limits ────────────────────────────────────────────────────────────
 LimitNOFILE=65536

@@ -12,7 +12,7 @@ concurrency:
 env:
   VPS_USER: ${{ secrets.VPS_USER }}
   VPS_HOST: ${{ secrets.VPS_HOST }}
-  DEPLOY_DIR: /var/www/vethub
+  DEPLOY_DIR: /var/www/pethub
 
 jobs:
   deploy:
@@ -51,10 +51,26 @@ jobs:
           echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           echo "StrictHostKeyChecking no" >> ~/.ssh/config
 
+      - name: Ensure permissions on VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            sudo mkdir -p /var/www/pethub
+            sudo chown -R $USER:$USER /var/www/pethub
+            # Ensure bun binary is globally accessible (copy, not symlink — ProtectHome blocks symlinks)
+            if [ ! -f /usr/local/bin/bun ]; then
+              sudo cp "$HOME/.bun/bin/bun" /usr/local/bin/bun
+              sudo chmod 755 /usr/local/bin/bun
+            fi
+
       - name: Rsync built files to VPS
         run: |
           set -euo pipefail
-          DEST="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/vethub"
+          DEST="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/pethub"
 
           echo "→ Rsyncing dist/..."
           rsync -az --delete frontend/dist/ "$DEST/dist/"
@@ -67,6 +83,7 @@ jobs:
             frontend/server.ts \
             frontend/package.json \
             frontend/bun.lock \
+            frontend/prisma.config.ts \
             "$DEST/"
 
           echo "→ Rsyncing deployment configs..."
@@ -74,14 +91,41 @@ jobs:
 
       - name: Post-deploy — restart services
         uses: appleboy/ssh-action@v1
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           port: 22
+          envs: DATABASE_URL,CLERK_SECRET_KEY,CLERK_PUBLISHABLE_KEY,VITE_CLERK_PUBLISHABLE_KEY,SESSION_SECRET
           script: |
             set -euo pipefail
-            cd /var/www/vethub
+            cd /var/www/pethub
+
+            # Bun installs to ~/.bun/bin/ — not in PATH for non-interactive SSH
+            export BUN_PATH="$HOME/.bun/bin"
+            export PATH="$BUN_PATH:$PATH"
+
+            # Write .env.production from GitHub secrets
+            echo "→ Writing .env.production..."
+            printf '%s\n' \
+              "NODE_ENV=production" \
+              "PORT=3000" \
+              "HOST=0.0.0.0" \
+              "DATABASE_URL=$DATABASE_URL" \
+              "CLERK_SECRET_KEY=$CLERK_SECRET_KEY" \
+              "CLERK_PUBLISHABLE_KEY=$CLERK_PUBLISHABLE_KEY" \
+              "VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY" \
+              "SESSION_SECRET=$SESSION_SECRET" \
+              > .env.production
+
+            # Pass DATABASE_URL into Prisma
+            export DATABASE_URL="$DATABASE_URL"
 
             echo "→ Installing production dependencies..."
             bun install --production --frozen-lockfile
@@ -93,10 +137,10 @@ jobs:
             bunx prisma migrate deploy
 
             echo "→ Installing systemd service (if not yet installed)..."
-            if [ ! -f /etc/systemd/system/vethub.service ]; then
-              sudo cp deployment/systemd/vethub.service /etc/systemd/system/vethub.service
+            if [ ! -f /etc/systemd/system/pethub.service ]; then
+              sudo cp deployment/systemd/pethub.service /etc/systemd/system/pethub.service
               sudo systemctl daemon-reload
-              sudo systemctl enable vethub
+              sudo systemctl enable pethub
             fi
 
             echo "→ Installing Caddyfile..."
@@ -107,7 +151,7 @@ jobs:
 
             echo "→ Restarting app..."
             sudo systemctl daemon-reload
-            sudo systemctl restart vethub
+            sudo systemctl restart pethub
 
             echo "→ Waiting for service..."
             sleep 5
@@ -116,7 +160,7 @@ jobs:
             curl -fsS --max-time 5 http://localhost:3000/api/health || {
               echo "✗ Health check failed!"
               echo "  Logs:"
-              sudo journalctl -u vethub --no-pager -n 30
+              sudo journalctl -u pethub --no-pager -n 30
               exit 1
             }
 

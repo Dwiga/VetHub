@@ -1,15 +1,10 @@
 # ──────────────────────────────────────────────────────────────────────────────
-# Vethub — Caddy reverse proxy configuration
+# Pethub — Caddy reverse proxy configuration
 #
 # Auto-provisions TLS via Let's Encrypt. No manual cert management needed.
-#
-# For local dev without DNS, you can run:
-#   caddy run --config Caddyfile
-# but you'll need to set your domain or use `tls internal` for dev.
 # ──────────────────────────────────────────────────────────────────────────────
 
-# ── Production ────────────────────────────────────────────────────────────────
-your-domain.com {
+pethub.silvertech.dev {
     # Reverse proxy to Bun app
     reverse_proxy localhost:3000
 
@@ -34,17 +29,6 @@ your-domain.com {
 
     # Logs
     log {
-        output file /var/log/caddy/vethub.log
+        output file /var/log/caddy/pethub.log
     }
 }
-
-# ── Staging (optional — uncomment and use for testing) ────────────────────────
-# staging.your-domain.com {
-#     reverse_proxy localhost:3000
-#     header { ... }
-#     encode gzip
-#     tls {
-#         # Use staging CA to avoid rate limits during testing
-#         ca https://acme-staging-v02.api.letsencrypt.org/directory
-#     }
-# }

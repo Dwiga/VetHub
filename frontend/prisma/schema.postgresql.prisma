@@ -20,6 +20,7 @@ model User {
   isVet        Boolean   @default(false) @map("is_vet")
   isVetOwner   Boolean   @default(false) @map("is_vet_owner")
   isHotelOwner Boolean   @default(false) @map("is_hotel_owner")
+  isAdmin      Boolean   @default(false) @map("is_admin")
   clinicId     Int?      @map("clinic_id")
   hotelId      Int?      @map("hotel_id")
   vetStatus    String?   @map("vet_status")

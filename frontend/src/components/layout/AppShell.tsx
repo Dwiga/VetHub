@@ -15,6 +15,7 @@ import {
   User,
   LogOut,
   BarChart3,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/contexts/RoleContext";
@@ -31,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from '@/lib/auth'
 
 const clerkUserButton = HAS_CLERK;
 
@@ -126,6 +128,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         .slice(0, 2)
     : "?";
 
+  const { signOut } = useAuth()
+
   return (
     <div className="min-h-[100dvh] bg-background flex flex-col">
       {/* Top bar with role switcher and account menu */}
@@ -217,6 +221,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   {t("nav_reports")}
                 </DropdownMenuItem>
               )}
+              {user?.isAdmin && (
+                <DropdownMenuItem onClick={() => navigate({ to: "/admin" as never })}>
+                  <Shield className="h-4 w-4 mr-2" />
+                  {t("nav_admin")}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate({ to: "/settings" as never })}>
                 <Settings className="h-4 w-4 mr-2" />
@@ -224,14 +234,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={async () => {
-                  try {
-                    const { useAuth } = await import("@/lib/auth");
-                    const { signOut } = useAuth();
-                    // Clerk signOut handled by UserButton; this is fallback
-                  } catch {}
-                  navigate({ to: "/" as never });
-                }}
+                onClick={() => signOut()}
                 className="text-destructive"
               >
                 <LogOut className="h-4 w-4 mr-2" />

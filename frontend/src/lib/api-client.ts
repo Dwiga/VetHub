@@ -37,6 +37,7 @@ export interface MeResponse {
   isVet: boolean
   isVetOwner: boolean
   isHotelOwner: boolean
+  isAdmin: boolean
   clinicId: number | null
   hotelId: number | null
   vetStatus: string | null
@@ -116,6 +117,19 @@ export function useListSpecies() {
     queryKey: ['species'],
     queryFn: () => fetcher('/api/species'),
     staleTime: 5 * 60_000,
+  })
+}
+
+export function useAddSpecies() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: { name: string }) =>
+      fetcher('/api/species', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['species'] }),
   })
 }
 
