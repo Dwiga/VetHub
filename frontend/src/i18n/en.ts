@@ -122,6 +122,7 @@ export const en = {
   therapyPlaceholderShort: "Prescribed therapy...",
   createVisit: "Create visit",
   creatingVisit: "Creating...",
+  errorCreatingVisit: "Failed to create visit",
   noClinicAssigned: "No clinic assigned",
 
   clinicalNotes: "Clinical notes",

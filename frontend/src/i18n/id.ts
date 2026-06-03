@@ -124,6 +124,7 @@ export const id: Record<LangKeys, string> = {
   therapyPlaceholderShort: "Terapi yang diberikan...",
   createVisit: "Buat kunjungan",
   creatingVisit: "Membuat...",
+  errorCreatingVisit: "Gagal membuat kunjungan",
   noClinicAssigned: "Belum terdaftar di klinik",
 
   clinicalNotes: "Catatan klinis",
