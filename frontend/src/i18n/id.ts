@@ -26,6 +26,8 @@ export const id: Record<LangKeys, string> = {
     "Pantau kesehatan, berat badan, dan riwayat kunjungan hewan peliharaan Anda",
   vetClinic: "Klinik hewan",
   vetClinicDesc: "Daftarkan klinik Anda untuk mengelola kunjungan dan staf",
+  hotel: "Hotel",
+  hotelDesc: "Daftarkan hotel Anda untuk mengelola tamu dan perawatan harian",
   myPets: "Hewanku",
   addPet: "Tambah hewan",
   noPets: "Belum ada hewan. Tambahkan hewan pertama Anda!",
@@ -345,6 +347,7 @@ export const id: Record<LangKeys, string> = {
    petInHotel: "Hewan Anda sedang berada di",
   viewFeeDetails: "Lihat rincian biaya",
    nav_reports: "Laporan",
+  nav_admin: "Admin",
   topServices: "Layanan teratas",
   receiptTransactions: "Rincian Biaya",
   receiptPatient: "Pasien",
@@ -365,4 +368,5 @@ export const id: Record<LangKeys, string> = {
   confirm: "Konfirmasi",
   passedAwayTitle: "Tandai Sebagai Meninggal?",
   passedAwayDesc: "Ini akan menandai hewan sebagai meninggal. Anda dapat mengubahnya nanti dari form edit.",
+  speciesAdded: "Spesies ditambahkan",
 };

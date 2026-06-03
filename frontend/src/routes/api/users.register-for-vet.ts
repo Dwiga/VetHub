@@ -36,6 +36,7 @@ export const Route = createFileRoute('/api/users/register-for-vet')({
         const updatedUser = await prisma.user.update({
           where: { id: user.id },
           data: {
+            isPetOwner: true,
             isVet: true,
             isVetOwner: true,
             clinicId: clinic.id,

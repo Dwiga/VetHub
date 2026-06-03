@@ -23,6 +23,8 @@ export const en = {
   petOwnerDesc: "Track your pets' health, weight, and visit history",
   vetClinic: "Veterinary clinic",
   vetClinicDesc: "Register your clinic to manage visits and staff",
+  hotel: "Hotel",
+  hotelDesc: "Register your hotel to manage guests and daily care",
   myPets: "My pets",
   addPet: "Add pet",
   noPets: "No pets yet. Add your first pet!",
@@ -343,6 +345,7 @@ export const en = {
    petInHotel: "Your pet is currently at",
   viewFeeDetails: "View fee details",
    nav_reports: "Reports",
+  nav_admin: "Admin",
   topServices: "Top services",
   receiptTransactions: "Transaction Details",
   receiptPatient: "Patient",
@@ -363,6 +366,7 @@ export const en = {
   confirm: "Confirm",
   passedAwayTitle: "Mark as Passed Away?",
   passedAwayDesc: "This will mark the pet as passed away. You can change this later from the edit form.",
+  speciesAdded: "Species added",
 };
 
 export type LangKeys = keyof typeof en;
