@@ -6,6 +6,7 @@ import {
   useGetVisit, useUpdateVisit,
   useCreateDailyReport, useGetMe,
   useAddVaccination, useListVaccinations, useUpdatePetStatus, useShareVisit,
+  useAddMonitoring, useListMonitoring,
 } from '@/lib/api-client'
 import { useRole } from '@/contexts/RoleContext'
 import { useLang } from '@/contexts/LangContext'
@@ -24,6 +25,16 @@ import { z } from 'zod'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { useToast } from '@/hooks/use-toast'
 import { Printer, Plus, Trash2, CheckCircle2, Circle, Banknote, Share2, AlertTriangle, ArrowDownLeft, ArrowUpRight } from 'lucide-react'
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts'
+import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/vet/visits/$visitId')({
@@ -62,6 +73,13 @@ const vaccinationSchema = z.object({
   batchNumber: z.string().optional(),
   administeredBy: z.string().optional(),
   cost: z.string().optional(),
+  notes: z.string().optional(),
+})
+
+const monitoringSchema = z.object({
+  weight: z.string().optional(),
+  height: z.string().optional(),
+  temperature: z.string().optional(),
   notes: z.string().optional(),
 })
 
@@ -133,6 +151,8 @@ function VisitDetailPage() {
   const shareVisit = useShareVisit()
   const addVaccination = useAddVaccination()
   const updatePetStatus = useUpdatePetStatus()
+  const addMonitoring = useAddMonitoring()
+  const monitoringRecords = useListMonitoring(visit.data?.petId)
   const [vaccinationDialogOpen, setVaccinationDialogOpen] = useState(false)
   const vaccinations = useListVaccinations(visit.data?.petId)
 
@@ -189,6 +209,11 @@ function VisitDetailPage() {
   const vaccinationForm = useForm<z.infer<typeof vaccinationSchema>>({
     resolver: zodResolver(vaccinationSchema),
     defaultValues: { vaccineName: '', brand: '', date: today, nextDueDate: '', batchNumber: '', administeredBy: '', cost: '', notes: '' },
+  })
+
+  const monitoringForm = useForm<z.infer<typeof monitoringSchema>>({
+    resolver: zodResolver(monitoringSchema),
+    defaultValues: { weight: '', height: '', temperature: '', notes: '' },
   })
 
   async function saveVisit(values: z.infer<typeof visitSchema>) {
@@ -263,6 +288,19 @@ function VisitDetailPage() {
     toast({ title: t('deceasedDone') })
   }
 
+  async function addMonitoringRecord(values: z.infer<typeof monitoringSchema>) {
+    if (!v?.petId) return
+    const data: any = {}
+    if (values.weight) data.weight = parseFloat(values.weight)
+    if (values.height) data.height = parseFloat(values.height)
+    if (values.temperature) data.temperature = parseFloat(values.temperature)
+    if (values.notes) data.notes = values.notes
+    if (!data.weight && !data.height && !data.temperature) return
+    await addMonitoring.mutateAsync({ petId: v.petId, data })
+    monitoringForm.reset({ weight: '', height: '', temperature: '', notes: '' })
+    toast({ title: t('monitoringAdded') })
+  }
+
   if (visit.isLoading) return (
     <AppShell>
       <div className="space-y-4 pt-4">
@@ -286,7 +324,11 @@ function VisitDetailPage() {
     <AppShell>
       <PageHeader
         title={`${t('newVisit').split(' ')[0]} — ${(v as any).petName ?? ''}`}
-        subtitle={[v.visitDate, v.vetName ? `drh. ${v.vetName}` : null].filter(Boolean).join(' · ')}
+        subtitle={[
+          v.visitDate,
+          (v as any).ownerName || (v as any).ownerPhone ? `${(v as any).ownerName || (v as any).ownerPhone}` : null,
+          v.vetName ? `drh. ${v.vetName}` : null,
+        ].filter(Boolean).join(' · ')}
         back
         action={
           <div className="flex items-center gap-1">
@@ -366,6 +408,119 @@ function VisitDetailPage() {
             </CardContent>
           </Card>
         )}
+
+        {isVet && (
+          <Card>
+            <CardHeader className="pb-3"><CardTitle className="text-sm">{t('healthMonitoring')}</CardTitle></CardHeader>
+            <CardContent>
+              <Form {...monitoringForm}>
+                <form onSubmit={monitoringForm.handleSubmit(addMonitoringRecord)} className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField control={monitoringForm.control} name="weight" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('weightKg')}</FormLabel>
+                        <FormControl><Input type="number" step="0.01" {...field} placeholder="0.00" data-testid="input-monitoring-weight" /></FormControl>
+                      </FormItem>
+                    )} />
+                    <FormField control={monitoringForm.control} name="height" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('heightCm')}</FormLabel>
+                        <FormControl><Input type="number" step="0.1" {...field} placeholder="0.0" data-testid="input-monitoring-height" /></FormControl>
+                      </FormItem>
+                    )} />
+                  </div>
+                  <FormField control={monitoringForm.control} name="temperature" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('temperatureC')}</FormLabel>
+                      <FormControl><Input type="number" step="0.1" {...field} placeholder="0.0" data-testid="input-monitoring-temperature" /></FormControl>
+                    </FormItem>
+                  )} />
+                  <FormField control={monitoringForm.control} name="notes" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('notes')}</FormLabel>
+                      <FormControl><Textarea {...field} rows={2} data-testid="input-monitoring-notes" /></FormControl>
+                    </FormItem>
+                  )} />
+                  <Button type="submit" size="sm" className="w-full" disabled={addMonitoring.isPending} data-testid="btn-save-monitoring">
+                    {addMonitoring.isPending ? t('saving') : t('saveRecord')}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        )}
+
+        {(() => {
+          const records = monitoringRecords.data ?? []
+          if (monitoringRecords.isLoading) return <div className="h-20 bg-muted animate-pulse rounded-xl" />
+          if (records.length === 0) return null
+          return (
+            <div className="space-y-3">
+              {(() => {
+                const weightData = records.filter((r: any) => r.weight != null).reverse().map((r: any) => ({ date: format(new Date(r.recordedAt), 'MM/dd'), weight: r.weight }))
+                if (weightData.length === 0) return null
+                return (
+                  <Card>
+                    <CardHeader className="pb-2 pt-4"><CardTitle className="text-sm">{t('weightKg')}</CardTitle></CardHeader>
+                    <CardContent className="pb-4">
+                      <ResponsiveContainer width="100%" height={140}>
+                        <LineChart data={weightData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} width={32} />
+                          <Tooltip />
+                          <Line type="monotone" dataKey="weight" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                )
+              })()}
+
+              {(() => {
+                const tempData = records.filter((r: any) => r.temperature != null).reverse().map((r: any) => ({ date: format(new Date(r.recordedAt), 'MM/dd'), temperature: r.temperature }))
+                if (tempData.length === 0) return null
+                return (
+                  <Card>
+                    <CardHeader className="pb-2 pt-4"><CardTitle className="text-sm">{t('temperatureC')}</CardTitle></CardHeader>
+                    <CardContent className="pb-4">
+                      <ResponsiveContainer width="100%" height={140}>
+                        <LineChart data={tempData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} width={32} />
+                          <Tooltip />
+                          <Line type="monotone" dataKey="temperature" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={{ r: 3 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                )
+              })()}
+
+              {(() => {
+                const heightData = records.filter((r: any) => r.height != null).reverse().map((r: any) => ({ date: format(new Date(r.recordedAt), 'MM/dd'), height: r.height }))
+                if (heightData.length === 0) return null
+                return (
+                  <Card>
+                    <CardHeader className="pb-2 pt-4"><CardTitle className="text-sm">{t('heightCm')}</CardTitle></CardHeader>
+                    <CardContent className="pb-4">
+                      <ResponsiveContainer width="100%" height={140}>
+                        <LineChart data={heightData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} width={32} />
+                          <Tooltip />
+                          <Line type="monotone" dataKey="height" stroke="hsl(var(--chart-3))" strokeWidth={2} dot={{ r: 3 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                )
+              })()}
+            </div>
+          )
+        })()}
 
         {/* Daily Reports - for all visit types */}
         <Card>

@@ -1,11 +1,21 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useGetSharedVetVisit } from '@/lib/api-client'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Stethoscope } from 'lucide-react'
 import { useLang } from '@/contexts/LangContext'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { SignupPrompt } from '@/components/shared/SignupPrompt'
 import { cn } from '@/lib/utils'
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts'
+import { format } from 'date-fns'
 
 export const Route = createFileRoute('/share/vet/$token')({
   component: SharedVetPage,
@@ -209,6 +219,78 @@ function SharedVetPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Monitoring charts */}
+        {(() => {
+          const records = (v as any).monitoring ?? []
+          if (records.length === 0) return null
+          return (
+            <>
+              {(() => {
+                const weightData = records.filter((r: any) => r.weight != null).reverse().map((r: any) => ({ date: format(new Date(r.recordedAt), 'MM/dd'), weight: r.weight }))
+                if (weightData.length === 0) return null
+                return (
+                  <Card className="mt-4 border shadow-sm">
+                    <CardHeader className="pb-2 pt-4"><CardTitle className="text-sm">Weight (kg)</CardTitle></CardHeader>
+                    <CardContent className="pb-4">
+                      <ResponsiveContainer width="100%" height={140}>
+                        <LineChart data={weightData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} width={32} />
+                          <Tooltip />
+                          <Line type="monotone" dataKey="weight" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                )
+              })()}
+
+              {(() => {
+                const tempData = records.filter((r: any) => r.temperature != null).reverse().map((r: any) => ({ date: format(new Date(r.recordedAt), 'MM/dd'), temperature: r.temperature }))
+                if (tempData.length === 0) return null
+                return (
+                  <Card className="mt-4 border shadow-sm">
+                    <CardHeader className="pb-2 pt-4"><CardTitle className="text-sm">Temperature (°C)</CardTitle></CardHeader>
+                    <CardContent className="pb-4">
+                      <ResponsiveContainer width="100%" height={140}>
+                        <LineChart data={tempData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} width={32} />
+                          <Tooltip />
+                          <Line type="monotone" dataKey="temperature" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={{ r: 3 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                )
+              })()}
+
+              {(() => {
+                const heightData = records.filter((r: any) => r.height != null).reverse().map((r: any) => ({ date: format(new Date(r.recordedAt), 'MM/dd'), height: r.height }))
+                if (heightData.length === 0) return null
+                return (
+                  <Card className="mt-4 border shadow-sm">
+                    <CardHeader className="pb-2 pt-4"><CardTitle className="text-sm">Height (cm)</CardTitle></CardHeader>
+                    <CardContent className="pb-4">
+                      <ResponsiveContainer width="100%" height={140}>
+                        <LineChart data={heightData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} width={32} />
+                          <Tooltip />
+                          <Line type="monotone" dataKey="height" stroke="hsl(var(--chart-3))" strokeWidth={2} dot={{ r: 3 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                )
+              })()}
+            </>
+          )
+        })()}
 
         {/* Signup Prompt */}
         <div className="mt-5">

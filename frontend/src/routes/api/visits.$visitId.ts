@@ -13,6 +13,7 @@ export const Route = createFileRoute('/api/visits/$visitId')({
           where: { id },
           include: {
             dailyReports: { orderBy: { reportDate: 'desc' } },
+            pet: { include: { owner: true } },
           },
         })
         if (!visit) return Response.json({ error: 'not found' }, { status: 404 })
@@ -34,8 +35,13 @@ export const Route = createFileRoute('/api/visits/$visitId')({
           .reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0)
         const balance = totalDeposits - totalCredits
 
+        const { dailyReports, pet, ...rest } = visit
+
         return Response.json({
-          ...visit,
+          ...rest,
+          petName: pet?.name ?? null,
+          ownerName: pet?.owner?.name ?? null,
+          ownerPhone: pet?.owner?.phone ?? null,
           dailyFee: dailyFeeNum || null,
           roomFeeTotal,
           totalDeposits,

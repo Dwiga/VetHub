@@ -299,6 +299,42 @@ export function useDeleteHealthEvent() {
   })
 }
 
+// ─────────────────────────────  Monitoring  ────────────────────────────────
+
+export interface MonitoringRecord {
+  id: number
+  petId: number
+  weight: number | null
+  height: number | null
+  temperature: number | null
+  notes: string | null
+  recordedBy: string | null
+  recordedAt: string
+}
+
+export function useListMonitoring(petId: number | string | undefined) {
+  const fetcher = useAuthedFetch()
+  return useQuery<MonitoringRecord[]>({
+    queryKey: ['monitoring', petId],
+    queryFn: () => fetcher(`/api/pets/${petId}/monitoring`),
+    enabled: !!petId,
+  })
+}
+
+export function useAddMonitoring() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ petId, data }: { petId: number; data: Partial<MonitoringRecord> }) =>
+      fetcher(`/api/pets/${petId}/monitoring`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_, { petId }) =>
+      qc.invalidateQueries({ queryKey: ['monitoring', petId] }),
+  })
+}
+
 // ─────────────────────────────  Visits  ────────────────────────────────────
 
 export interface Visit {

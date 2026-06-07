@@ -66,7 +66,7 @@ function ActiveVisitsList({ clinicId }: { clinicId: number }) {
                   <p className="font-semibold text-sm text-foreground" data-testid={`text-pet-name-${v.id}`}>{v.petName || `Visit #${v.id}`}</p>
                   <StatusBadge status={v.type ?? 'outpatient'} />
                 </div>
-                <p className="text-xs text-muted-foreground">{v.visitDate}</p>
+                <p className="text-xs text-muted-foreground">{v.visitDate}{v.ownerName ? ` · ${v.ownerName}` : v.ownerPhone ? ` · ${v.ownerPhone}` : ''}</p>
               </div>
             </CardContent>
           </Card>
@@ -124,6 +124,7 @@ function VisitHistoryList({ clinicId }: { clinicId: number }) {
                           </div>
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {v.visitDate}
+                            {v.ownerName ? ` · ${v.ownerName}` : v.ownerPhone ? ` · ${v.ownerPhone}` : ''}
                             {v.vetName ? ` · drh. ${v.vetName}` : ''}
                           </p>
                         </div>
