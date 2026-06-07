@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/share/vet/$token')({
         const visit = await prisma.visit.findUnique({
           where: { shareToken: token },
           include: {
-            pet: { include: { species: true, owner: true } },
+            pet: { include: { species: true, owner: true, monitoringRecords: { orderBy: { recordedAt: 'desc' }, take: 10 } } },
             clinic: { select: { name: true, phone: true, address: true } },
             dailyReports: { orderBy: { reportDate: 'asc' } },
           },
@@ -67,6 +67,14 @@ export const Route = createFileRoute('/api/share/vet/$token')({
             description: r.description,
             amount: parseFloat(r.amount) || 0,
             reportDate: r.reportDate,
+          })),
+          monitoring: (visit.pet?.monitoringRecords ?? []).map((r) => ({
+            id: r.id,
+            weight: r.weight,
+            height: r.height,
+            temperature: r.temperature,
+            notes: r.notes,
+            recordedAt: r.recordedAt,
           })),
         })
       },

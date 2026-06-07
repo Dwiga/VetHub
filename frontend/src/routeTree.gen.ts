@@ -69,6 +69,7 @@ import { Route as ApiUsersMeRegisterPetOwnerRouteImport } from './routes/api/use
 import { Route as ApiShareVetTokenRouteImport } from './routes/api/share.vet.$token'
 import { Route as ApiShareHotelTokenRouteImport } from './routes/api/share.hotel.$token'
 import { Route as ApiPetsPetIdVaccinationsRouteImport } from './routes/api/pets.$petId.vaccinations'
+import { Route as ApiPetsPetIdMonitoringRouteImport } from './routes/api/pets.$petId.monitoring'
 import { Route as ApiPetsPetIdHealthEventsRouteImport } from './routes/api/pets.$petId.health-events'
 import { Route as ApiHotelBookingIdShareRouteImport } from './routes/api/hotel.$bookingId.share'
 import { Route as ApiHotelBookingIdLogsRouteImport } from './routes/api/hotel.$bookingId.logs'
@@ -390,6 +391,11 @@ const ApiPetsPetIdVaccinationsRoute =
     path: '/vaccinations',
     getParentRoute: () => ApiPetsPetIdRoute,
   } as any)
+const ApiPetsPetIdMonitoringRoute = ApiPetsPetIdMonitoringRouteImport.update({
+  id: '/monitoring',
+  path: '/monitoring',
+  getParentRoute: () => ApiPetsPetIdRoute,
+} as any)
 const ApiPetsPetIdHealthEventsRoute =
   ApiPetsPetIdHealthEventsRouteImport.update({
     id: '/health-events',
@@ -537,6 +543,7 @@ export interface FileRoutesByFullPath {
   '/api/hotel/$bookingId/logs': typeof ApiHotelBookingIdLogsRouteWithChildren
   '/api/hotel/$bookingId/share': typeof ApiHotelBookingIdShareRoute
   '/api/pets/$petId/health-events': typeof ApiPetsPetIdHealthEventsRouteWithChildren
+  '/api/pets/$petId/monitoring': typeof ApiPetsPetIdMonitoringRoute
   '/api/pets/$petId/vaccinations': typeof ApiPetsPetIdVaccinationsRouteWithChildren
   '/api/share/hotel/$token': typeof ApiShareHotelTokenRoute
   '/api/share/vet/$token': typeof ApiShareVetTokenRoute
@@ -614,6 +621,7 @@ export interface FileRoutesByTo {
   '/api/hotel/$bookingId/logs': typeof ApiHotelBookingIdLogsRouteWithChildren
   '/api/hotel/$bookingId/share': typeof ApiHotelBookingIdShareRoute
   '/api/pets/$petId/health-events': typeof ApiPetsPetIdHealthEventsRouteWithChildren
+  '/api/pets/$petId/monitoring': typeof ApiPetsPetIdMonitoringRoute
   '/api/pets/$petId/vaccinations': typeof ApiPetsPetIdVaccinationsRouteWithChildren
   '/api/share/hotel/$token': typeof ApiShareHotelTokenRoute
   '/api/share/vet/$token': typeof ApiShareVetTokenRoute
@@ -692,6 +700,7 @@ export interface FileRoutesById {
   '/api/hotel/$bookingId/logs': typeof ApiHotelBookingIdLogsRouteWithChildren
   '/api/hotel/$bookingId/share': typeof ApiHotelBookingIdShareRoute
   '/api/pets/$petId/health-events': typeof ApiPetsPetIdHealthEventsRouteWithChildren
+  '/api/pets/$petId/monitoring': typeof ApiPetsPetIdMonitoringRoute
   '/api/pets/$petId/vaccinations': typeof ApiPetsPetIdVaccinationsRouteWithChildren
   '/api/share/hotel/$token': typeof ApiShareHotelTokenRoute
   '/api/share/vet/$token': typeof ApiShareVetTokenRoute
@@ -771,6 +780,7 @@ export interface FileRouteTypes {
     | '/api/hotel/$bookingId/logs'
     | '/api/hotel/$bookingId/share'
     | '/api/pets/$petId/health-events'
+    | '/api/pets/$petId/monitoring'
     | '/api/pets/$petId/vaccinations'
     | '/api/share/hotel/$token'
     | '/api/share/vet/$token'
@@ -848,6 +858,7 @@ export interface FileRouteTypes {
     | '/api/hotel/$bookingId/logs'
     | '/api/hotel/$bookingId/share'
     | '/api/pets/$petId/health-events'
+    | '/api/pets/$petId/monitoring'
     | '/api/pets/$petId/vaccinations'
     | '/api/share/hotel/$token'
     | '/api/share/vet/$token'
@@ -925,6 +936,7 @@ export interface FileRouteTypes {
     | '/api/hotel/$bookingId/logs'
     | '/api/hotel/$bookingId/share'
     | '/api/pets/$petId/health-events'
+    | '/api/pets/$petId/monitoring'
     | '/api/pets/$petId/vaccinations'
     | '/api/share/hotel/$token'
     | '/api/share/vet/$token'
@@ -1421,6 +1433,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPetsPetIdVaccinationsRouteImport
       parentRoute: typeof ApiPetsPetIdRoute
     }
+    '/api/pets/$petId/monitoring': {
+      id: '/api/pets/$petId/monitoring'
+      path: '/monitoring'
+      fullPath: '/api/pets/$petId/monitoring'
+      preLoaderRoute: typeof ApiPetsPetIdMonitoringRouteImport
+      parentRoute: typeof ApiPetsPetIdRoute
+    }
     '/api/pets/$petId/health-events': {
       id: '/api/pets/$petId/health-events'
       path: '/health-events'
@@ -1601,11 +1620,13 @@ const ApiPetsPetIdVaccinationsRouteWithChildren =
 
 interface ApiPetsPetIdRouteChildren {
   ApiPetsPetIdHealthEventsRoute: typeof ApiPetsPetIdHealthEventsRouteWithChildren
+  ApiPetsPetIdMonitoringRoute: typeof ApiPetsPetIdMonitoringRoute
   ApiPetsPetIdVaccinationsRoute: typeof ApiPetsPetIdVaccinationsRouteWithChildren
 }
 
 const ApiPetsPetIdRouteChildren: ApiPetsPetIdRouteChildren = {
   ApiPetsPetIdHealthEventsRoute: ApiPetsPetIdHealthEventsRouteWithChildren,
+  ApiPetsPetIdMonitoringRoute: ApiPetsPetIdMonitoringRoute,
   ApiPetsPetIdVaccinationsRoute: ApiPetsPetIdVaccinationsRouteWithChildren,
 }
 
