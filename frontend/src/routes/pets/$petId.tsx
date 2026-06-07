@@ -80,6 +80,8 @@ import {
   useListHotelBookingsByPet,
   useUpdatePet,
   useListSpecies,
+  useListMonitoring,
+  useAddMonitoring,
 } from '@/lib/api-client'
 import { useRole } from '@/contexts/RoleContext'
 import { useLang } from '@/contexts/LangContext'
@@ -295,6 +297,8 @@ function PetDetailPage() {
             </div>
           </CardContent>
         </Card>
+
+        <MonitoringSection petId={petId} />
 
         {/* Edit Pet Modal */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
@@ -973,6 +977,201 @@ function HealthEventsSection({ petId }: { petId: string }) {
             </Card>
           ))}
         </div>
+      )}
+    </div>
+  )
+}
+
+function MonitoringSection({ petId }: { petId: string }) {
+  const id = Number(petId)
+  const { t } = useLang()
+  const { toast } = useToast()
+  const [open, setOpen] = useState(false)
+  const [form, setForm] = useState({
+    weight: '',
+    height: '',
+    temperature: '',
+    notes: '',
+  })
+
+  const monitoringQuery = useListMonitoring(id)
+  const addMutation = useAddMonitoring()
+  const records = monitoringQuery.data ?? []
+
+  function handleChange(
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) {
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const data: any = {}
+    if (form.weight) data.weight = parseFloat(form.weight)
+    if (form.height) data.height = parseFloat(form.height)
+    if (form.temperature) data.temperature = parseFloat(form.temperature)
+    if (form.notes) data.notes = form.notes
+    if (!data.weight && !data.height && !data.temperature) return
+    await addMutation.mutateAsync({ petId: id, data })
+    setForm({ weight: '', height: '', temperature: '', notes: '' })
+    setOpen(false)
+    toast({ title: t('monitoringRecordAdded') })
+  }
+
+  if (monitoringQuery.isLoading) {
+    return <div className="h-32 bg-muted animate-pulse rounded-xl" />
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold text-foreground text-sm">
+          {t('healthMonitoring')}
+        </h2>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm" variant="outline" data-testid="btn-add-monitoring">
+              <Plus className="h-4 w-4 mr-1" />
+              {t('addRecord')}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-sm mx-auto">
+            <DialogHeader>
+              <DialogTitle>{t('addMonitoringRecord')}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-3 pt-1">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="mon-weight">{t('weightKg')}</Label>
+                  <Input
+                    id="mon-weight"
+                    name="weight"
+                    type="number"
+                    step="0.01"
+                    value={form.weight}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="mon-height">{t('heightCm')}</Label>
+                  <Input
+                    id="mon-height"
+                    name="height"
+                    type="number"
+                    step="0.1"
+                    value={form.height}
+                    onChange={handleChange}
+                    placeholder="0.0"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="mon-temp">{t('temperatureC')}</Label>
+                <Input
+                  id="mon-temp"
+                  name="temperature"
+                  type="number"
+                  step="0.1"
+                  value={form.temperature}
+                  onChange={handleChange}
+                  placeholder="0.0"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="mon-notes">{t('notes')}</Label>
+                <Textarea
+                  id="mon-notes"
+                  name="notes"
+                  value={form.notes}
+                  onChange={handleChange}
+                  rows={2}
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={addMutation.isPending}
+              >
+                {addMutation.isPending ? t('saving') : t('saveRecord')}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {records.length === 0 ? (
+        <Card>
+          <CardContent className="py-8 flex flex-col items-center gap-2">
+            <Activity className="h-8 w-8 text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">{t('noMonitoringRecords')}</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {(() => {
+            const weightData = records.filter((r) => r.weight != null).reverse().map((r) => ({ date: format(new Date(r.recordedAt), 'MM/dd'), weight: r.weight }))
+            if (weightData.length === 0) return null
+            return (
+              <Card>
+                <CardHeader className="pb-2 pt-4"><CardTitle className="text-sm">{t('weightKg')}</CardTitle></CardHeader>
+                <CardContent className="pb-4">
+                  <ResponsiveContainer width="100%" height={140}>
+                    <LineChart data={weightData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} width={32} />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="weight" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )
+          })()}
+
+          {(() => {
+            const tempData = records.filter((r) => r.temperature != null).reverse().map((r) => ({ date: format(new Date(r.recordedAt), 'MM/dd'), temperature: r.temperature }))
+            if (tempData.length === 0) return null
+            return (
+              <Card>
+                <CardHeader className="pb-2 pt-4"><CardTitle className="text-sm">{t('temperatureC')}</CardTitle></CardHeader>
+                <CardContent className="pb-4">
+                  <ResponsiveContainer width="100%" height={140}>
+                    <LineChart data={tempData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} width={32} />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="temperature" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={{ r: 3 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )
+          })()}
+
+          {(() => {
+            const heightData = records.filter((r) => r.height != null).reverse().map((r) => ({ date: format(new Date(r.recordedAt), 'MM/dd'), height: r.height }))
+            if (heightData.length === 0) return null
+            return (
+              <Card>
+                <CardHeader className="pb-2 pt-4"><CardTitle className="text-sm">{t('heightCm')}</CardTitle></CardHeader>
+                <CardContent className="pb-4">
+                  <ResponsiveContainer width="100%" height={140}>
+                    <LineChart data={heightData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} width={32} />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="height" stroke="hsl(var(--chart-3))" strokeWidth={2} dot={{ r: 3 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )
+          })()}
+        </>
       )}
     </div>
   )

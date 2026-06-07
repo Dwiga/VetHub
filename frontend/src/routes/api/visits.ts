@@ -43,10 +43,11 @@ export const Route = createFileRoute('/api/visits')({
           orderBy: { createdAt: 'desc' },
           include: {
             dailyReports: true,
+            pet: { include: { owner: true } },
           },
         })
 
-        // Enrich each visit with financial summary
+        // Enrich each visit with financial summary & pet/owner info
         const enriched = visits.map((v) => {
           const endDate = v.dischargeDate ? new Date(v.dischargeDate) : new Date()
           const daysIn = Math.max(1, Math.ceil((endDate.getTime() - new Date(v.visitDate).getTime()) / (1000 * 60 * 60 * 24)))
@@ -61,9 +62,12 @@ export const Route = createFileRoute('/api/visits')({
             .reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0) + roomFeeTotal
           const balance = totalDeposits - totalCredits
 
-          const { dailyReports, ...rest } = v
+          const { dailyReports, pet, ...rest } = v
           return {
             ...rest,
+            petName: pet?.name ?? null,
+            ownerName: pet?.owner?.name ?? null,
+            ownerPhone: pet?.owner?.phone ?? null,
             totalDeposits,
             totalCredits,
             roomFeeTotal,

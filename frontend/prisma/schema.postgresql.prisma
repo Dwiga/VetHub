@@ -100,10 +100,11 @@ model Pet {
 
   species       Species        @relation(fields: [speciesId], references: [id])
   owner         User?          @relation("PetOwner", fields: [ownerId], references: [id])
-  vaccinations  Vaccination[]
-  visits        Visit[]
-  healthEvents  HealthEvent[]
-  hotelBookings HotelBooking[]
+  vaccinations      Vaccination[]
+  visits            Visit[]
+  healthEvents      HealthEvent[]
+  hotelBookings     HotelBooking[]
+  monitoringRecords Monitoring[]
 
   @@map("pets")
 }
@@ -231,4 +232,19 @@ model HealthEvent {
   pet Pet @relation(fields: [petId], references: [id], onDelete: Cascade)
 
   @@map("health_events")
+}
+
+model Monitoring {
+  id          Int      @id @default(autoincrement())
+  petId       Int      @map("pet_id")
+  weight      Float?
+  height      Float?
+  temperature Float?
+  notes       String?
+  recordedBy  String?  @map("recorded_by")
+  recordedAt  DateTime @default(now()) @map("recorded_at")
+
+  pet Pet @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@map("monitoring")
 }
