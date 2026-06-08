@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useCreateHotelBooking, useGetPet, useGetMe } from "@/lib/api-client";
@@ -17,9 +17,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useLang } from "@/contexts/LangContext";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/hotel/new/$petId")({
   component: HotelNewPage,
@@ -27,6 +29,7 @@ export const Route = createFileRoute("/hotel/new/$petId")({
 
 const schema = z.object({
   checkIn: z.string().min(1),
+  expectedCheckOut: z.string().optional(),
   roomType: z.string().optional(),
   dailyFee: z.string().optional(),
   notes: z.string().optional(),
@@ -41,6 +44,7 @@ function HotelNewPage() {
   const me = useGetMe();
   const createBooking = useCreateHotelBooking();
   const pet = useGetPet(petId);
+  const [reservationMode, setReservationMode] = useState(false);
   let guestName = "";
   let phone = pet.data?.owner?.phone ?? "";
   let petName = pet.data?.name ?? "";
@@ -50,6 +54,7 @@ function HotelNewPage() {
     resolver: zodResolver(schema),
     defaultValues: {
       checkIn: "",
+      expectedCheckOut: "",
       roomType: "",
       dailyFee: "",
       notes: "",
@@ -72,12 +77,14 @@ function HotelNewPage() {
         data: {
           clinicId: hotelId,
           checkIn: values.checkIn,
+          expectedCheckOut: values.expectedCheckOut || undefined,
           roomType: values.roomType || undefined,
           dailyFee: values.dailyFee ? String(values.dailyFee) : undefined,
           notes: values.notes || undefined,
+          status: reservationMode ? "reserved" : "active",
         },
       });
-      toast({ title: t("bookingCreated") });
+      toast({ title: reservationMode ? t("reservationCreated") : t("bookingCreated") });
       navigate({
         to: "/hotel/$bookingId",
         params: { bookingId: String((booking as any).id) },
@@ -121,6 +128,21 @@ function HotelNewPage() {
 
             <Separator />
 
+            <div className={cn(
+              "flex items-center justify-between p-3 rounded-lg border",
+              reservationMode ? "bg-primary/5 border-primary/30" : "bg-muted/50"
+            )}>
+              <div>
+                <p className="text-sm font-medium">{t("reservationMode")}</p>
+                <p className="text-xs text-muted-foreground">{t("reservationModeHint")}</p>
+              </div>
+              <Switch
+                checked={reservationMode}
+                onCheckedChange={setReservationMode}
+                data-testid="switch-reservation-mode"
+              />
+            </div>
+
             <div className="space-y-4">
               <FormField
                 control={form.control}
@@ -139,6 +161,25 @@ function HotelNewPage() {
                   </FormItem>
                 )}
               />
+              {reservationMode && (
+                <FormField
+                  control={form.control}
+                  name="expectedCheckOut"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("expectedCheckOut")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          {...field}
+                          data-testid="input-expected-check-out"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               <FormField
                 control={form.control}
                 name="roomType"
@@ -193,8 +234,11 @@ function HotelNewPage() {
               data-testid="btn-submit"
             >
               {createBooking.isPending
-                ? t("creatingBooking")
-                : t("createBooking")}
+                ? t("saving")
+                : reservationMode
+                  ? t("reservationMode")
+                  : t("createBooking")
+              }
             </Button>
           </form>
         </Form>

@@ -368,6 +368,18 @@ export const en = {
   passedAwayTitle: "Mark as Passed Away?",
   passedAwayDesc: "This will mark the pet as passed away. You can change this later from the edit form.",
   speciesAdded: "Species added",
+  expectedCheckOut: "Expected check-out",
+  reservationMode: "Reservation",
+  reservationModeHint: "Create a reservation for a future stay",
+  reservedStatus: "Reserved",
+  mulaiButton: "Start",
+  reservationCreated: "Reservation created",
+  editReservation: "Edit reservation",
+  deleteReservation: "Delete reservation",
+  deleteReservationConfirm: "Delete this reservation?",
+  noReservations: "No reservations yet",
+  editBooking: "Edit booking",
+  bookingUpdated: "Booking updated",
 };
 
 export type LangKeys = keyof typeof en;

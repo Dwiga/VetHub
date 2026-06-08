@@ -185,18 +185,19 @@ model Product {
 }
 
 model HotelBooking {
-  id          Int      @id @default(autoincrement())
-  petId       Int?     @map("pet_id")
-  hotelId     Int      @map("clinic_id")
-  checkIn     String   @map("check_in")
-  checkOut    String?  @map("check_out")
-  dailyFee    String?  @map("daily_fee")
-  status      String   @default("active")
-  notes       String?
-  roomType    String?  @map("room_type")
-  shareToken  String?  @unique @map("share_token")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id               Int      @id @default(autoincrement())
+  petId            Int?     @map("pet_id")
+  hotelId          Int      @map("clinic_id")
+  checkIn          String   @map("check_in")
+  checkOut         String?  @map("check_out")
+  expectedCheckOut String?  @map("expected_check_out")
+  dailyFee         String?  @map("daily_fee")
+  status           String   @default("active")
+  notes            String?
+  roomType         String?  @map("room_type")
+  shareToken       String?  @unique @map("share_token")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
   clinic    Clinic           @relation(fields: [hotelId], references: [id])
   pet       Pet?             @relation(fields: [petId], references: [id])

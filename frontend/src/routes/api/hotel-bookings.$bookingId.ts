@@ -20,6 +20,7 @@ export const Route = createFileRoute('/api/hotel-bookings/$bookingId')({
           petSpecies: booking.pet?.species?.name ?? null,
           ownerName: booking.pet?.owner?.name ?? null,
           ownerPhone: booking.pet?.owner?.phone ?? null,
+          expectedCheckOut: booking.expectedCheckOut,
         })
       },
       PATCH: async ({ request, params }) => {

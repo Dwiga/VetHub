@@ -914,6 +914,18 @@ export function useUpdateHotelBookingStandalone() {
   })
 }
 
+export function useDeleteHotelBookingStandalone() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ bookingId }: { bookingId: number }) =>
+      fetcher(`/api/hotel/${bookingId}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['hotel'] })
+    },
+  })
+}
+
 export function useListHotelLogs(bookingId: number) {
   const fetcher = useAuthedFetch()
   return useQuery<HotelDailyLog[]>({
