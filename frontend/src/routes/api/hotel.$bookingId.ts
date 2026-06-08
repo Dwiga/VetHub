@@ -38,6 +38,7 @@ export const Route = createFileRoute('/api/hotel/$bookingId')({
           petSpecies: booking.pet?.species?.name ?? null,
           ownerName: booking.pet?.owner?.name ?? null,
           ownerPhone: booking.pet?.owner?.phone ?? null,
+          expectedCheckOut: booking.expectedCheckOut,
           daysIn,
           roomFeeTotal,
           totalDeposits,
@@ -50,6 +51,19 @@ export const Route = createFileRoute('/api/hotel/$bookingId')({
         if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
         const id = Number(params.bookingId)
         const body = await request.json()
+
+        // If "Mulai": convert reserved → active, set checkIn to today if it was in the future
+        if (body.status === 'active') {
+          const current = await prisma.hotelBooking.findUnique({ where: { id } })
+          if (current && current.status === 'reserved') {
+            const checkInDate = new Date(current.checkIn)
+            const today = new Date()
+            today.setHours(0, 0, 0, 0)
+            if (checkInDate > today) {
+              body.checkIn = new Date().toISOString().split('T')[0]
+            }
+          }
+        }
 
         // If checking out, auto-create a room fee credit entry
         if (body.status === 'completed' || body.checkOut) {
@@ -80,6 +94,13 @@ export const Route = createFileRoute('/api/hotel/$bookingId')({
 
         const updated = await prisma.hotelBooking.update({ where: { id }, data: body })
         return Response.json(updated)
+      },
+      DELETE: async ({ request, params }) => {
+        const user = await getOrCreateLocalUser(request)
+        if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
+        const id = Number(params.bookingId)
+        await prisma.hotelBooking.delete({ where: { id } })
+        return new Response(null, { status: 204 })
       },
     },
   },

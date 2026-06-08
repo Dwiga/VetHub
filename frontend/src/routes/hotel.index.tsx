@@ -5,9 +5,10 @@ import { useGetMe, useListHotelBookings } from '@/lib/api-client'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Building2, Plus, PawPrint, Search } from 'lucide-react'
+import { Building2, UserPlus, PawPrint, Search, Calendar } from 'lucide-react'
 import { useState } from 'react'
 import { useLang } from '@/contexts/LangContext'
+import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/hotel/')({
   component: HotelDashboardPage,
@@ -21,7 +22,9 @@ function HotelDashboardPage() {
   const [searchInput, setSearchInput] = useState('')
 
   const activeQuery = useListHotelBookings(hotelId ?? undefined, 'active')
+  const reservedQuery = useListHotelBookings(hotelId ?? undefined, 'reserved')
   const bookings: any[] = activeQuery.data ?? []
+  const reservations: any[] = reservedQuery.data ?? []
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -35,8 +38,8 @@ function HotelDashboardPage() {
         title={t('activeGuests')}
         action={
           <Button asChild size="sm" variant="outline">
-            <Link to="/hotel/new">
-              <Plus className="h-4 w-4 mr-1" />
+            <Link to="/hotel/guests">
+              <UserPlus className="h-4 w-4 mr-1" />
               {t('newGuest')}
             </Link>
           </Button>
@@ -61,7 +64,8 @@ function HotelDashboardPage() {
           </Button>
         </form>
 
-        {activeQuery.isLoading && (
+        {/* Loading skeleton */}
+        {(activeQuery.isLoading || reservedQuery.isLoading) && (
           <div className="space-y-3">
             {[0, 1, 2].map((i) => (
               <div
@@ -72,7 +76,8 @@ function HotelDashboardPage() {
           </div>
         )}
 
-        {!activeQuery.isLoading && bookings.length === 0 && (
+        {/* Empty state */}
+        {!activeQuery.isLoading && !reservedQuery.isLoading && bookings.length === 0 && reservations.length === 0 && (
           <Card>
             <CardContent className="py-12 flex flex-col items-center gap-3">
               <Building2 className="h-10 w-10 text-muted-foreground/40" />
@@ -80,58 +85,121 @@ function HotelDashboardPage() {
                 {t('noActiveGuests')}
               </p>
               <Button asChild size="sm" variant="outline">
-                <Link to="/hotel/new">{t('newGuest')}</Link>
+                <Link to="/hotel/guests">{t('newGuest')}</Link>
               </Button>
             </CardContent>
           </Card>
         )}
 
-        <div className="space-y-3">
-          {bookings.map((b: any) => {
-            const daysIn = Math.max(
-              1,
-              Math.ceil(
-                (Date.now() - new Date(b.checkIn).getTime()) /
-                  (1000 * 60 * 60 * 24),
-              ),
-            )
-            const displayName = b.pet?.name ?? '—'
-            const displayType = b.pet?.species?.name ?? ''
-            const ownerName = b.pet?.owner?.name ?? ''
-            return (
-              <Card
-                key={b.id}
-                className="hover:border-primary/50 transition-colors cursor-pointer"
-                onClick={() =>
-                  navigate({
-                    to: '/hotel/$bookingId',
-                    params: { bookingId: String(b.id) },
-                  })
-                }
-              >
-                <CardContent className="py-3 flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center shrink-0">
-                    <PawPrint className="h-4 w-4 text-primary/60" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm">{displayName}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {displayType}
-                      {displayType && ownerName ? ' · ' : ''}
-                      {ownerName}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-xs font-medium text-primary">
-                      {daysIn} {t('daysLabel')}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{b.checkIn}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
+        {/* Reservations section */}
+        {!reservedQuery.isLoading && reservations.length > 0 && (
+          <div className="space-y-2">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              {t('reservationMode')} ({reservations.length})
+            </h2>
+            <div className="space-y-2">
+              {reservations.map((b: any) => {
+                const displayName = b.pet?.name ?? '—'
+                const displayType = b.pet?.species?.name ?? ''
+                const ownerName = b.pet?.owner?.name ?? ''
+                return (
+                  <Card
+                    key={b.id}
+                    className="hover:border-yellow-300 transition-colors cursor-pointer bg-yellow-50/30 border-yellow-200"
+                    onClick={() =>
+                      navigate({
+                        to: '/hotel/$bookingId',
+                        params: { bookingId: String(b.id) },
+                      })
+                    }
+                  >
+                    <CardContent className="py-3 flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
+                        <Calendar className="h-4 w-4 text-yellow-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm">{displayName}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {displayType}
+                          {displayType && ownerName ? ' · ' : ''}
+                          {ownerName}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-xs font-medium text-yellow-700">
+                          {b.checkIn}
+                        </p>
+                        {b.expectedCheckOut && (
+                          <p className="text-xs text-muted-foreground">{b.expectedCheckOut}</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Active guests section */}
+        {!activeQuery.isLoading && bookings.length > 0 && (
+          <div className="space-y-2">
+            {reservations.length > 0 && (
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                {t('activeGuests')} ({bookings.length})
+              </h2>
+            )}
+            <div className="space-y-3">
+              {bookings.map((b: any) => {
+                const daysIn = Math.max(
+                  1,
+                  Math.ceil(
+                    (Date.now() - new Date(b.checkIn).getTime()) /
+                      (1000 * 60 * 60 * 24),
+                  ),
+                )
+                const displayName = b.pet?.name ?? '—'
+                const displayType = b.pet?.species?.name ?? ''
+                const ownerName = b.pet?.owner?.name ?? ''
+                return (
+                  <Card
+                    key={b.id}
+                    className={cn(
+                      "hover:border-primary/50 transition-colors cursor-pointer",
+                      reservations.length === 0 && ""
+                    )}
+                    onClick={() =>
+                      navigate({
+                        to: '/hotel/$bookingId',
+                        params: { bookingId: String(b.id) },
+                      })
+                    }
+                  >
+                    <CardContent className="py-3 flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                        <PawPrint className="h-4 w-4 text-primary/60" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm">{displayName}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {displayType}
+                          {displayType && ownerName ? ' · ' : ''}
+                          {ownerName}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-xs font-medium text-primary">
+                          {daysIn} {t('daysLabel')}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{b.checkIn}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {bookings.length > 0 && (
           <div className="pt-2">

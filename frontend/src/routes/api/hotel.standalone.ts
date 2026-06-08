@@ -13,10 +13,11 @@ export const Route = createFileRoute('/api/hotel/standalone')({
           data: {
             hotelId: body.clinicId ?? body.hotelId,
             checkIn: body.checkIn,
+            expectedCheckOut: body.expectedCheckOut,
             roomType: body.roomType,
             dailyFee: body.dailyFee ? String(body.dailyFee) : undefined,
             notes: body.notes,
-            status: 'active',
+            status: body.status ?? 'active',
           },
         })
         return Response.json(booking, { status: 201 })

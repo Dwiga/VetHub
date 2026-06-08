@@ -17,7 +17,7 @@ function HotelHistoryPage() {
   const navigate = useNavigate()
 
   const histQuery = useListHotelBookings(hotelId ?? undefined)
-  const all: any[] = (histQuery.data ?? []).filter((b: any) => b.status !== 'active')
+  const all: any[] = (histQuery.data ?? []).filter((b: any) => b.status === 'completed' || b.status === 'cancelled')
 
   return (
     <AppShell>
