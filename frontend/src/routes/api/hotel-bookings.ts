@@ -63,10 +63,11 @@ export const Route = createFileRoute('/api/hotel-bookings')({
             petId,
             hotelId: user.hotelId ?? body.hotelId,
             checkIn: body.checkIn,
+            expectedCheckOut: body.expectedCheckOut,
             roomType: body.roomType,
             dailyFee: body.dailyFee,
             notes: body.notes,
-            status: 'active',
+            status: body.status ?? 'active',
           },
         })
         return Response.json(booking, { status: 201 })
