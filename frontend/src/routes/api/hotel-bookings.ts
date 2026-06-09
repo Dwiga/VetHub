@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { prisma } from '@/lib/db'
 import { getOrCreateLocalUser } from '@/lib/clerk-server'
+import { enrichHotelBooking } from '@/lib/hotel-enrichment'
 
 export const Route = createFileRoute('/api/hotel-bookings')({
   server: {
@@ -39,26 +40,7 @@ export const Route = createFileRoute('/api/hotel-bookings')({
             dailyLogs: true,
           },
         })
-        const enriched = bookings.map((b) => {
-          const endDate = b.checkOut ? new Date(b.checkOut) : new Date()
-          const daysIn = Math.max(1, Math.ceil((endDate.getTime() - new Date(b.checkIn).getTime()) / (1000 * 60 * 60 * 24)))
-          const dailyFeeNum = b.dailyFee ? parseFloat(b.dailyFee) : 0
-          const roomFeeTotal = dailyFeeNum * daysIn
-          const creditTotal = (b as any).dailyLogs
-            ? ((b as any).dailyLogs as any[]).filter((l: any) => l.type === 'credit').reduce((s: number, l: any) => s + (parseFloat(l.amount) || 0), 0)
-            : 0
-          return {
-            ...b,
-            petName: b.pet?.name ?? null,
-            petSpecies: b.pet?.species?.name ?? null,
-            ownerName: b.pet?.owner?.name ?? null,
-            ownerPhone: b.pet?.owner?.phone ?? null,
-            clinicName: b.clinic?.name ?? null,
-            daysIn,
-            roomFeeTotal,
-            totalCost: roomFeeTotal + creditTotal,
-          }
-        })
+        const enriched = bookings.map(enrichHotelBooking)
         return Response.json(enriched)
       },
       POST: async ({ request }) => {
@@ -66,10 +48,12 @@ export const Route = createFileRoute('/api/hotel-bookings')({
         if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
         const userHotelId = user.hotelId ?? user.clinicId
         const url = new URL(request.url)
-        const petId = Number(url.searchParams.get('petId'))
         const body = await request.json()
-        const hotelId = userHotelId ?? body.hotelId
+
+        const petId = Number(url.searchParams.get('petId') || body.petId) || undefined
+        const hotelId = userHotelId ?? body.hotelId ?? body.clinicId
         if (!hotelId) return Response.json({ error: 'missing hotelId' }, { status: 400 })
+
         const booking = await prisma.hotelBooking.create({
           data: {
             petId,
@@ -77,7 +61,7 @@ export const Route = createFileRoute('/api/hotel-bookings')({
             checkIn: body.checkIn,
             expectedCheckOut: body.expectedCheckOut,
             roomType: body.roomType,
-            dailyFee: body.dailyFee,
+            dailyFee: body.dailyFee ? String(body.dailyFee) : undefined,
             notes: body.notes,
             status: body.status ?? 'active',
           },
