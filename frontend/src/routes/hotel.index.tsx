@@ -38,7 +38,7 @@ function HotelDashboardPage() {
         title={t('activeGuests')}
         action={
           <Button asChild size="sm" variant="outline">
-            <Link to="/hotel/guests">
+            <Link to="/hotel/guests" search={{ phone: '' }}>
               <UserPlus className="h-4 w-4 mr-1" />
               {t('newGuest')}
             </Link>
@@ -79,13 +79,18 @@ function HotelDashboardPage() {
         {/* Empty state */}
         {!activeQuery.isLoading && !reservedQuery.isLoading && bookings.length === 0 && reservations.length === 0 && (
           <Card>
-            <CardContent className="py-12 flex flex-col items-center gap-3">
+            <CardContent className="py-12 flex flex-col items-center gap-4">
               <Building2 className="h-10 w-10 text-muted-foreground/40" />
-              <p className="text-sm text-muted-foreground text-center">
-                {t('noActiveGuests')}
-              </p>
+              <div className="text-center space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  {t('noActiveGuests')}
+                </p>
+                <p className="text-xs text-muted-foreground/70 max-w-xs leading-relaxed">
+                  {t('howToAddNewGuest')}
+                </p>
+              </div>
               <Button asChild size="sm" variant="outline">
-                <Link to="/hotel/guests">{t('newGuest')}</Link>
+                <Link to="/hotel/guests" search={{ phone: '' }}>{t('newGuest')}</Link>
               </Button>
             </CardContent>
           </Card>

@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { prisma } from '@/lib/db'
 import { getOrCreateLocalUser } from '@/lib/clerk-server'
+import { normalizePhone } from '@/lib/phone'
 
 export const Route = createFileRoute('/api/search/owner')({
   server: {
@@ -9,14 +10,27 @@ export const Route = createFileRoute('/api/search/owner')({
         const user = await getOrCreateLocalUser(request)
         if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
         const url = new URL(request.url)
-        const phone = url.searchParams.get('phone') ?? ''
+        const rawPhone = url.searchParams.get('phone') ?? ''
+        const phone = normalizePhone(rawPhone)
 
         // 1. Look up registered user by phone
         const owner = await prisma.user.findFirst({
-          where: { phone: { contains: phone } },
+          where: { phone },
         })
 
-        // 2. Collect pets — from registered owner AND from unowned pets with matching ownerPhone
+        // 2. Look up guest contact (for unregistered owners)
+        const clinicId = user.hotelId ?? user.clinicId
+        let guestContact = null
+        if (clinicId) {
+          guestContact = await prisma.guestContact.findUnique({
+            where: { phone_hotelId: { phone, hotelId: clinicId } },
+          })
+        }
+
+        // Determine best owner name: User name first, then guest contact name
+        const guestOwnerName = owner?.name ?? guestContact?.name ?? null
+
+        // 3. Collect pets — from registered owner AND from unowned pets with matching ownerPhone
         const ownedPets = owner
           ? await prisma.pet.findMany({
               where: { ownerId: owner.id },
@@ -27,7 +41,7 @@ export const Route = createFileRoute('/api/search/owner')({
         const unownedPets = await prisma.pet.findMany({
           where: {
             ownerId: null,
-            ownerPhone: { contains: phone },
+            ownerPhone: phone,
           },
           include: { species: true },
         })
@@ -38,23 +52,25 @@ export const Route = createFileRoute('/api/search/owner')({
             name: p.name,
             speciesName: p.species?.name ?? null,
             status: p.status,
-            ownerName: owner!.name ?? null,
-            ownerPhone: owner!.phone ?? null,
+            ownerName: owner?.name ?? null,
+            ownerPhone: owner?.phone ?? null,
           })),
           ...unownedPets.map(p => ({
             id: p.id,
             name: p.name,
             speciesName: p.species?.name ?? null,
             status: p.status,
-            ownerName: null,
+            ownerName: guestContact?.name ?? null,
             ownerPhone: p.ownerPhone,
           })),
         ]
 
         return Response.json({
           owner: owner
-            ? { id: owner.id, name: owner.name, phone: owner.phone }
-            : null,
+            ? { id: owner.id, name: owner.name ?? guestContact?.name ?? null, phone: owner.phone, address: guestContact?.address ?? null }
+            : guestContact
+              ? { id: 0, name: guestContact.name, phone, address: guestContact.address }
+              : null,
           pets: allPets,
         })
       },

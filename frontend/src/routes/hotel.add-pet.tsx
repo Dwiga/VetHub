@@ -17,11 +17,11 @@ function AddPetForOwnerPage() {
 
   return (
     <AppShell>
-      <PageHeader title={t('addPetForOwner') || 'Add pet for owner'} back backHref="/hotel/search" />
+      <PageHeader title={t('addPetForOwner') || 'Add pet for owner'} back backHref="/hotel/guests" />
       <AddPetForOwnerForm
         initialPhone={phone}
-        backHref="/hotel/search"
-        successRedirect={(phone) => '/hotel/search'}
+        backHref="/hotel/guests"
+        successRedirect={(phone) => ({ to: '/hotel/guests', search: { phone } })}
       />
     </AppShell>
   )

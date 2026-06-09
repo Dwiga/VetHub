@@ -21,7 +21,7 @@ function AddPetForOwnerPage() {
       <AddPetForOwnerForm
         initialPhone={phone}
         backHref="/vet/search"
-        successRedirect={(phone) => '/vet/search'}
+        successRedirect={(phone) => ({ to: '/vet/search', search: { q: phone } })}
       />
     </AppShell>
   )

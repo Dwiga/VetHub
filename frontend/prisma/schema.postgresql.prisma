@@ -52,10 +52,11 @@ model Clinic {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  staff    Staff[]
-  visits   Visit[]
-  products Product[]
-  bookings HotelBooking[]
+  staff          Staff[]
+  visits         Visit[]
+  products       Product[]
+  bookings       HotelBooking[]
+  guestContacts  GuestContact[]
 
   @@map("clinics")
 }
@@ -248,4 +249,19 @@ model Monitoring {
   pet Pet @relation(fields: [petId], references: [id], onDelete: Cascade)
 
   @@map("monitoring")
+}
+
+model GuestContact {
+  id        Int      @id @default(autoincrement())
+  phone     String
+  name      String?
+  address   String?
+  hotelId   Int      @map("hotel_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  clinic Clinic @relation(fields: [hotelId], references: [id])
+
+  @@unique([phone, hotelId])
+  @@map("guest_contacts")
 }
