@@ -41,6 +41,23 @@ export const Route = createFileRoute('/api/pets')({
           } else {
             ownerId = null
             ownerPhone = normalizedPhone
+            // Save guest contact info for future lookups
+            const clinicId = user.hotelId ?? user.clinicId
+            if (clinicId && (body.ownerName || body.ownerAddress)) {
+              await prisma.guestContact.upsert({
+                where: { phone_hotelId: { phone: normalizedPhone, hotelId: clinicId } },
+                create: {
+                  phone: normalizedPhone,
+                  name: body.ownerName || undefined,
+                  address: body.ownerAddress || undefined,
+                  hotelId: clinicId,
+                },
+                update: {
+                  name: body.ownerName || undefined,
+                  address: body.ownerAddress || undefined,
+                },
+              })
+            }
           }
         }
 

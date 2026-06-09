@@ -370,6 +370,8 @@ export const id: Record<LangKeys, string> = {
   passedAwayTitle: "Tandai Sebagai Meninggal?",
   passedAwayDesc: "Ini akan menandai hewan sebagai meninggal. Anda dapat mengubahnya nanti dari form edit.",
   speciesAdded: "Spesies ditambahkan",
+  howToAddNewVisit: "Masukkan nomor HP client untuk mencari. Jika sudah memiliki hewan, pilih hewan yang akan masuk. Jika belum, tambahkan hewan baru.",
+  howToAddNewGuest: "Masukkan nomor HP client untuk mencari. Jika sudah memiliki hewan, pilih hewan yang akan dititipkan. Jika belum, tambahkan hewan baru.",
   expectedCheckOut: "Perkiraan check-out",
   reservationMode: "Reservasi",
   reservationModeHint: "Buat reservasi untuk masa inap mendatang",

@@ -1,5 +1,6 @@
+import { useEffect } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { useAddPetForOwner, useListSpecies } from '@/lib/api-client'
+import { useAddPetForOwner, useListSpecies, useSearchPetOwner } from '@/lib/api-client'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -9,9 +10,12 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { useLang } from '@/contexts/LangContext'
+import { normalizePhone } from '@/lib/phone'
 
 const schema = z.object({
   ownerPhone: z.string().min(1, 'Owner phone is required'),
+  ownerName: z.string().optional(),
+  ownerAddress: z.string().optional(),
   name: z.string().min(1, 'Pet name is required'),
   speciesId: z.string().min(1, 'Species is required'),
   dateOfBirth: z.string().optional(),
@@ -23,7 +27,7 @@ const schema = z.object({
 type AddPetForOwnerFormProps = {
   initialPhone: string
   backHref: string
-  successRedirect: (phone: string) => string
+  successRedirect: (phone: string) => { to: string; search: Record<string, string> }
 }
 
 export function AddPetForOwnerForm({ initialPhone, backHref, successRedirect }: AddPetForOwnerFormProps) {
@@ -33,15 +37,31 @@ export function AddPetForOwnerForm({ initialPhone, backHref, successRedirect }: 
   const { toast } = useToast()
   const { t } = useLang()
 
+  const normalizedPhone = normalizePhone(initialPhone)
+  const ownerResult = useSearchPetOwner({ phone: normalizedPhone })
+  const existingName = ownerResult.data?.owner?.name ?? null
+  const existingAddress = ownerResult.data?.owner?.address ?? null
+
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { ownerPhone: initialPhone, name: '', speciesId: '', dateOfBirth: '', gender: 'unknown', sterilized: false, color: '' },
+    defaultValues: { ownerPhone: initialPhone, ownerName: existingName ?? '', ownerAddress: '', name: '', speciesId: '', dateOfBirth: '', gender: 'unknown', sterilized: false, color: '' },
   })
+
+  useEffect(() => {
+    if (existingName) {
+      form.setValue('ownerName', existingName)
+    }
+    if (existingAddress) {
+      form.setValue('ownerAddress', existingAddress)
+    }
+  }, [existingName, existingAddress])
 
   async function onSubmit(values: z.infer<typeof schema>) {
     const pet = await addPet.mutateAsync({
       data: {
         ownerPhone: values.ownerPhone,
+        ownerName: values.ownerName || undefined,
+        ownerAddress: values.ownerAddress || undefined,
         name: values.name,
         speciesId: parseInt(values.speciesId),
         dateOfBirth: values.dateOfBirth || undefined,
@@ -51,7 +71,7 @@ export function AddPetForOwnerForm({ initialPhone, backHref, successRedirect }: 
       },
     })
     toast({ title: `${(pet as any).name} ${t('registered') || 'registered'}` })
-    navigate({ to: successRedirect(values.ownerPhone), search: { q: values.ownerPhone } as any })
+    navigate(successRedirect(values.ownerPhone) as any)
   }
 
   return (
@@ -63,6 +83,35 @@ export function AddPetForOwnerForm({ initialPhone, backHref, successRedirect }: 
             <FormControl>
               <Input {...field} placeholder="+62 812..." data-testid="input-owner-phone" />
             </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+        {existingName ? (
+          <div className="space-y-1">
+            <p className="text-sm font-medium">{t('guestName') || 'Owner name'}</p>
+            <p className="text-sm text-muted-foreground">{existingName}</p>
+          </div>
+        ) : (
+          <FormField control={form.control} name="ownerName" render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('guestName') || 'Owner name'}</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g. Budi" data-testid="input-owner-name" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+        )}
+        <FormField control={form.control} name="ownerAddress" render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t('addressLabel') || 'Address'}</FormLabel>
+            {existingAddress ? (
+              <p className="text-sm text-muted-foreground">{existingAddress}</p>
+            ) : (
+              <FormControl>
+                <Input {...field} placeholder="e.g. Jl. Merdeka No. 10" data-testid="input-owner-address" />
+              </FormControl>
+            )}
             <FormMessage />
           </FormItem>
         )} />

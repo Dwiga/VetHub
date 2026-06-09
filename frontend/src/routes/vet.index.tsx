@@ -45,9 +45,12 @@ function ActiveVisitsList({ clinicId }: { clinicId: number }) {
 
   if (list.length === 0) return (
     <Card>
-      <CardContent className="py-10 flex flex-col items-center gap-2">
+      <CardContent className="py-10 flex flex-col items-center gap-4">
         <Stethoscope className="h-10 w-10 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground text-center">{t('noActivePatientsShort')}</p>
+        <div className="text-center space-y-2">
+          <p className="text-sm text-muted-foreground">{t('noActivePatientsShort')}</p>
+          <p className="text-xs text-muted-foreground/70 max-w-xs leading-relaxed">{t('howToAddNewVisit')}</p>
+        </div>
       </CardContent>
     </Card>
   )
