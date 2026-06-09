@@ -9,6 +9,10 @@ export const Route = createFileRoute('/api/hotel/$hotelId/reports/summary')({
         const user = await getOrCreateLocalUser(request)
         if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
         const hotelId = Number(params.hotelId)
+        const userHotelId = user.hotelId ?? user.clinicId
+        if (!userHotelId || hotelId !== userHotelId) {
+          return Response.json({ error: 'forbidden' }, { status: 403 })
+        }
         const url = new URL(request.url)
         const period = url.searchParams.get('period') ?? 'monthly'
         const date = url.searchParams.get('date') ?? new Date().toISOString().split('T')[0]

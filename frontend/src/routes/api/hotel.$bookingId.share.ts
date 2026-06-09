@@ -17,6 +17,11 @@ export const Route = createFileRoute('/api/hotel/$bookingId/share')({
         })
         if (!booking) return Response.json({ error: 'not found' }, { status: 404 })
 
+        const userHotelId = user.hotelId ?? user.clinicId
+        if (!userHotelId || booking.hotelId !== userHotelId) {
+          return Response.json({ error: 'forbidden' }, { status: 403 })
+        }
+
         let shareToken = booking.shareToken
         if (!shareToken) {
           shareToken = crypto.randomBytes(16).toString('hex')

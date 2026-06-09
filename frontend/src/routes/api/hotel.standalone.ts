@@ -8,10 +8,13 @@ export const Route = createFileRoute('/api/hotel/standalone')({
       POST: async ({ request }) => {
         const user = await getOrCreateLocalUser(request)
         if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
+        const userHotelId = user.hotelId ?? user.clinicId
         const body = await request.json()
+        const hotelId = userHotelId ?? body.clinicId ?? body.hotelId
+        if (!hotelId) return Response.json({ error: 'missing hotelId' }, { status: 400 })
         const booking = await prisma.hotelBooking.create({
           data: {
-            hotelId: body.clinicId ?? body.hotelId,
+            hotelId,
             checkIn: body.checkIn,
             expectedCheckOut: body.expectedCheckOut,
             roomType: body.roomType,

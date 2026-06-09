@@ -9,6 +9,12 @@ export const Route = createFileRoute('/api/hotel/$bookingId/logs')({
         const user = await getOrCreateLocalUser(request)
         if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
         const bookingId = Number(params.bookingId)
+        const booking = await prisma.hotelBooking.findUnique({ where: { id: bookingId } })
+        if (!booking) return Response.json({ error: 'not found' }, { status: 404 })
+        const userHotelId = user.hotelId ?? user.clinicId
+        if (!userHotelId || booking.hotelId !== userHotelId) {
+          return Response.json({ error: 'forbidden' }, { status: 403 })
+        }
         const logs = await prisma.hotelDailyLog.findMany({ where: { bookingId }, orderBy: { logDate: 'desc' } })
         return Response.json(logs)
       },
@@ -16,6 +22,12 @@ export const Route = createFileRoute('/api/hotel/$bookingId/logs')({
         const user = await getOrCreateLocalUser(request)
         if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
         const bookingId = Number(params.bookingId)
+        const booking = await prisma.hotelBooking.findUnique({ where: { id: bookingId } })
+        if (!booking) return Response.json({ error: 'not found' }, { status: 404 })
+        const userHotelId = user.hotelId ?? user.clinicId
+        if (!userHotelId || booking.hotelId !== userHotelId) {
+          return Response.json({ error: 'forbidden' }, { status: 403 })
+        }
         const body = await request.json()
         const log = await prisma.hotelDailyLog.create({
           data: {

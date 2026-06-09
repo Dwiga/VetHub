@@ -9,6 +9,10 @@ export const Route = createFileRoute('/api/hotel/clinic/$clinicId/bookings')({
         const user = await getOrCreateLocalUser(request)
         if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
         const hotelId = Number(params.clinicId)
+        const userHotelId = user.hotelId ?? user.clinicId
+        if (!userHotelId || hotelId !== userHotelId) {
+          return Response.json({ error: 'forbidden' }, { status: 403 })
+        }
         const url = new URL(request.url)
         const status = url.searchParams.get('status')
         const where: Record<string, any> = { hotelId }

@@ -8,13 +8,22 @@ export const Route = createFileRoute('/api/hotel-bookings')({
       GET: async ({ request }) => {
         const user = await getOrCreateLocalUser(request)
         if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
+        const userHotelId = user.hotelId ?? user.clinicId
         const url = new URL(request.url)
         const status = url.searchParams.get('status') ?? undefined
         const clinicId = url.searchParams.get('clinicId') ?? undefined
         const petId = url.searchParams.get('petId') ?? undefined
         const where: Record<string, any> = {}
         if (status) where.status = status
-        if (clinicId) where.hotelId = Number(clinicId)
+        if (clinicId) {
+          const requestedHotelId = Number(clinicId)
+          if (!userHotelId || requestedHotelId !== userHotelId) {
+            return Response.json({ error: 'forbidden' }, { status: 403 })
+          }
+          where.hotelId = requestedHotelId
+        } else if (userHotelId) {
+          where.hotelId = userHotelId
+        }
         if (petId) where.petId = Number(petId)
         const bookings = await prisma.hotelBooking.findMany({
           where,
@@ -55,13 +64,16 @@ export const Route = createFileRoute('/api/hotel-bookings')({
       POST: async ({ request }) => {
         const user = await getOrCreateLocalUser(request)
         if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
+        const userHotelId = user.hotelId ?? user.clinicId
         const url = new URL(request.url)
         const petId = Number(url.searchParams.get('petId'))
         const body = await request.json()
+        const hotelId = userHotelId ?? body.hotelId
+        if (!hotelId) return Response.json({ error: 'missing hotelId' }, { status: 400 })
         const booking = await prisma.hotelBooking.create({
           data: {
             petId,
-            hotelId: user.hotelId ?? body.hotelId,
+            hotelId,
             checkIn: body.checkIn,
             expectedCheckOut: body.expectedCheckOut,
             roomType: body.roomType,

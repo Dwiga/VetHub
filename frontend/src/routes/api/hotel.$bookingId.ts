@@ -18,6 +18,11 @@ export const Route = createFileRoute('/api/hotel/$bookingId')({
         })
         if (!booking) return Response.json({ error: 'not found' }, { status: 404 })
 
+        const userHotelId = user.hotelId ?? user.clinicId
+        if (!userHotelId || booking.hotelId !== userHotelId) {
+          return Response.json({ error: 'forbidden' }, { status: 403 })
+        }
+
         const endDate = booking.checkOut
           ? new Date(booking.checkOut)
           : new Date()
@@ -50,6 +55,12 @@ export const Route = createFileRoute('/api/hotel/$bookingId')({
         const user = await getOrCreateLocalUser(request)
         if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
         const id = Number(params.bookingId)
+        const booking = await prisma.hotelBooking.findUnique({ where: { id } })
+        if (!booking) return Response.json({ error: 'not found' }, { status: 404 })
+        const userHotelId = user.hotelId ?? user.clinicId
+        if (!userHotelId || booking.hotelId !== userHotelId) {
+          return Response.json({ error: 'forbidden' }, { status: 403 })
+        }
         const body = await request.json()
 
         // If "Mulai": convert reserved → active, set checkIn to today if it was in the future
@@ -99,6 +110,12 @@ export const Route = createFileRoute('/api/hotel/$bookingId')({
         const user = await getOrCreateLocalUser(request)
         if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
         const id = Number(params.bookingId)
+        const booking = await prisma.hotelBooking.findUnique({ where: { id } })
+        if (!booking) return Response.json({ error: 'not found' }, { status: 404 })
+        const userHotelId = user.hotelId ?? user.clinicId
+        if (!userHotelId || booking.hotelId !== userHotelId) {
+          return Response.json({ error: 'forbidden' }, { status: 403 })
+        }
         await prisma.hotelBooking.delete({ where: { id } })
         return new Response(null, { status: 204 })
       },
