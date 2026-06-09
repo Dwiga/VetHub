@@ -368,6 +368,8 @@ export const en = {
   passedAwayTitle: "Mark as Passed Away?",
   passedAwayDesc: "This will mark the pet as passed away. You can change this later from the edit form.",
   speciesAdded: "Species added",
+  howToAddNewVisit: "Enter the client's phone number to search. If they already have a pet, select which pet to check in. If not, add a new pet.",
+  howToAddNewGuest: "Enter the client's phone number to search. If they already have a pet, select which pet to check in. If not, add a new pet.",
   expectedCheckOut: "Expected check-out",
   reservationMode: "Reservation",
   reservationModeHint: "Create a reservation for a future stay",

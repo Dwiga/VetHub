@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
 import { AppShell } from '@/components/layout/AppShell'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -8,16 +9,19 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PawPrint, Phone, User, Plus } from 'lucide-react'
-import { useState } from 'react'
 import { normalizePhone } from '@/lib/phone'
 import { useLang } from '@/contexts/LangContext'
 
 export const Route = createFileRoute('/hotel/guests')({
   component: HotelGuestsPage,
+  validateSearch: (search: Record<string, string>) => ({
+    phone: search.phone ?? '',
+  }),
 })
 
 function HotelGuestsPage() {
-  const [phone, setPhone] = useState('')
+  const { phone: initialPhone } = Route.useSearch()
+  const [phone, setPhone] = useState(initialPhone)
   const [petName, setPetName] = useState('')
   const [tab, setTab] = useState('phone')
   const navigate = useNavigate()
@@ -29,6 +33,14 @@ function HotelGuestsPage() {
 
   const ownerResult = useSearchPetOwner({ phone: submittedPhone })
   const petResults = useSearchPet({ name: submittedPetName })
+
+  useEffect(() => {
+    if (initialPhone) {
+      const normalized = normalizePhone(initialPhone)
+      setPhone(normalized)
+      setSubmittedPhone(normalized)
+    }
+  }, [])
 
   function handlePhoneSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -66,7 +78,7 @@ function HotelGuestsPage() {
 
           {ownerResult.isLoading && <div className="h-24 bg-muted animate-pulse rounded-xl" />}
 
-          {ownerResult.isError && (
+          {(ownerResult.isError || (!ownerResult.isLoading && submittedPhone && !owner)) && (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground text-center">{t('noOwnerFound')}</p>
               <Button asChild variant="outline" size="sm" className="w-full" data-testid="btn-add-pet-for-owner">

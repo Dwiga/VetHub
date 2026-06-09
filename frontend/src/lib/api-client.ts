@@ -504,7 +504,7 @@ export function useUpdatePetStatus() {
 // ─────────────────────────────  Search  ─────────────────────────────────────
 
 export interface OwnerSearchResult {
-  owner: { id: number; name: string | null; phone: string | null } | null
+  owner: { id: number; name: string | null; phone: string | null; address: string | null } | null
   pets: Array<{ id: number; name: string; speciesName: string | null; status: string; ownerName: string | null; ownerPhone: string | null }>
 }
 
@@ -535,7 +535,10 @@ export function useAddPetForOwner() {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['pets'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['pets'] })
+      qc.invalidateQueries({ queryKey: ['search'] })
+    },
   })
 }
 

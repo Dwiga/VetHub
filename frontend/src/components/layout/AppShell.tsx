@@ -70,7 +70,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const hotelOwnerNav = [
     { href: "/hotel", icon: Hotel, label: t("nav_hotel") },
-    { href: "/hotel/guests", icon: Users, label: t("nav_guests") },
+    { href: "/hotel/guests" as any, icon: Users, label: t("nav_guests"), search: { phone: '' } as any },
     { href: "/hotel/history", icon: Clock, label: t("nav_history") },
   ];
 
@@ -259,13 +259,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         data-testid="bottom-nav"
       >
         <div className="max-w-lg mx-auto flex items-center justify-around">
-          {navItems.map(({ href, icon: Icon, label }) => {
+          {navItems.map(({ href, icon: Icon, label, search }: any) => {
             const active =
               location === href || location.startsWith(href + "/");
             return (
               <Link
                 key={href}
                 to={href as never}
+                search={search}
                 data-testid={`nav-${href
                   .replace("/", "")
                   .replace("/", "-")}`}

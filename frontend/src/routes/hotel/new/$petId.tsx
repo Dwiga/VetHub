@@ -102,7 +102,7 @@ function HotelNewPage() {
 
   return (
     <AppShell>
-      <PageHeader title={t("newHotelBooking")} back backHref="/hotel/search" />
+      <PageHeader title={t("newHotelBooking")} back backHref="/hotel/guests" />
 
       {isLoading ? (
         <div className="space-y-4 pt-4">
