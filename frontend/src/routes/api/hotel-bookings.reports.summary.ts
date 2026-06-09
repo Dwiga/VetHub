@@ -1,17 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { prisma } from '@/lib/db'
 import { getOrCreateLocalUser } from '@/lib/clerk-server'
+import { computeFinancials } from '@/lib/hotel-enrichment'
 
-export const Route = createFileRoute('/api/hotel/$hotelId/reports/summary')({
+export const Route = createFileRoute('/api/hotel-bookings/reports/summary')({
   server: {
     handlers: {
-      GET: async ({ request, params }) => {
+      GET: async ({ request }) => {
         const user = await getOrCreateLocalUser(request)
         if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
-        const hotelId = Number(params.hotelId)
+        const hotelId = user.hotelId ?? user.clinicId
+        if (!hotelId) return Response.json({ error: 'forbidden' }, { status: 403 })
+
         const url = new URL(request.url)
-        const period = url.searchParams.get('period') ?? 'monthly'
-        const date = url.searchParams.get('date') ?? new Date().toISOString().split('T')[0]
         const startDate = url.searchParams.get('startDate') ?? null
         const endDate = url.searchParams.get('endDate') ?? null
 
@@ -28,7 +29,11 @@ export const Route = createFileRoute('/api/hotel/$hotelId/reports/summary')({
             ...dateFilter,
           },
           include: {
-            pet: true,
+            pet: {
+              include: {
+                owner: true,
+              },
+            },
             dailyLogs: true,
           },
           orderBy: { checkIn: 'desc' },
@@ -63,34 +68,19 @@ export const Route = createFileRoute('/api/hotel/$hotelId/reports/summary')({
           .slice(0, 10)
 
         // Guest list
-        const guests = bookings.map(b => ({
-          bookingId: b.id,
-          petName: b.pet?.name ?? 'Unknown',
-          ownerPhone: b.pet?.ownerPhone ?? '-',
-          checkIn: b.checkIn,
-          checkOut: b.checkOut,
-          totalCost: (b.dailyLogs || [])
-            .filter(l => l.type === 'deposit')
-            .reduce((sum, l) => sum + (parseFloat(l.amount || '0')), 0),
-          balance: (() => {
-            const deposits = (b.dailyLogs || [])
-              .filter(l => l.type === 'deposit')
-              .reduce((sum, l) => sum + (parseFloat(l.amount || '0')), 0)
-            const credits = (b.dailyLogs || [])
-              .filter(l => l.type === 'credit')
-              .reduce((sum, l) => sum + (parseFloat(l.amount || '0')), 0)
-            const roomFee = b.dailyFee
-              ? (() => {
-                  const daysIn = b.checkOut
-                    ? Math.max(1, Math.ceil((new Date(b.checkOut).getTime() - new Date(b.checkIn).getTime()) / (1000 * 60 * 60 * 24)))
-                    : Math.max(1, Math.ceil((Date.now() - new Date(b.checkIn).getTime()) / (1000 * 60 * 60 * 24)))
-                  return daysIn * parseFloat(b.dailyFee)
-                })()
-              : 0
-            return deposits - (credits + roomFee)
-          })(),
-          status: b.status,
-        }))
+        const guests = bookings.map(b => {
+          const financials = computeFinancials({ checkIn: b.checkIn, checkOut: b.checkOut, dailyFee: b.dailyFee, dailyLogs: b.dailyLogs as any })
+          return {
+            bookingId: b.id,
+            petName: b.pet?.name ?? 'Unknown',
+            ownerPhone: (b.pet as any)?.owner?.phone ?? '-',
+            checkIn: b.checkIn,
+            checkOut: b.checkOut,
+            totalCost: financials.totalDeposits,
+            balance: financials.balance,
+            status: b.status,
+          }
+        })
 
         return Response.json({
           totalGuests,
