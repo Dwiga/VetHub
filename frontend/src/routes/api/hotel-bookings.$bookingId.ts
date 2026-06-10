@@ -25,7 +25,14 @@ export const Route = createFileRoute('/api/hotel-bookings/$bookingId')({
           return Response.json({ error: 'forbidden' }, { status: 403 })
         }
 
-        return Response.json(enrichHotelBooking(booking))
+        let guestContact = null
+        if (!booking.pet.owner && booking.pet.ownerPhone) {
+          guestContact = await prisma.guestContact.findUnique({
+            where: { phone: booking.pet.ownerPhone },
+          })
+        }
+
+        return Response.json(enrichHotelBooking(booking, guestContact))
       },
       PATCH: async ({ request, params }) => {
         const user = await getOrCreateLocalUser(request)

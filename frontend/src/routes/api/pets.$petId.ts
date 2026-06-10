@@ -21,7 +21,20 @@ export const Route = createFileRoute('/api/pets/$petId')({
         if (!pet) {
           return Response.json({ error: 'not found' }, { status: 404 })
         }
-        return Response.json(pet)
+
+        let guestContact = null
+        if (!pet.owner && pet.ownerPhone) {
+          guestContact = await prisma.guestContact.findUnique({
+            where: { phone: pet.ownerPhone },
+          })
+        }
+
+        return Response.json({
+          ...pet,
+          guestContact: guestContact
+            ? { name: guestContact.name, phone: guestContact.phone, address: guestContact.address }
+            : null,
+        })
       },
       PATCH: async ({ request, params }) => {
         const user = await getOrCreateLocalUser(request)

@@ -56,7 +56,6 @@ model Clinic {
   visits         Visit[]
   products       Product[]
   bookings       HotelBooking[]
-  guestContacts  GuestContact[]
 
   @@map("clinics")
 }
@@ -237,15 +236,11 @@ model HealthEvent {
 
 model GuestContact {
   id        Int      @id @default(autoincrement())
-  phone     String
+  phone     String   @unique
   name      String?
   address   String?
-  hotelId   Int      @map("hotel_id")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  clinic Clinic @relation(fields: [hotelId], references: [id])
-
-  @@unique([phone, hotelId])
   @@map("guest_contacts")
 }
