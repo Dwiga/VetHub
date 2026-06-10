@@ -18,14 +18,10 @@ export const Route = createFileRoute('/api/search/owner')({
           where: { phone },
         })
 
-        // 2. Look up guest contact (for unregistered owners)
-        const clinicId = user.hotelId ?? user.clinicId
-        let guestContact = null
-        if (clinicId) {
-          guestContact = await prisma.guestContact.findUnique({
-            where: { phone_hotelId: { phone, hotelId: clinicId } },
-          })
-        }
+        // 2. Look up guest contact (for unregistered owners, global across all hotels/vets)
+        const guestContact = await prisma.guestContact.findUnique({
+          where: { phone },
+        })
 
         // Determine best owner name: User name first, then guest contact name
         const guestOwnerName = owner?.name ?? guestContact?.name ?? null

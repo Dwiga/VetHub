@@ -45,8 +45,8 @@ function HotelNewPage() {
   const createBooking = useCreateHotelBooking();
   const pet = useGetPet(petId);
   const [reservationMode, setReservationMode] = useState(false);
-  let guestName = "";
-  let phone = pet.data?.owner?.phone ?? "";
+  let guestName = pet.data?.owner?.name ?? pet.data?.guestContact?.name ?? "";
+  let phone = pet.data?.owner?.phone ?? pet.data?.guestContact?.phone ?? "";
   let petName = pet.data?.name ?? "";
   let speciesName = pet.data?.species?.name ?? "";
 

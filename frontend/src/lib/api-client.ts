@@ -149,6 +149,7 @@ export interface Pet {
   photoUrl: string | null
   species?: Species | null
   owner?: { id: number; name: string | null; phone: string | null } | null
+  guestContact?: { name: string | null; phone: string | null; address: string | null } | null
 }
 
 export function useListMyPets() {
