@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { PawPrint, Phone, User, Plus } from 'lucide-react'
+import { PawPrint, Phone, User, Plus, Info } from 'lucide-react'
 import { normalizePhone } from '@/lib/phone'
 import { useLang } from '@/contexts/LangContext'
 
@@ -66,6 +66,13 @@ function HotelGuestsPage() {
         </TabsList>
 
         <TabsContent value="phone" className="space-y-4">
+          <Card className="border-blue-200 bg-blue-50/50">
+            <CardContent className="py-3 flex gap-3">
+              <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
+              <p className="text-sm text-blue-800 leading-relaxed">{t('guestsDirection')}</p>
+            </CardContent>
+          </Card>
+
           <form onSubmit={handlePhoneSearch} className="flex gap-2">
             <Input
               placeholder={t('phonePlaceholder')}
@@ -80,7 +87,7 @@ function HotelGuestsPage() {
 
           {(ownerResult.isError || (!ownerResult.isLoading && submittedPhone && !owner)) && (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground text-center">{t('noOwnerFound')}</p>
+              <p className="text-sm text-muted-foreground text-center">{t('noOwnerFoundDirection')}</p>
               <Button asChild variant="outline" size="sm" className="w-full" data-testid="btn-add-pet-for-owner">
                 <Link to="/hotel/add-pet" search={{ phone: submittedPhone }}>{t('addPetForNumber')}</Link>
               </Button>
@@ -94,12 +101,15 @@ function HotelGuestsPage() {
                   <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center">
                     <User className="h-5 w-5 text-primary/60" />
                   </div>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm" data-testid="text-owner-name">{owner.name ?? 'Unnamed'}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <Phone className="h-3 w-3" />{owner.phone}
                     </p>
                   </div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${owner.id !== 0 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                    {owner.id !== 0 ? t('registeredOwner') : t('unregisteredContact')}
+                  </span>
                 </CardContent>
               </Card>
 
@@ -109,6 +119,10 @@ function HotelGuestsPage() {
                   <Link to="/hotel/add-pet" search={{ phone: owner.phone ?? '' }}><Plus className="h-4 w-4 mr-1" />{t('addPet')}</Link>
                 </Button>
               </div>
+
+              {ownerPets.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-2">{t('ownerFoundNoPets')}</p>
+              )}
 
               <div className="space-y-3">
                 {ownerPets.map((pet: any) => (

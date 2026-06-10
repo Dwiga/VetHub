@@ -138,7 +138,7 @@ function HotelBookingPage() {
     setIsSharing(true)
     try {
       const result = await shareBooking.mutateAsync({ bookingId })
-      const url = (result as any).shareUrl
+      const url = `${window.location.origin}/share/hotel/${(result as any).token}`
       await navigator.clipboard.writeText(url)
       toast({
         title: t('shareStaySuccess'),
@@ -205,11 +205,9 @@ function HotelBookingPage() {
         back
         backHref="/hotel"
         action={
-          isActive ? (
-            <Button size="icon" variant="ghost" onClick={handleShare} disabled={isSharing}>
-              <Share2 className="h-4 w-4" />
-            </Button>
-          ) : null
+          <Button size="icon" variant="ghost" onClick={handleShare} disabled={isSharing}>
+            <Share2 className="h-4 w-4" />
+          </Button>
         }
       />
 
