@@ -12,7 +12,10 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push --skip-generate",
-    "prisma:seed": "bun run prisma/seed.ts"
+    "prisma:seed": "bun run prisma/seed.ts",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@clerk/backend": "^2.18.0",
@@ -83,13 +86,20 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^25.3.3",
     "@types/pg": "^8.20.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.0.4",
+    "@vitest/coverage-v8": "4.1.8",
+    "@vitest/ui": "^4.1.8",
+    "jsdom": "^29.1.1",
     "prisma": "^7.8.0",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "vitest": "^4.1.8"
   },
   "trustedDependencies": [
     "@clerk/shared"
