@@ -17,6 +17,13 @@ export const Route = createFileRoute('/api/share/hotel/$token')({
         })
         if (!booking) return Response.json({ error: 'not found' }, { status: 404 })
 
+        let guestContact = null
+        if (!booking.pet.owner && booking.pet.ownerPhone) {
+          guestContact = await prisma.guestContact.findUnique({
+            where: { phone: booking.pet.ownerPhone },
+          })
+        }
+
         const financials = computeFinancials(booking)
         const daysIn = computeDaysIn(booking)
 
@@ -31,7 +38,8 @@ export const Route = createFileRoute('/api/share/hotel/$token')({
           id: booking.id,
           petName: booking.pet?.name ?? null,
           petSpecies: booking.pet?.species?.name ?? null,
-          ownerName: booking.pet?.owner?.name ?? null,
+          ownerName: booking.pet?.owner?.name ?? guestContact?.name ?? null,
+          ownerPhone: booking.pet?.owner?.phone ?? guestContact?.phone ?? booking.pet?.ownerPhone ?? null,
           checkIn: booking.checkIn,
           checkOut: booking.checkOut,
           status: booking.status,

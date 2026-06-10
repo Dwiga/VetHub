@@ -58,15 +58,19 @@ export function roomFeeDescription(dailyFeeNum: number, daysIn: number): string 
   return `Room fee (${daysIn} days × Rp ${dailyFeeNum.toLocaleString('id-ID')})`
 }
 
-export function enrichHotelBooking(booking: any) {
+export function enrichHotelBooking(
+  booking: any,
+  guestContact?: { name?: string | null; phone?: string | null } | null,
+) {
   const financials = computeFinancials(booking)
+  const petOwnerPhone = booking.pet?.ownerPhone as string | null | undefined
 
   return {
     ...booking,
     petName: booking.pet?.name ?? null,
     petSpecies: booking.pet?.species?.name ?? null,
-    ownerName: booking.pet?.owner?.name ?? null,
-    ownerPhone: booking.pet?.owner?.phone ?? null,
+    ownerName: booking.pet?.owner?.name ?? guestContact?.name ?? null,
+    ownerPhone: booking.pet?.owner?.phone ?? guestContact?.phone ?? petOwnerPhone ?? null,
     clinicName: booking.clinic?.name ?? null,
     daysIn: financials.daysIn,
     roomFeeTotal: financials.roomFeeTotal,
