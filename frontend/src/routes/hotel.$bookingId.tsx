@@ -219,10 +219,6 @@ function HotelBookingPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-semibold text-sm text-yellow-800">{t('reservedStatus')}</p>
-                  <p className="text-xs text-yellow-600 mt-1">
-                    {t('checkIn')}: {b.checkIn}
-                    {expectedCheckOut ? ` · ${t('expectedCheckOut')}: ${expectedCheckOut}` : ''}
-                  </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button size="sm" variant="outline" onClick={openEditDialog}>
@@ -249,6 +245,10 @@ function HotelBookingPage() {
                   </Button>
                 </div>
               </div>
+              <p className="text-xs text-yellow-600 mt-2">
+                {t('checkIn')}: {b.checkIn}
+                {expectedCheckOut ? ` · ${t('expectedCheckOut')}: ${expectedCheckOut}` : ''}
+              </p>
             </CardContent>
           </Card>
         )}

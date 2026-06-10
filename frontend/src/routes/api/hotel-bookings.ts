@@ -40,7 +40,20 @@ export const Route = createFileRoute('/api/hotel-bookings')({
             dailyLogs: true,
           },
         })
-        const enriched = bookings.map(enrichHotelBooking)
+        const ownerPhones = bookings
+          .filter((b) => !b.pet.owner && b.pet.ownerPhone)
+          .map((b) => b.pet.ownerPhone!)
+        const uniquePhones = [...new Set(ownerPhones)]
+        const guestContacts = uniquePhones.length > 0
+          ? await prisma.guestContact.findMany({ where: { phone: { in: uniquePhones } } })
+          : []
+        const guestMap = new Map(guestContacts.map((g) => [g.phone, g]))
+
+        const enriched = bookings.map((b) => {
+          const petOwnerPhone = (b.pet as any).ownerPhone as string | null | undefined
+          const guestContact = (!b.pet.owner && petOwnerPhone) ? (guestMap.get(petOwnerPhone) ?? null) : null
+          return enrichHotelBooking(b, guestContact)
+        })
         return Response.json(enriched)
       },
       POST: async ({ request }) => {
