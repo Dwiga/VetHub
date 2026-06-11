@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { useCreateHotelBooking, useGetPet, useGetMe } from "@/lib/api-client";
+import { useCreateHotelBooking, useGetPet, useGetMe, useListAvailableRooms } from "@/lib/api-client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useLang } from "@/contexts/LangContext";
 import { Separator } from "@/components/ui/separator";
@@ -30,6 +31,7 @@ export const Route = createFileRoute("/hotel/new/$petId")({
 const schema = z.object({
   checkIn: z.string().min(1),
   expectedCheckOut: z.string().optional(),
+  roomId: z.string().optional(),
   roomType: z.string().optional(),
   dailyFee: z.string().optional(),
   notes: z.string().optional(),
@@ -55,6 +57,7 @@ function HotelNewPage() {
     defaultValues: {
       checkIn: "",
       expectedCheckOut: "",
+      roomId: undefined,
       roomType: "",
       dailyFee: "",
       notes: "",
@@ -67,17 +70,32 @@ function HotelNewPage() {
     }
   }, []);
 
+  const checkIn = form.watch("checkIn");
+  const expectedCheckOut = form.watch("expectedCheckOut");
+  const effectiveCheckOut = expectedCheckOut || checkIn;
+  const hotelId = me.data?.hotelId;
+  const availableRooms = useListAvailableRooms(hotelId ?? undefined, checkIn, effectiveCheckOut);
+
+  function handleRoomSelect(roomId: string) {
+    form.setValue("roomId", roomId);
+    const room = availableRooms.data?.find(r => String(r.id) === roomId);
+    if (room?.dailyFee) {
+      form.setValue("dailyFee", room.dailyFee);
+    }
+  }
+
   async function onSubmit(values: z.infer<typeof schema>) {
-    const hotelId = me.data?.hotelId;
-    if (!hotelId) return;
+    const hid = me.data?.hotelId;
+    if (!hid) return;
 
     try {
       const booking = await createBooking.mutateAsync({
         petId,
         data: {
-          clinicId: hotelId,
+          clinicId: hid,
           checkIn: values.checkIn,
           expectedCheckOut: values.expectedCheckOut || undefined,
+          roomId: values.roomId ? Number(values.roomId) : undefined,
           roomType: values.roomType || undefined,
           dailyFee: values.dailyFee ? String(values.dailyFee) : undefined,
           notes: values.notes || undefined,
@@ -89,10 +107,13 @@ function HotelNewPage() {
         to: "/hotel/$bookingId",
         params: { bookingId: String((booking as any).id) },
       });
-    } catch {
+    } catch (err: any) {
+      const msg = err?.message?.includes?.("room_already_booked")
+        ? "Room is not available for the selected dates"
+        : "Failed to create booking";
       toast({
         title: "Error",
-        description: "Failed to create booking",
+        description: msg,
         variant: "destructive",
       });
     }
@@ -180,6 +201,37 @@ function HotelNewPage() {
                   )}
                 />
               )}
+              <FormField
+                control={form.control}
+                name="roomId"
+                render={() => (
+                  <FormItem>
+                    <FormLabel>{t("roomSelectLabel")}</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={form.watch("roomId")}
+                        onValueChange={handleRoomSelect}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("roomSelectPlaceholder")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableRooms.data?.map((r) => (
+                            <SelectItem key={r.id} value={String(r.id)}>
+                              <span>{r.name}</span>
+                              <span className="text-muted-foreground ml-1">
+                                {(r.availableSlots ?? r.capacity - (r.bookings?.length ?? 0))}/{r.capacity ?? 1}
+                                {r.dailyFee ? ` · Rp ${Number(r.dailyFee).toLocaleString('id-ID')}` : ''}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="roomType"

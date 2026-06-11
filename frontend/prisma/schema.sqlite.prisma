@@ -55,6 +55,7 @@ model Clinic {
   staff          Staff[]
   visits         Visit[]
   products       Product[]
+  rooms          Room[]
   bookings       HotelBooking[]
 
   @@map("clinics")
@@ -195,11 +196,13 @@ model HotelBooking {
   status           String   @default("active")
   notes            String?
   roomType         String?  @map("room_type")
+  roomId           Int?     @map("room_id")
   shareToken       String?  @unique @map("share_token")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   clinic    Clinic           @relation(fields: [hotelId], references: [id])
+  room      Room?            @relation(fields: [roomId], references: [id])
   pet       Pet?             @relation(fields: [petId], references: [id])
   dailyLogs HotelDailyLog[]
 
@@ -232,6 +235,23 @@ model HealthEvent {
   pet Pet @relation(fields: [petId], references: [id], onDelete: Cascade)
 
   @@map("health_events")
+}
+
+model Room {
+  id        Int      @id @default(autoincrement())
+  name      String
+  capacity  Int      @default(1)
+  dailyFee  String?  @map("daily_fee")
+  status    String   @default("available")
+  hotelId   Int      @map("clinic_id")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  hotel    Clinic         @relation(fields: [hotelId], references: [id])
+  bookings HotelBooking[]
+
+  @@map("rooms")
 }
 
 model GuestContact {

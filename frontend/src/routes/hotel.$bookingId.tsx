@@ -284,6 +284,12 @@ function HotelBookingPage() {
                 <span className="font-medium">{(b as any).roomType}</span>
               </div>
             )}
+            {(b as any).roomName && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">{t('roomAllocation')}</span>
+                <span className="font-medium">{(b as any).roomName}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">{t('daysLabel')}</span>
               <span className="font-medium">{isReserved ? '—' : daysIn}</span>
