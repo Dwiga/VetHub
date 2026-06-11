@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Building2, Plus, PawPrint } from 'lucide-react'
 import { useLang } from '@/contexts/LangContext'
+import { calculateDaysIn } from '@/lib/hotel-utils'
 
 export const Route = createFileRoute('/vet/hotel')({
   component: HotelListPage,
@@ -53,7 +54,7 @@ function HotelListPage() {
 
       <div className="space-y-3">
         {bookings.map((b: any) => {
-          const daysIn = Math.ceil((Date.now() - new Date(b.checkIn).getTime()) / (1000 * 60 * 60 * 24))
+          const daysIn = calculateDaysIn({ checkIn: b.checkIn })
           return (
             <Card
               key={b.id}

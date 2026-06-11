@@ -15,6 +15,7 @@ import { useState } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { useLang } from '@/contexts/LangContext'
 import { cn } from '@/lib/utils'
+import { calculateDaysIn, calculateRoomFee } from '@/lib/hotel-utils'
 
 export const Route = createFileRoute('/hotel/$bookingId')({
   component: HotelBookingPage,
@@ -180,14 +181,9 @@ function HotelBookingPage() {
   const petDisplayType = (b as any).petSpecies ?? ''
   const ownerDisplayName = (b as any).ownerName ?? ''
   const ownerDisplayPhone = (b as any).ownerPhone ?? ''
-  const daysIn = (b as any).daysIn ?? (
-    b.checkOut
-      ? Math.max(1, Math.ceil((new Date(b.checkOut).getTime() - new Date(b.checkIn).getTime()) / (1000 * 60 * 60 * 24)))
-      : Math.max(1, Math.ceil((Date.now() - new Date(b.checkIn).getTime()) / (1000 * 60 * 60 * 24)))
-  )
+  const daysIn = (b as any).daysIn ?? calculateDaysIn({ checkIn: b.checkIn, checkOut: b.checkOut })
   const dailyFee = (b as any).dailyFee ?? null
-  const dailyFeeNum = dailyFee ? parseFloat(dailyFee) : 0
-  const roomFeeTotal = dailyFeeNum * daysIn
+  const { dailyFeeNum, roomFeeTotal } = calculateRoomFee({ checkIn: b.checkIn, checkOut: b.checkOut, dailyFee })
   const totalDeposits = (b as any).totalDeposits ?? 0
   const totalCredits = (b as any).totalCredits ?? 0
   const balance = (b as any).balance ?? 0
