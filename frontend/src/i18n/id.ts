@@ -390,4 +390,6 @@ export const id: Record<LangKeys, string> = {
   noReservations: "Belum ada reservasi",
   editBooking: "Edit pemesanan",
   bookingUpdated: "Pemesanan diperbarui",
+
+  vetSearchDirection: "Ketik nomor HP pemilik. Jika pemilik dan hewan sudah terdaftar, pilih hewan untuk membuat kunjungan. Jika pemilik terdaftar tapi hewannya tidak, tambahkan hewan baru. Jika keduanya belum ada, cukup ketik nomornya untuk menambahkan semuanya.",
 };
