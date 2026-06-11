@@ -24,6 +24,7 @@ export const Route = createFileRoute('/api/clinic/$clinicId/products')({
           data: {
             clinicId,
             name: body.name,
+            barcode: body.barcode,
             category: body.category,
             description: body.description,
             price: String(body.price ?? 0),
