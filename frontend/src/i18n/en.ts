@@ -388,6 +388,7 @@ export const en = {
   noReservations: "No reservations yet",
   editBooking: "Edit booking",
   bookingUpdated: "Booking updated",
+  vetSearchDirection: "Type the owner's phone number. If the owner and pet are listed, select the pet to create a visit. If the owner exists but the pet isn't listed, add a new pet for them. If neither exists yet, just type the number to add both.",
   rooms: "Rooms",
   roomManagement: "Room management",
   addRoom: "Add room",

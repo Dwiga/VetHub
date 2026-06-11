@@ -26,6 +26,7 @@ function VetSearchPage() {
         backHref="/vet"
         addPetPath="/vet/add-pet"
         initialQ={q}
+        directionMessage={t('vetSearchDirection')}
         actionButton={(pet) =>
           me.data?.clinicId ? (
             <Button
