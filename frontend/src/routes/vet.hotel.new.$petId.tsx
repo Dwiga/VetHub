@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { AppShell } from '@/components/layout/AppShell'
 import { PageHeader } from '@/components/shared/PageHeader'
-import { useCreateHotelBooking, useGetPet } from '@/lib/api-client'
+import { useCreateHotelBooking, useGetPet, useListAvailableRooms, useGetMe } from '@/lib/api-client'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -9,6 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { useLang } from '@/contexts/LangContext'
 import { Card, CardContent } from '@/components/ui/card'
@@ -20,6 +21,7 @@ export const Route = createFileRoute('/vet/hotel/new/$petId')({
 
 const schema = z.object({
   checkIn: z.string().min(1),
+  roomId: z.string().optional(),
   dailyFee: z.string().optional(),
   notes: z.string().optional(),
 })
@@ -32,21 +34,36 @@ function HotelNewPage() {
   const { t } = useLang()
   const createBooking = useCreateHotelBooking()
   const pet = useGetPet(petId)
+  const me = useGetMe()
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
       checkIn: new Date().toISOString().split('T')[0],
+      roomId: undefined,
       dailyFee: '',
       notes: '',
     },
   })
+
+  const checkIn = form.watch('checkIn')
+  const hotelId = me.data?.hotelId ?? me.data?.clinicId
+  const availableRooms = useListAvailableRooms(hotelId ?? undefined, checkIn, checkIn)
+
+  function handleRoomSelect(roomId: string) {
+    form.setValue('roomId', roomId)
+    const room = availableRooms.data?.find(r => String(r.id) === roomId)
+    if (room?.dailyFee) {
+      form.setValue('dailyFee', room.dailyFee)
+    }
+  }
 
   async function onSubmit(values: z.infer<typeof schema>) {
     const booking = await createBooking.mutateAsync({
       petId,
       data: {
         checkIn: values.checkIn,
+        roomId: values.roomId ? Number(values.roomId) : undefined,
         dailyFee: values.dailyFee ? parseFloat(values.dailyFee) : undefined,
         notes: values.notes || undefined,
       },
@@ -79,6 +96,31 @@ function HotelNewPage() {
             <FormItem>
               <FormLabel>{t('checkIn')}</FormLabel>
               <FormControl><Input type="date" {...field} data-testid="input-check-in" /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={form.control} name="roomId" render={() => (
+            <FormItem>
+              <FormLabel>{t('roomSelectLabel')}</FormLabel>
+              <FormControl>
+                <Select
+                  value={form.watch('roomId')}
+                  onValueChange={handleRoomSelect}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('roomSelectPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableRooms.data?.map((r) => (
+                      <SelectItem key={r.id} value={String(r.id)}>
+                        <span>{r.name}</span>
+                        {r.type && <span className="text-muted-foreground ml-1">({r.type})</span>}
+                        {r.dailyFee && <span className="text-muted-foreground ml-1">- Rp {Number(r.dailyFee).toLocaleString('id-ID')}</span>}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )} />

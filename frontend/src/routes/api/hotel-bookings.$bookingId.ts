@@ -15,6 +15,7 @@ export const Route = createFileRoute('/api/hotel-bookings/$bookingId')({
           include: {
             pet: { include: { species: true, owner: true } },
             clinic: true,
+            room: true,
             dailyLogs: true,
           },
         })

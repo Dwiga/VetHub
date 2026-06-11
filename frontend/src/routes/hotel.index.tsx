@@ -1,11 +1,11 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { AppShell } from '@/components/layout/AppShell'
 import { PageHeader } from '@/components/shared/PageHeader'
-import { useGetMe, useListHotelBookings } from '@/lib/api-client'
+import { useGetMe, useListHotelBookings, useListHotelRooms } from '@/lib/api-client'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Building2, UserPlus, PawPrint, Search, Calendar } from 'lucide-react'
+import { Building2, UserPlus, PawPrint, Search, Calendar, DoorOpen } from 'lucide-react'
 import { useState } from 'react'
 import { useLang } from '@/contexts/LangContext'
 import { cn } from '@/lib/utils'
@@ -23,8 +23,12 @@ function HotelDashboardPage() {
 
   const activeQuery = useListHotelBookings(hotelId ?? undefined, 'active')
   const reservedQuery = useListHotelBookings(hotelId ?? undefined, 'reserved')
+  const roomsQuery = useListHotelRooms(hotelId ?? undefined)
   const bookings: any[] = activeQuery.data ?? []
   const reservations: any[] = reservedQuery.data ?? []
+  const rooms: any[] = roomsQuery.data ?? []
+  const availableRooms = rooms.filter((r: any) => r.status === 'available' && (!r.bookings || r.bookings.length === 0))
+  const occupiedRooms = rooms.filter((r: any) => r.status === 'occupied' || (r.bookings && r.bookings.length > 0))
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -37,12 +41,20 @@ function HotelDashboardPage() {
       <PageHeader
         title={t('activeGuests')}
         action={
-          <Button asChild size="sm" variant="outline">
-            <Link to="/hotel/guests" search={{ phone: '' }}>
-              <UserPlus className="h-4 w-4 mr-1" />
-              {t('newGuest')}
-            </Link>
-          </Button>
+          <div className="flex gap-1">
+            <Button asChild size="sm" variant="outline">
+              <Link to="/hotel/rooms">
+                <DoorOpen className="h-4 w-4 mr-1" />
+                {t('rooms')}
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link to="/hotel/guests" search={{ phone: '' }}>
+                <UserPlus className="h-4 w-4 mr-1" />
+                {t('newGuest')}
+              </Link>
+            </Button>
+          </div>
         }
       />
 
@@ -63,6 +75,32 @@ function HotelDashboardPage() {
             <Search className="h-4 w-4" />
           </Button>
         </form>
+
+        {rooms.length > 0 && (
+          <Link to="/hotel/rooms" className="block">
+            <Card className="hover:border-primary/50 transition-colors cursor-pointer bg-muted/30">
+              <CardContent className="py-3 flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                  <DoorOpen className="h-4 w-4 text-blue-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm">{t('roomOccupancy')}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {availableRooms.length} {t('roomStatusAvailable')} · {occupiedRooms.length} {t('roomStatusOccupied')} · {rooms.length} {t('totalRooms')}
+                  </p>
+                </div>
+                <div className="shrink-0">
+                  <div className="w-16 h-2 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full bg-blue-500 rounded-full transition-all"
+                      style={{ width: `${rooms.length > 0 ? (occupiedRooms.length / rooms.length) * 100 : 0}%` }}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        )}
 
         {/* Loading skeleton */}
         {(activeQuery.isLoading || reservedQuery.isLoading) && (
