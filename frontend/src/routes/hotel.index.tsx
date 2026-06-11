@@ -9,6 +9,7 @@ import { Building2, UserPlus, PawPrint, Search, Calendar, DoorOpen } from 'lucid
 import { useState } from 'react'
 import { useLang } from '@/contexts/LangContext'
 import { cn } from '@/lib/utils'
+import { calculateDaysIn } from '@/lib/hotel-utils'
 
 export const Route = createFileRoute('/hotel/')({
   component: HotelDashboardPage,
@@ -199,13 +200,7 @@ function HotelDashboardPage() {
             )}
             <div className="space-y-3">
               {bookings.map((b: any) => {
-                const daysIn = Math.max(
-                  1,
-                  Math.ceil(
-                    (Date.now() - new Date(b.checkIn).getTime()) /
-                      (1000 * 60 * 60 * 24),
-                  ),
-                )
+                const daysIn = calculateDaysIn({ checkIn: b.checkIn })
                 const displayName = b.pet?.name ?? '—'
                 const displayType = b.pet?.species?.name ?? ''
                 const ownerName = b.pet?.owner?.name ?? ''
