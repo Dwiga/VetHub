@@ -926,8 +926,7 @@ export const useDeleteHotelLog = useDeleteHotelDailyLog
 export interface HotelRoom {
   id: number
   name: string
-  type: string | null
-  capacity: number | null
+  capacity: number
   dailyFee: string | null
   status: string
   hotelId: number
@@ -939,6 +938,8 @@ export interface HotelRoom {
     expectedCheckOut: string | null
     status: string
   }>
+  conflictingCount?: number
+  availableSlots?: number
 }
 
 export function useListHotelRooms(hotelId: number | undefined, status?: string) {

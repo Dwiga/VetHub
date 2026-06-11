@@ -240,8 +240,7 @@ model HealthEvent {
 model Room {
   id        Int      @id @default(autoincrement())
   name      String
-  type      String?
-  capacity  Int?
+  capacity  Int      @default(1)
   dailyFee  String?  @map("daily_fee")
   status    String   @default("available")
   hotelId   Int      @map("clinic_id")

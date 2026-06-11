@@ -39,8 +39,7 @@ export const Route = createFileRoute('/api/hotel/rooms')({
         const room = await prisma.room.create({
           data: {
             name: body.name,
-            type: body.type,
-            capacity: body.capacity ? parseInt(body.capacity) : undefined,
+            capacity: body.capacity ? parseInt(body.capacity) : 1,
             dailyFee: body.dailyFee ? String(body.dailyFee) : undefined,
             hotelId: userHotelId,
           },

@@ -28,8 +28,7 @@ export const Route = createFileRoute('/api/hotel/rooms/$roomId')({
         const body = await request.json()
         const data: Record<string, any> = {}
         if (body.name !== undefined) data.name = body.name
-        if (body.type !== undefined) data.type = body.type
-        if (body.capacity !== undefined) data.capacity = body.capacity ? parseInt(body.capacity) : null
+        if (body.capacity !== undefined) data.capacity = body.capacity ? parseInt(body.capacity) : 1
         if (body.dailyFee !== undefined) data.dailyFee = body.dailyFee ? String(body.dailyFee) : null
         if (body.status !== undefined) data.status = body.status
         if (body.isActive !== undefined) data.isActive = body.isActive

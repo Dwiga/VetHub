@@ -18,7 +18,7 @@ export const Route = createFileRoute('/api/hotel/rooms/available')({
         if (!checkIn || !checkOut) return Response.json({ error: 'checkIn and checkOut required' }, { status: 400 })
 
         const rooms = await prisma.room.findMany({
-          where: { hotelId: userHotelId, isActive: true, status: 'available' },
+          where: { hotelId: userHotelId, isActive: true, status: { not: 'maintenance' } },
           orderBy: { name: 'asc' },
           include: {
             bookings: {
@@ -31,19 +31,23 @@ export const Route = createFileRoute('/api/hotel/rooms/available')({
           },
         })
 
-        const availableRooms = rooms.filter((room) => {
-          return !room.bookings.some((booking) => {
-            const bCheckIn = new Date(booking.checkIn)
-            const bCheckOut = booking.checkOut
-              ? new Date(booking.checkOut)
-              : booking.expectedCheckOut
-                ? new Date(booking.expectedCheckOut)
-                : new Date('2099-12-31')
-            const reqCheckIn = new Date(checkIn)
-            const reqCheckOut = new Date(checkOut)
-            return reqCheckIn < bCheckOut && reqCheckOut > bCheckIn
+        const availableRooms = rooms
+          .map((room) => {
+            const conflictingCount = room.bookings.filter((booking) => {
+              const bCheckIn = new Date(booking.checkIn)
+              const bCheckOut = booking.checkOut
+                ? new Date(booking.checkOut)
+                : booking.expectedCheckOut
+                  ? new Date(booking.expectedCheckOut)
+                  : new Date('2099-12-31')
+              const reqCheckIn = new Date(checkIn)
+              const reqCheckOut = new Date(checkOut)
+              return reqCheckIn < bCheckOut && reqCheckOut > bCheckIn
+            }).length
+            const availableSlots = room.capacity - conflictingCount
+            return { ...room, conflictingCount, availableSlots }
           })
-        })
+          .filter((room) => room.availableSlots > 0)
 
         return Response.json(availableRooms)
       },

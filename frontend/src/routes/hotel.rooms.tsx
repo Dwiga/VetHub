@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Pencil, Trash2, DoorOpen, Settings } from 'lucide-react'
+import { Plus, Pencil, Trash2, DoorOpen } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useLang } from '@/contexts/LangContext'
 import { cn } from '@/lib/utils'
@@ -18,9 +18,6 @@ export const Route = createFileRoute('/hotel/rooms')({
   component: HotelRoomsPage,
 })
 
-const EMPTY_ROOM = { name: '', type: '', capacity: '', dailyFee: '', status: 'available' as string }
-
-const ROOM_TYPES = ['Standard Cage', 'Large Cage', 'VIP Room', 'Cat Room', 'Isolation', 'Play Area', 'Other']
 const ROOM_STATUSES = ['available', 'occupied', 'maintenance']
 
 function HotelRoomsPage() {
@@ -36,12 +33,12 @@ function HotelRoomsPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingRoom, setEditingRoom] = useState<any>(null)
-  const [form, setForm] = useState(EMPTY_ROOM)
+  const [form, setForm] = useState({ name: '', capacity: '1', dailyFee: '', status: 'available' })
   const [saving, setSaving] = useState(false)
 
   function openCreate() {
     setEditingRoom(null)
-    setForm(EMPTY_ROOM)
+    setForm({ name: '', capacity: '1', dailyFee: '', status: 'available' })
     setDialogOpen(true)
   }
 
@@ -49,8 +46,7 @@ function HotelRoomsPage() {
     setEditingRoom(room)
     setForm({
       name: room.name ?? '',
-      type: room.type ?? '',
-      capacity: room.capacity ? String(room.capacity) : '',
+      capacity: room.capacity ? String(room.capacity) : '1',
       dailyFee: room.dailyFee ?? '',
       status: room.status ?? 'available',
     })
@@ -66,8 +62,7 @@ function HotelRoomsPage() {
           roomId: editingRoom.id,
           data: {
             name: form.name,
-            type: form.type || undefined,
-            capacity: form.capacity || undefined,
+            capacity: form.capacity || '1',
             dailyFee: form.dailyFee || undefined,
             status: form.status,
           },
@@ -77,8 +72,7 @@ function HotelRoomsPage() {
         await createRoom.mutateAsync({
           data: {
             name: form.name,
-            type: form.type || undefined,
-            capacity: form.capacity || undefined,
+            capacity: form.capacity || '1',
             dailyFee: form.dailyFee || undefined,
           },
         })
@@ -146,8 +140,11 @@ function HotelRoomsPage() {
           <div className="space-y-2">
             {rooms.map((room: any) => {
               const activeBookings = room.bookings ?? []
-              const isOccupied = activeBookings.length > 0 || room.status === 'occupied'
+              const used = activeBookings.length
+              const cap = room.capacity ?? 1
+              const isFull = used >= cap
               const isMaintenance = room.status === 'maintenance'
+              const isOccupied = isMaintenance ? false : (isFull || room.status === 'occupied')
 
               return (
                 <Card key={room.id} className={cn(
@@ -156,33 +153,36 @@ function HotelRoomsPage() {
                   <CardContent className="py-3 flex items-center gap-3">
                     <div className={cn(
                       'h-10 w-10 rounded-full flex items-center justify-center shrink-0',
-                      isMaintenance ? 'bg-gray-100' : isOccupied ? 'bg-orange-100' : 'bg-green-100',
+                      isMaintenance ? 'bg-gray-100' : isFull ? 'bg-orange-100' : isOccupied ? 'bg-blue-100' : 'bg-green-100',
                     )}>
                       <DoorOpen className={cn(
                         'h-4 w-4',
-                        isMaintenance ? 'text-gray-400' : isOccupied ? 'text-orange-600' : 'text-green-600',
+                        isMaintenance ? 'text-gray-400' : isFull ? 'text-orange-600' : isOccupied ? 'text-blue-600' : 'text-green-600',
                       )} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm">{room.name}</p>
                       <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-                        {room.type && <span>{room.type}</span>}
-                        {room.capacity != null && <span>{t('capacityLabel')}: {room.capacity}</span>}
                         {room.dailyFee && <span>Rp {Number(room.dailyFee).toLocaleString('id-ID')}/{t('dayUnit')}</span>}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <span className={cn(
                           'text-[10px] px-1.5 py-0.5 rounded-full font-medium',
                           isMaintenance ? 'bg-gray-100 text-gray-600' :
-                          isOccupied ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700',
+                          isFull ? 'bg-orange-100 text-orange-700' :
+                          isOccupied ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700',
                         )}>
-                          {isMaintenance ? t('roomStatusMaintenance') : isOccupied ? t('roomStatusOccupied') : t('roomStatusAvailable')}
+                          {isMaintenance ? t('roomStatusMaintenance') : isFull ? t('roomStatusFull') : `${used}/${cap} ${t('roomStatusAvailable')}`}
                         </span>
-                        {activeBookings.length > 0 && (
-                          <span className="text-[10px] text-muted-foreground">
-                            {activeBookings.length} {t('activeBookingsCount')}
-                          </span>
-                        )}
+                      </div>
+                      <div className="w-full h-1.5 rounded-full bg-muted mt-1.5 overflow-hidden">
+                        <div
+                          className={cn(
+                            'h-full rounded-full transition-all',
+                            isMaintenance ? 'bg-gray-400' : isFull ? 'bg-orange-500' : 'bg-green-500',
+                          )}
+                          style={{ width: `${isMaintenance ? 0 : Math.min((used / cap) * 100, 100)}%` }}
+                        />
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
@@ -217,23 +217,10 @@ function HotelRoomsPage() {
               <Label htmlFor="room-name">{t('roomName')} *</Label>
               <Input id="room-name" name="name" value={form.name} onChange={handleChange} placeholder={t('roomNamePlaceholder')} required />
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="room-type">{t('roomType')}</Label>
-              <Select value={form.type} onValueChange={(v) => setForm(f => ({ ...f, type: v }))}>
-                <SelectTrigger id="room-type">
-                  <SelectValue placeholder={t('selectRoomType')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {ROOM_TYPES.map(rt => (
-                    <SelectItem key={rt} value={rt}>{rt}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label htmlFor="room-capacity">{t('capacityLabel')}</Label>
-                <Input id="room-capacity" name="capacity" type="number" min="0" value={form.capacity} onChange={handleChange} placeholder="1" />
+                <Input id="room-capacity" name="capacity" type="number" min="1" value={form.capacity} onChange={handleChange} placeholder="1" />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="room-fee">{t('dailyFee')}</Label>

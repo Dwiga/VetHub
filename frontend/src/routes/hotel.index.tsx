@@ -27,8 +27,13 @@ function HotelDashboardPage() {
   const bookings: any[] = activeQuery.data ?? []
   const reservations: any[] = reservedQuery.data ?? []
   const rooms: any[] = roomsQuery.data ?? []
-  const availableRooms = rooms.filter((r: any) => r.status === 'available' && (!r.bookings || r.bookings.length === 0))
-  const occupiedRooms = rooms.filter((r: any) => r.status === 'occupied' || (r.bookings && r.bookings.length > 0))
+  const totalSlots = rooms
+    .filter((r: any) => r.status !== 'maintenance')
+    .reduce((sum: number, r: any) => sum + (r.capacity ?? 1), 0)
+  const usedSlots = rooms
+    .filter((r: any) => r.status !== 'maintenance')
+    .reduce((sum: number, r: any) => sum + Math.min((r.bookings ?? []).length, r.capacity ?? 1), 0)
+  const availableSlots = totalSlots - usedSlots
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -86,14 +91,14 @@ function HotelDashboardPage() {
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm">{t('roomOccupancy')}</p>
                   <p className="text-xs text-muted-foreground">
-                    {availableRooms.length} {t('roomStatusAvailable')} · {occupiedRooms.length} {t('roomStatusOccupied')} · {rooms.length} {t('totalRooms')}
+                    {availableSlots} {t('roomStatusAvailable')} ({usedSlots}/{totalSlots} {t('roomOccupiedLabel')})
                   </p>
                 </div>
                 <div className="shrink-0">
                   <div className="w-16 h-2 rounded-full bg-muted overflow-hidden">
                     <div
                       className="h-full bg-blue-500 rounded-full transition-all"
-                      style={{ width: `${rooms.length > 0 ? (occupiedRooms.length / rooms.length) * 100 : 0}%` }}
+                      style={{ width: `${totalSlots > 0 ? (usedSlots / totalSlots) * 100 : 0}%` }}
                     />
                   </div>
                 </div>

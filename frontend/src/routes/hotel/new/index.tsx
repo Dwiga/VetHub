@@ -145,13 +145,15 @@ function HotelNewGuestPage() {
                       <SelectValue placeholder={t('roomSelectPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableRooms.data?.map((r) => (
-                        <SelectItem key={r.id} value={String(r.id)}>
-                          <span>{r.name}</span>
-                          {r.type && <span className="text-muted-foreground ml-1">({r.type})</span>}
-                          {r.dailyFee && <span className="text-muted-foreground ml-1">- Rp {Number(r.dailyFee).toLocaleString('id-ID')}</span>}
-                        </SelectItem>
-                      ))}
+                        {availableRooms.data?.map((r) => (
+                          <SelectItem key={r.id} value={String(r.id)}>
+                            <span>{r.name}</span>
+                            <span className="text-muted-foreground ml-1">
+                              {(r.availableSlots ?? r.capacity - (r.bookings?.length ?? 0))}/{r.capacity ?? 1}
+                              {r.dailyFee ? ` · Rp ${Number(r.dailyFee).toLocaleString('id-ID')}` : ''}
+                            </span>
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </FormControl>

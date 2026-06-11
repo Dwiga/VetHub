@@ -417,5 +417,7 @@ export const id: Record<LangKeys, string> = {
   activeBookingsCount: "aktif",
   selectStatus: "Pilih status",
   roomOccupancy: "Okupansi kamar",
+  roomOccupiedLabel: "terpakai",
+  roomStatusFull: "Penuh",
   totalRooms: "total",
 };

@@ -73,7 +73,7 @@ export function enrichHotelBooking(
     ownerPhone: booking.pet?.owner?.phone ?? guestContact?.phone ?? petOwnerPhone ?? null,
     clinicName: booking.clinic?.name ?? null,
     roomName: booking.room?.name ?? null,
-    roomType: booking.room?.type ?? booking.roomType ?? null,
+    roomType: booking.roomType ?? null,
     roomCapacity: booking.room?.capacity ?? null,
     roomStatus: booking.room?.status ?? null,
     daysIn: financials.daysIn,

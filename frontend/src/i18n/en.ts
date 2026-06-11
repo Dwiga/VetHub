@@ -415,6 +415,8 @@ export const en = {
   activeBookingsCount: "active",
   selectStatus: "Select status",
   roomOccupancy: "Room occupancy",
+  roomOccupiedLabel: "used",
+  roomStatusFull: "Full",
   totalRooms: "total",
 };
 
