@@ -714,6 +714,7 @@ export interface Product {
   id: number
   clinicId: number
   name: string
+  barcode: string | null
   category: string | null
   description: string | null
   price: string
@@ -824,6 +825,116 @@ export function useDeleteProduct() {
     mutationFn: ({ productId }: { productId: number }) =>
       fetcher(`/api/products/${productId}`, { method: 'DELETE' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }),
+  })
+}
+
+export function useUpdateProduct() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ productId, data }: { productId: number; data: Record<string, any> }) =>
+      fetcher(`/api/products/${productId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }),
+  })
+}
+
+// ─────────────────────────────  Product Sales  ────────────────────────────
+
+export interface ProductSaleItem {
+  id: number
+  saleId: number
+  productId: number
+  productName: string
+  price: string
+  quantity: number
+  subtotal: string
+}
+
+export interface ProductSale {
+  id: number
+  clinicId: number
+  buyerId: number | null
+  buyerName: string | null
+  buyerPhone: string | null
+  total: string
+  paid: string
+  status: string
+  saleDate: string
+  createdAt: string
+  items: ProductSaleItem[]
+}
+
+export function useListProductSales(
+  clinicId: number | undefined,
+  params?: { startDate?: string; endDate?: string },
+) {
+  const fetcher = useAuthedFetch()
+  const qs = new URLSearchParams()
+  if (clinicId) qs.set('clinicId', String(clinicId))
+  if (params?.startDate) qs.set('startDate', params.startDate)
+  if (params?.endDate) qs.set('endDate', params.endDate)
+  return useQuery<ProductSale[]>({
+    queryKey: ['product-sales', clinicId, params],
+    queryFn: () => fetcher(`/api/product-sales?${qs}`),
+    enabled: !!clinicId,
+  })
+}
+
+export function useCreateProductSale() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ data }: { data: Record<string, any> }) =>
+      fetcher('/api/product-sales', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['product-sales'] })
+      qc.invalidateQueries({ queryKey: ['products'] })
+      qc.invalidateQueries({ queryKey: ['product-reports'] })
+    },
+  })
+}
+
+// ─────────────────────────────  Product Reports  ──────────────────────────
+
+export interface ProductReport {
+  totalRevenue: number
+  totalSales: number
+  topProducts: Array<{ name: string; quantity: number; revenue: number }>
+  stockSummary: Array<{
+    id: number
+    name: string
+    stock: number
+    unit: string
+    price: string
+    barcode: string | null
+    category: string | null
+  }>
+  labels: string[]
+  salesCounts: number[]
+  revenues: number[]
+}
+
+export function useGetProductReport(
+  clinicId: number | undefined,
+  params: { period: string; date: string; startDate?: string; endDate?: string },
+) {
+  const fetcher = useAuthedFetch()
+  const qs = new URLSearchParams()
+  if (clinicId) qs.set('clinicId', String(clinicId))
+  qs.set('period', params.period)
+  qs.set('date', params.date)
+  if (params.startDate) qs.set('startDate', params.startDate)
+  if (params.endDate) qs.set('endDate', params.endDate)
+  return useQuery<ProductReport>({
+    queryKey: ['product-reports', clinicId, params],
+    queryFn: () => fetcher(`/api/product-reports?${qs}`),
+    enabled: !!clinicId,
   })
 }
 

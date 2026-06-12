@@ -3,7 +3,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import { PageHeader } from '@/components/shared/PageHeader'
 import {
   useGetMe, useGetMyClinic, useListStaff, useUpdateClinic, useInviteStaff, useRemoveStaff,
-  useListProducts, useCreateProduct, useDeleteProduct,
+  useListProducts, useCreateProduct, useDeleteProduct, useUpdateProduct,
 } from '@/lib/api-client'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -41,6 +41,7 @@ const staffSchema = z.object({
 
 const productSchema = z.object({
   name: z.string().min(1),
+  barcode: z.string().optional(),
   category: z.string().optional(),
   description: z.string().optional(),
   price: z.string().min(1),
@@ -66,9 +67,11 @@ function ClinicPage() {
   const removeStaff = useRemoveStaff()
   const createProduct = useCreateProduct()
   const deleteProduct = useDeleteProduct()
+  const updateProduct = useUpdateProduct()
 
   const [staffDialogOpen, setStaffDialogOpen] = useState(false)
   const [productDialogOpen, setProductDialogOpen] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<{ id: number; name: string; barcode: string; category: string; description: string; price: string; stock: string; unit: string } | null>(null)
 
   const clinicForm = useForm<z.infer<typeof clinicSchema>>({
     resolver: zodResolver(clinicSchema),
@@ -119,6 +122,7 @@ function ClinicPage() {
       clinicId,
       data: {
         name: values.name,
+        barcode: values.barcode || undefined,
         category: values.category || undefined,
         description: values.description || undefined,
         price: parseFloat(values.price),
@@ -128,8 +132,42 @@ function ClinicPage() {
     })
     queryClient.invalidateQueries({ queryKey: ['products'] })
     setProductDialogOpen(false)
+    setEditingProduct(null)
     productForm.reset()
     toast({ title: t('productAdded') })
+  }
+
+  async function editProduct(values: z.infer<typeof productSchema>) {
+    if (!editingProduct) return
+    await updateProduct.mutateAsync({
+      productId: editingProduct.id,
+      data: {
+        name: values.name,
+        barcode: values.barcode || null,
+        category: values.category || null,
+        description: values.description || null,
+        price: parseFloat(values.price),
+        stock: values.stock ? parseInt(values.stock) : null,
+        unit: values.unit || null,
+      },
+    })
+    queryClient.invalidateQueries({ queryKey: ['products'] })
+    setProductDialogOpen(false)
+    setEditingProduct(null)
+    productForm.reset()
+    toast({ title: t('productUpdated') })
+  }
+
+  function openAddProduct() {
+    setEditingProduct(null)
+    productForm.reset({ name: '', barcode: '', category: '', description: '', price: '0', stock: '', unit: '' })
+    setProductDialogOpen(true)
+  }
+
+  function openEditProduct(p: any) {
+    setEditingProduct({ id: p.id, name: p.name, barcode: p.barcode || '', category: p.category || '', description: p.description || '', price: String(p.price ?? 0), stock: p.stock != null ? String(p.stock) : '', unit: p.unit || '' })
+    productForm.reset({ name: p.name, barcode: p.barcode || '', category: p.category || '', description: p.description || '', price: String(p.price ?? 0), stock: p.stock != null ? String(p.stock) : '', unit: p.unit || '' })
+    setProductDialogOpen(true)
   }
 
   async function removeProduct(productId: number) {
@@ -282,67 +320,12 @@ function ClinicPage() {
 
         <TabsContent value="products" className="space-y-4">
           <div className="flex items-center justify-between">
-            Fitur ini dalamtahap pengembangan
-            {/* <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {productList.length} {productList.length === 1 ? t('productSingular') : t('productPlural')}
             </p>
-            <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" variant="outline" data-testid="btn-add-product">
-                  <Plus className="h-4 w-4 mr-1" />{t('add')}
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>{t('addProduct')}</DialogTitle></DialogHeader>
-                <Form {...productForm}>
-                  <form onSubmit={productForm.handleSubmit(addProduct)} className="space-y-4 pt-2">
-                    <FormField control={productForm.control} name="name" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('name')}</FormLabel>
-                        <FormControl><Input {...field} data-testid="input-product-name" /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    <FormField control={productForm.control} name="category" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('category')}</FormLabel>
-                        <FormControl><Input {...field} placeholder={t('categoryPlaceholder')} data-testid="input-product-category" /></FormControl>
-                      </FormItem>
-                    )} />
-                    <FormField control={productForm.control} name="price" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('price')}</FormLabel>
-                        <FormControl><Input type="number" min="0" {...field} data-testid="input-product-price" /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    <div className="flex gap-3">
-                      <FormField control={productForm.control} name="stock" render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel>{t('stock')}</FormLabel>
-                          <FormControl><Input type="number" min="0" {...field} data-testid="input-product-stock" /></FormControl>
-                        </FormItem>
-                      )} />
-                      <FormField control={productForm.control} name="unit" render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel>{t('unit')}</FormLabel>
-                          <FormControl><Input {...field} placeholder={t('unitPlaceholder')} data-testid="input-product-unit" /></FormControl>
-                        </FormItem>
-                      )} />
-                    </div>
-                    <FormField control={productForm.control} name="description" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('description')}</FormLabel>
-                        <FormControl><Textarea {...field} rows={2} data-testid="input-product-desc" /></FormControl>
-                      </FormItem>
-                    )} />
-                    <Button type="submit" className="w-full" disabled={createProduct.isPending} data-testid="btn-submit-product">
-                      {createProduct.isPending ? t('addingProduct') : t('addProduct')}
-                    </Button>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog> */}
+            <Button size="sm" variant="outline" onClick={openAddProduct} data-testid="btn-add-product">
+              <Plus className="h-4 w-4 mr-1" />{t('add')}
+            </Button>
           </div>
           <div className="space-y-3">
             {productList.map((p: any) => (
@@ -351,12 +334,13 @@ function ClinicPage() {
                   <div className="h-9 w-9 rounded-xl bg-secondary flex items-center justify-center shrink-0">
                     <Package className="h-4 w-4 text-primary/60" />
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 cursor-pointer" onClick={() => openEditProduct(p)}>
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-sm" data-testid={`text-product-name-${p.id}`}>{p.name}</p>
                       {p.category && <Badge variant="outline" className="text-xs">{p.category}</Badge>}
                     </div>
                     <p className="text-xs text-muted-foreground">
+                      {p.barcode && <span className="mr-2">#{p.barcode}</span>}
                       Rp {(p.price ?? 0).toLocaleString('id-ID')}
                       {p.stock != null ? ` · ${t('stockLabel')} ${p.stock} ${p.unit ?? ''}` : ''}
                     </p>
@@ -382,6 +366,70 @@ function ClinicPage() {
               </Card>
             )}
           </div>
+
+          <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
+            <DialogContent>
+              <DialogHeader><DialogTitle>{editingProduct ? t('editProduct') : t('addProduct')}</DialogTitle></DialogHeader>
+              <Form {...productForm}>
+                <form onSubmit={productForm.handleSubmit(editingProduct ? editProduct : addProduct)} className="space-y-4 pt-2">
+                  <FormField control={productForm.control} name="name" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('name')}</FormLabel>
+                      <FormControl><Input {...field} data-testid="input-product-name" /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={productForm.control} name="barcode" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('barcode')}</FormLabel>
+                      <FormControl><Input {...field} placeholder={t('barcodePlaceholder')} data-testid="input-product-barcode" /></FormControl>
+                    </FormItem>
+                  )} />
+                  <FormField control={productForm.control} name="category" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('category')}</FormLabel>
+                      <FormControl><Input {...field} placeholder={t('categoryPlaceholder')} data-testid="input-product-category" /></FormControl>
+                    </FormItem>
+                  )} />
+                  <FormField control={productForm.control} name="price" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('price')}</FormLabel>
+                      <FormControl><Input type="number" min="0" {...field} data-testid="input-product-price" /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <div className="flex gap-3">
+                    <FormField control={productForm.control} name="stock" render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>{t('stock')}</FormLabel>
+                        <FormControl><Input type="number" min="0" {...field} data-testid="input-product-stock" /></FormControl>
+                      </FormItem>
+                    )} />
+                    <FormField control={productForm.control} name="unit" render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>{t('unit')}</FormLabel>
+                        <FormControl><Input {...field} placeholder={t('unitPlaceholder')} data-testid="input-product-unit" /></FormControl>
+                      </FormItem>
+                    )} />
+                  </div>
+                  <FormField control={productForm.control} name="description" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('description')}</FormLabel>
+                      <FormControl><Textarea {...field} rows={2} data-testid="input-product-desc" /></FormControl>
+                    </FormItem>
+                  )} />
+                  <Button type="submit" className="w-full" disabled={createProduct.isPending || updateProduct.isPending} data-testid="btn-submit-product">
+                    {createProduct.isPending || updateProduct.isPending ? t('saving') : (editingProduct ? t('updateProduct') : t('addProduct'))}
+                  </Button>
+                  {editingProduct && (
+                    <Button type="button" variant="outline" className="w-full" onClick={() => { setProductDialogOpen(false); setEditingProduct(null); productForm.reset() }}>
+                      {t('cancel')}
+                    </Button>
+                  )}
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
       </Tabs>
     </AppShell>

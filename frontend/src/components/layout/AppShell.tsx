@@ -16,6 +16,7 @@ import {
   LogOut,
   BarChart3,
   Shield,
+  ShoppingCart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/contexts/RoleContext";
@@ -65,11 +66,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const vetOwnerNav = [
     { href: "/vet", icon: Stethoscope, label: t("nav_clinic") },
+    { href: "/pos", icon: ShoppingCart, label: t("nav_pos") },
     { href: "/clinic", icon: Building2, label: t("nav_manage") },
   ];
 
   const hotelOwnerNav = [
     { href: "/hotel", icon: Hotel, label: t("nav_hotel") },
+    { href: "/pos", icon: ShoppingCart, label: t("nav_pos") },
     { href: "/hotel/guests" as any, icon: Users, label: t("nav_guests"), search: { phone: '' } as any },
     { href: "/hotel/history", icon: Clock, label: t("nav_history") },
   ];
@@ -210,10 +213,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {user?.name ?? t("profile")}
               </DropdownMenuLabel>
               {user?.clinicId && (
-                <DropdownMenuItem onClick={() => navigate({ to: "/vet/reports" as never })}>
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  {t("nav_reports")}
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem onClick={() => navigate({ to: "/vet/reports" as never })}>
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    {t("nav_reports")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate({ to: "/product-reports" as never })}>
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    {t("productReport")}
+                  </DropdownMenuItem>
+                </>
               )}
               {user?.hotelId && (
                 <DropdownMenuItem onClick={() => navigate({ to: "/hotel/reports" as never })}>
