@@ -1032,6 +1032,101 @@ export const useListHotelLogs = useListHotelDailyLogs
 export const useAddHotelLog = useAddHotelDailyLog
 export const useDeleteHotelLog = useDeleteHotelDailyLog
 
+// ─────────────────────────────  Hotel Rooms  ─────────────────────────────────
+
+export interface HotelRoom {
+  id: number
+  name: string
+  capacity: number
+  dailyFee: string | null
+  status: string
+  hotelId: number
+  isActive: boolean
+  bookings?: Array<{
+    id: number
+    checkIn: string
+    checkOut: string | null
+    expectedCheckOut: string | null
+    status: string
+  }>
+  conflictingCount?: number
+  availableSlots?: number
+}
+
+export function useListHotelRooms(hotelId: number | undefined, status?: string) {
+  const fetcher = useAuthedFetch()
+  const params = new URLSearchParams()
+  if (hotelId) params.set('hotelId', String(hotelId))
+  if (status) params.set('status', status)
+  return useQuery<HotelRoom[]>({
+    queryKey: ['hotel-rooms', hotelId, status],
+    queryFn: () => fetcher(`/api/hotel/rooms?${params}`),
+    enabled: !!hotelId,
+  })
+}
+
+export function useGetHotelRoom(roomId: number | undefined) {
+  const fetcher = useAuthedFetch()
+  return useQuery<HotelRoom>({
+    queryKey: ['hotel-rooms', roomId],
+    queryFn: () => fetcher(`/api/hotel/rooms/${roomId}`),
+    enabled: !!roomId,
+  })
+}
+
+export function useCreateHotelRoom() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ data }: { data: Record<string, any> }) =>
+      fetcher('/api/hotel/rooms', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['hotel-rooms'] }),
+  })
+}
+
+export function useUpdateHotelRoom() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ roomId, data }: { roomId: number; data: Record<string, any> }) =>
+      fetcher(`/api/hotel/rooms/${roomId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_, { roomId }) => {
+      qc.invalidateQueries({ queryKey: ['hotel-rooms', roomId] })
+      qc.invalidateQueries({ queryKey: ['hotel-rooms'] })
+    },
+  })
+}
+
+export function useDeleteHotelRoom() {
+  const fetcher = useAuthedFetch()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ roomId }: { roomId: number }) =>
+      fetcher(`/api/hotel/rooms/${roomId}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['hotel-rooms'] }),
+  })
+}
+
+export function useListAvailableRooms(hotelId: number | undefined, checkIn: string, checkOut: string, bookingId?: number) {
+  const fetcher = useAuthedFetch()
+  const params = new URLSearchParams()
+  if (hotelId) params.set('hotelId', String(hotelId))
+  params.set('checkIn', checkIn)
+  params.set('checkOut', checkOut)
+  if (bookingId) params.set('bookingId', String(bookingId))
+  return useQuery<HotelRoom[]>({
+    queryKey: ['hotel-rooms', 'available', hotelId, checkIn, checkOut, bookingId],
+    queryFn: () => fetcher(`/api/hotel/rooms/available?${params}`),
+    enabled: !!hotelId && !!checkIn && !!checkOut,
+  })
+}
+
 // ─────────────────────────────  Hotel Share  ──────────────────────────────────
 
 export function useShareHotelBooking() {

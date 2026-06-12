@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { PawPrint, Phone, User, Plus } from 'lucide-react'
+import { PawPrint, Phone, User, Plus, Info } from 'lucide-react'
 import { normalizePhone } from '@/lib/phone'
 import { useLang } from '@/contexts/LangContext'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -15,9 +15,10 @@ type OwnerSearchProps = {
   addPetPath: string
   initialQ: string
   actionButton: (pet: { id: number; name: string }) => ReactNode
+  directionMessage?: string
 }
 
-export function OwnerSearch({ backHref, addPetPath, initialQ, actionButton }: OwnerSearchProps) {
+export function OwnerSearch({ backHref, addPetPath, initialQ, actionButton, directionMessage }: OwnerSearchProps) {
   const [phone, setPhone] = useState(initialQ)
   const [petName, setPetName] = useState(initialQ)
   const [tab, setTab] = useState('phone')
@@ -53,6 +54,15 @@ export function OwnerSearch({ backHref, addPetPath, initialQ, actionButton }: Ow
       </TabsList>
 
       <TabsContent value="phone" className="space-y-4">
+        {directionMessage && (
+          <Card className="border-blue-200 bg-blue-50/50">
+            <CardContent className="py-3 flex gap-3">
+              <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
+              <p className="text-sm text-blue-800 leading-relaxed">{directionMessage}</p>
+            </CardContent>
+          </Card>
+        )}
+
         <form onSubmit={handlePhoneSearch} className="flex gap-2">
           <Input
             placeholder={t('phonePlaceholder')}

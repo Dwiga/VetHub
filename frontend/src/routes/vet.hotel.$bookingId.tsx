@@ -20,6 +20,7 @@ import { useState } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { useLang } from '@/contexts/LangContext'
 import { cn } from '@/lib/utils'
+import { calculateDaysIn, calculateRoomFee } from '@/lib/hotel-utils'
 
 export const Route = createFileRoute('/vet/hotel/$bookingId')({
   component: HotelDetailPage,
@@ -107,11 +108,8 @@ function HotelDetailPage() {
   if (!b) return <AppShell><p className="text-center text-muted-foreground pt-8">{t('visitNotFound')}</p></AppShell>
 
   const isActive = b.status === 'active'
-  const daysIn = b.checkOut
-    ? Math.ceil((new Date(b.checkOut).getTime() - new Date(b.checkIn).getTime()) / (1000 * 60 * 60 * 24))
-    : Math.ceil((Date.now() - new Date(b.checkIn).getTime()) / (1000 * 60 * 60 * 24))
-  const dailyFeeNum = b.dailyFee ?? 0
-  const roomFeeTotal = dailyFeeNum * daysIn
+  const daysIn = calculateDaysIn({ checkIn: b.checkIn, checkOut: b.checkOut })
+  const roomFeeTotal = calculateRoomFee({ checkIn: b.checkIn, checkOut: b.checkOut, dailyFee: b.dailyFee ? String(b.dailyFee) : undefined }).roomFeeTotal
   const totalDeposits = (b as any).totalDeposits ?? 0
   const totalCredits = (b as any).totalCredits ?? 0
   const balance = (b as any).balance ?? 0

@@ -67,6 +67,29 @@ export const Route = createFileRoute('/api/hotel-bookings')({
         const hotelId = userHotelId ?? body.hotelId ?? body.clinicId
         if (!hotelId) return Response.json({ error: 'missing hotelId' }, { status: 400 })
 
+        if (body.roomId) {
+          const conflicting = await prisma.hotelBooking.findFirst({
+            where: {
+              roomId: body.roomId,
+              hotelId,
+              status: { in: ['active', 'reserved'] },
+              AND: [
+                { checkIn: { lt: body.expectedCheckOut || body.checkIn } },
+                {
+                  OR: [
+                    { checkOut: { gt: body.checkIn } },
+                    { checkOut: null, expectedCheckOut: { gt: body.checkIn } },
+                    { checkOut: null, expectedCheckOut: null },
+                  ],
+                },
+              ],
+            },
+          })
+          if (conflicting) {
+            return Response.json({ error: 'room_already_booked', message: 'Room is not available for this date range' }, { status: 409 })
+          }
+        }
+
         const booking = await prisma.hotelBooking.create({
           data: {
             petId,
@@ -74,6 +97,7 @@ export const Route = createFileRoute('/api/hotel-bookings')({
             checkIn: body.checkIn,
             expectedCheckOut: body.expectedCheckOut,
             roomType: body.roomType,
+            roomId: body.roomId ? Number(body.roomId) : undefined,
             dailyFee: body.dailyFee ? String(body.dailyFee) : undefined,
             notes: body.notes,
             status: body.status ?? 'active',
